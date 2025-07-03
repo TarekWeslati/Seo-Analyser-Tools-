@@ -1,3 +1,2 @@
 PAGESPEED_API_KEY=AIzaSyB-Rd-VuB3XaAUa9M-N6RwYw8t9DNL9bEw
-OPENAI_API_KEY=ضع_مفتاح_API_أوبن_إيه_آي_الخاص_بك_هنا # اختياري - احذف هذا السطر إذا لم تستخدم ميزات الذكاء الاصطناعي
-
+OPENAI_API_KEY= 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
