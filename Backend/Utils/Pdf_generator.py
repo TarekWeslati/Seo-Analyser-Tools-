@@ -17,7 +17,7 @@ def generate_pdf_report(url, results):
         <style>
             body {{ font-family: sans-serif; margin: 20px; }}
             h1, h2, h3 {{ color: #333; }}
-            .section {{ margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px; }}
+            .section {{ margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px; }}1
             .score-badge {{
                 display: inline-block; padding: 8px 12px; border-radius: 5px; font-weight: bold;
                 color: white; text-align: center;
@@ -132,3 +132,4 @@ def generate_pdf_report(url, results):
 #     pdf_path = os.path.join("reports", pdf_filename)
 #     pdf.output(pdf_path)
 #     return pdf_path
+# Rename Backend folder to backend
