@@ -14,4 +14,4 @@ weasyprint # For PDF generation (requires system dependencies) or fpdf2
 # playwright
 # or
 # puppeteer-python
-Fix requirements.txt location
+# Fix requirements.txt location
