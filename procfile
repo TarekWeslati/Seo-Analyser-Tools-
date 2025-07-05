@@ -1,2 +1,1 @@
-web: cd backend && gunicorn app:app
-rename Procfile folder procfile
+web: gunicorn wsgi:app
