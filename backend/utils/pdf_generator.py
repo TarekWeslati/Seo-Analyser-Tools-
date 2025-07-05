@@ -66,8 +66,10 @@ def generate_pdf_report(url, results):
             </ul>
             <h3>Performance Issues:</h3>
             <ul>
-                {f"<li>{issue['title']} (Score: {issue.get('score', 'N/A')}): {issue.get('description', '')}</li>" for issue in results.get('page_speed',{}).get('issues', [])}
-            </ul>
+                {page_speed_issues_html = ""
+for issue in results.get('page_speed', {}).get('issues', []):
+    page_speed_issues_html += f"<li>{issue.get('title', 'N/A')} (Score: {issue.get('score', 'N/A')}): {issue.get('description', '')}</li>"
+
             <p><a href="{results.get('page_speed',{}).get('full_report_link', '#')}">View Full PageSpeed Insights Report</a></p>
         </div>
 
