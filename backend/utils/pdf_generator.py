@@ -91,9 +91,9 @@ for issue in results.get('page_speed', ).get('issues', []):
                 </ul>
             <h3>Improvement Tips:</h3>
             <ul>
-                {f"<li>{tip}</li>" for tip in results.get('seo_quality',{}).get('improvement_tips', [])}
+                f"<li>tip</li>" for tip in results.get('seo_quality',).get('improvement_tips', [])
             </ul>
-            {f"<h3>AI SEO Suggestions:</h3><p>{results.get('ai_insights',{}).get('seo_improvement_suggestions', 'N/A')}</p>" if results.get('ai_insights',{}).get('seo_improvement_suggestions') else ''}
+            f"<h3>AI SEO Suggestions:</h3><p>results.get('ai_insights',).get('seo_improvement_suggestions', 'N/A')</p>" if results.get('ai_insights',).get('seo_improvement_suggestions') else ''
         </div>
 
         <div class="section">
