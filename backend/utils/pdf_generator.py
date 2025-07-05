@@ -100,13 +100,13 @@ for issue in results.get('page_speed', ).get('issues', []):
             <h2>4. User Experience (UX)</h2>
             <h3>Issues Detected:</h3>
             <ul>
-                {f"<li>{issue}</li>" for issue in results.get('user_experience',{}).get('issues', [])}
+                f"<li>issue</li>" for issue in results.get('user_experience',).get('issues', [])
             </ul>
             <h3>General UX Suggestions:</h3>
             <ul>
                 {f"<li>{suggestion}</li>" for suggestion in results.get('user_experience',{}).get('suggestions', [])}
             </ul>
-            {f"<h3>AI Content Insights:</h3><p>{results.get('ai_insights',{}).get('content_originality_tone', 'N/A')}</p>" if results.get('ai_insights',{}).get('content_originality_tone') else ''}
+            f"<h3>AI Content Insights:</h3><p>results.get('ai_insights',).get('content_originality_tone', 'N/A')</p>" if results.get('ai_insights',).get('content_originality_tone') else ''
         </div>
 
     </body>
