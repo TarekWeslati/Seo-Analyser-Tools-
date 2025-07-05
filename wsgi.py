@@ -1,14 +1,14 @@
-# wsgi.py
 import sys
 import os
 
-# أضف مسار مجلد backend إلى sys.path
+# هذا السطر مهم جداً. يضيف مسار مجلد 'backend' إلى مسارات البايثون
+# حتى يتمكن من العثور على ملف 'app.py' داخله.
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'backend'))
 
-from backend.app import app as application # استيراد كائن الـ app من app.py
+# استيراد كائن التطبيق (الذي اسمه 'app' في ملف 'app.py' داخل 'backend')
+# وتسميته 'application' هنا لتجنب أي تعارضات محتملة في الأسماء.
+from backend.app import app as application
 
-# إذا كنت تستخدم gunicorn app:app
-# gunicorn سيحاول استيراد app من ملف اسمه app.py أو wsgi.py
-# هذا الملف wsgi.py في الجذر سيتكفل بالاستيراد الصحيح
-# اسم المتغير app هنا يجب أن يطابق ما هو في Procfile
+# Gunicorn يتوقع العثور على كائن باسم 'app' عند تشغيله بالأمر 'wsgi:app'.
+# لذلك، نجعل المتغير 'app' يشير إلى الكائن المستورد 'application'.
 app = application
