@@ -104,7 +104,7 @@ for issue in results.get('page_speed', ).get('issues', []):
             </ul>
             <h3>General UX Suggestions:</h3>
             <ul>
-                {f"<li>{suggestion}</li>" for suggestion in results.get('user_experience',{}).get('suggestions', [])}
+                f"<li>suggestion</li>" for suggestion in results.get('user_experience',).get('suggestions', [])
             </ul>
             f"<h3>AI Content Insights:</h3><p>results.get('ai_insights',).get('content_originality_tone', 'N/A')</p>" if results.get('ai_insights',).get('content_originality_tone') else ''
         </div>
@@ -116,7 +116,7 @@ for issue in results.get('page_speed', ).get('issues', []):
     # Create a temporary file to save the PDF
     output_dir = "reports"
     os.makedirs(output_dir, exist_ok=True)
-    pdf_filename = f"{url.replace('https://', '').replace('http://', '').replace('/', '_')}_report_{datetime.now().strftime('%Y%m%d%H%M%S')}.pdf"
+    pdf_filename = f"url.replace('https://', '').replace('http://', '').replace('/', '_')_report_datetime.now().strftime('%Y%m%d%H%M%S').pdf"
     pdf_path = os.path.join(output_dir, pdf_filename)
 
     HTML(string=report_html).write_pdf(pdf_path)
