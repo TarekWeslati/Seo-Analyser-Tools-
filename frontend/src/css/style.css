@@ -1,0 +1,21 @@
+/*
+هذا الملف لـ CSS المخصص.
+يمكنك إضافة أي أنماط هنا لتجاوز أنماط Bootstrap الافتراضية
+أو إضافة أنماط خاصة بك.
+*/
+
+/* مثال: تحسين شكل حقل الإدخال والزر */
+#website-url {
+    border-top-right-radius: 0.375rem !important; /* لضمان تطابق الزوايا مع Bootstrap RTL */
+    border-bottom-right-radius: 0.375rem !important;
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+}
+
+#analyze-btn {
+    border-top-left-radius: 0.375rem !important;
+    border-bottom-left-radius: 0.375rem !important;
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}
+/* ملاحظة: Bootstrap 5 تتعامل بشكل جيد مع RTL، قد لا تحتاج هذه التجاوزات */
