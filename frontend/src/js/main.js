@@ -1,384 +1,222 @@
-const API_BASE_URL = 'http://127.0.0.1:5000'; // عنوان URL للخلفية، سيصبح مختلفًا عند النشر
+document.addEventListener('DOMContentLoaded', () => {
+    // === عناصر DOM الرئيسية ===
+    const appTitle = document.getElementById('app-title');
+    const navAppTitle = document.getElementById('nav-app-title');
+    const analyzeAnyWebsiteText = document.getElementById('analyze-any-website-text');
+    const websiteUrlInput = document.getElementById('website-url');
+    const analyzeBtn = document.getElementById('analyze-btn');
+    const loadingIndicator = document.getElementById('loading-indicator');
+    const analyzingText = document.getElementById('analyzing-text');
+    const resultsSection = document.getElementById('results-section');
+    const analysisResultsForText = document.getElementById('analysis-results-for-text');
+    const analyzedUrlDisplay = document.getElementById('analyzed-url-display');
+    const exportPdfBtn = document.getElementById('export-pdf-btn');
+    const exportPdfText = document.getElementById('export-pdf-text');
 
-const websiteUrlInput = document.getElementById('website-url');
-const analyzeButton = document.getElementById('analyze-button');
-const errorMessage = document.getElementById('error-message');
-const loadingSpinner = document.getElementById('loading-spinner');
-const resultsDashboard = document.getElementById('results-dashboard');
+    // === عناصر عرض النتائج ===
+    const seoScoreTitle = document.getElementById('seo-score-title');
+    const seoScoreElem = document.getElementById('seo-score');
+    const seoDescriptionElem = document.getElementById('seo-description');
 
-const analyzedUrlSpan = document.getElementById('analyzed-url');
-const seoScoreDiv = document.getElementById('seo-score');
-const speedScoreDiv = document.getElementById('speed-score');
-const uxScoreDiv = document.getElementById('ux-score');
+    const speedScoreTitle = document.getElementById('speed-score-title');
+    const speedScoreElem = document.getElementById('speed-score');
+    const speedDescriptionElem = document.getElementById('speed-description');
 
-// ملخص الذكاء الاصطناعي
-const aiSummarySection = document.getElementById('ai-summary-section');
-const aiSummaryText = document.getElementById('ai-summary-text');
+    const uxScoreTitle = document.getElementById('ux-score-title');
+    const uxScoreElem = document.getElementById('ux-score');
+    const uxDescriptionElem = document.getElementById('ux-description');
 
-// سلطة النطاق
-const domainNameSpan = document.getElementById('domain-name');
-const domainAuthorityEstimateSpan = document.getElementById('domain-authority-estimate');
-const domainAgeSpan = document.getElementById('domain-age');
-const sslStatusSpan = document.getElementById('ssl-status');
-const blacklistStatusSpan = document.getElementById('blacklist-status');
-const dnsHealthSpan = document.getElementById('dns-health');
+    const domainAuthorityTitle = document.getElementById('domain-authority-title');
+    const domainAuthorityElem = document.getElementById('domain-authority');
+    const domainAuthorityDescElem = document.getElementById('domain-authority-desc');
 
-// سرعة الصفحة
-const coreWebVitalsList = document.getElementById('core-web-vitals');
-const performanceIssuesList = document.getElementById('performance-issues');
-const pagespeedLink = document.getElementById('pagespeed-link');
+    const securityScoreTitle = document.getElementById('security-score-title');
+    const securityScoreElem = document.getElementById('security-score');
+    const securityDescriptionElem = document.getElementById('security-description');
 
-// SEO
-const seoTitleSpan = document.getElementById('seo-title');
-const seoMetaDescriptionSpan = document.getElementById('seo-meta-description');
-const seoBrokenLinksSpan = document.getElementById('seo-broken-links');
-const seoMissingAltSpan = document.getElementById('seo-missing-alt');
-const seoInternalLinksSpan = document.getElementById('seo-internal-links');
-const seoExternalLinksSpan = document.getElementById('seo-external-links');
-const hTagsList = document.getElementById('h-tags-list');
-const keywordDensityList = document.getElementById('keyword-density-list');
-const seoImprovementTipsList = document.getElementById('seo-improvement-tips');
-const aiSeoSuggestionsSection = document.getElementById('ai-seo-suggestions-section');
-const aiSeoSuggestionsText = document.getElementById('ai-seo-suggestions-text');
+    const aiSummaryTitle = document.getElementById('ai-summary-title');
+    const aiSummaryContentElem = document.getElementById('ai-summary-content');
 
+    // === عناصر تبديل اللغة والثيم ===
+    const langToggleBtn = document.getElementById('lang-toggle-btn');
+    const themeToggleBtn = document.getElementById('theme-toggle-btn');
 
-// تجربة المستخدم (UX)
-const uxIssuesList = document.getElementById('ux-issues-list');
-const uxSuggestionsList = document.getElementById('ux-suggestions-list');
-const aiContentInsightsSection = document.getElementById('ai-content-insights-section');
-const aiContentInsightsText = document.getElementById('ai-content-insights-text');
+    // === متغيرات الحالة ===
+    let currentLang = localStorage.getItem('appLang') || 'ar'; // اللغة الافتراضية أو من التخزين المحلي
+    let currentTheme = localStorage.getItem('appTheme') || 'light'; // الثيم الافتراضي أو من التخزين المحلي
+    let translations = {}; // سيتم تحميل الترجمات هنا
 
+    // === وظائف مساعدة ===
 
-// أزرار الإجراءات
-const analyzeAnotherButton = document.getElementById('analyze-another-button');
-const exportPdfButton = document.getElementById('export-pdf-button');
-
-let currentAnalysisResults = null; // تخزين النتائج لتصدير PDF
-
-// --- تبديل الوضع الليلي/النهاري ---
-const themeToggle = document.getElementById('theme-toggle');
-const htmlElement = document.documentElement;
-
-themeToggle.addEventListener('click', () => {
-    htmlElement.classList.toggle('dark');
-    // تخزين تفضيل المستخدم في localStorage
-    if (htmlElement.classList.contains('dark')) {
-        localStorage.setItem('theme', 'dark');
-    } else {
-        localStorage.setItem('theme', 'light');
-    }
-});
-
-// تطبيق الثيم المحفوظ عند التحميل
-if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-    htmlElement.classList.add('dark');
-} else {
-    htmlElement.classList.remove('dark');
-}
-
-
-// --- وظائف مساعدة ---
-function showElement(element) {
-    element.classList.remove('hidden');
-}
-
-function hideElement(element) {
-    element.classList.add('hidden');
-}
-
-function setScoreBadge(element, score) {
-    // تنسيق النص للرقم
-    element.textContent = score !== null && score !== undefined ? `${Math.round(score)}` : 'N/A';
-    // إزالة كلاسات الألوان القديمة
-    element.classList.remove('text-green-600', 'dark:text-green-400', 'text-orange-600', 'dark:text-orange-400', 'text-red-600', 'dark:text-red-400');
-
-    if (score === 'N/A' || score === null || score === undefined) return;
-
-    // إضافة الكلاسات بناءً على النتيجة
-    if (score >= 70) {
-        element.classList.add('text-green-600', 'dark:text-green-400');
-    } else if (score >= 40) {
-        element.classList.add('text-orange-600', 'dark:text-orange-400');
-    } else {
-        element.classList.add('text-red-600', 'dark:text-red-400');
-    }
-}
-
-
-function isValidUrl(string) {
-    try {
-        new URL(string);
-        return true;
-    } catch (e) {
-        return false;
-    }
-}
-
-function clearResults() {
-    resultsDashboard.classList.add('hidden');
-    errorMessage.classList.add('hidden');
-    websiteUrlInput.value = '';
-    // مسح جميع النصوص والقوائم
-    analyzedUrlSpan.textContent = '';
-    setScoreBadge(seoScoreDiv, null);
-    setScoreBadge(speedScoreDiv, null);
-    setScoreBadge(uxScoreDiv, null);
-
-    aiSummarySection.classList.add('hidden');
-    aiSummaryText.textContent = '';
-
-    domainNameSpan.textContent = '';
-    domainAuthorityEstimateSpan.textContent = '';
-    domainAgeSpan.textContent = '';
-    sslStatusSpan.textContent = '';
-    blacklistStatusSpan.textContent = '';
-    dnsHealthSpan.textContent = '';
-
-    coreWebVitalsList.innerHTML = '';
-    performanceIssuesList.innerHTML = '';
-    pagespeedLink.href = '#';
-
-    seoTitleSpan.textContent = '';
-    seoMetaDescriptionSpan.textContent = '';
-    seoBrokenLinksSpan.textContent = '';
-    seoMissingAltSpan.textContent = '';
-    seoInternalLinksSpan.textContent = '';
-    seoExternalLinksSpan.textContent = '';
-    hTagsList.innerHTML = '';
-    keywordDensityList.innerHTML = '';
-    seoImprovementTipsList.innerHTML = '';
-    aiSeoSuggestionsSection.classList.add('hidden');
-    aiSeoSuggestionsText.textContent = '';
-
-    uxIssuesList.innerHTML = '';
-    uxSuggestionsList.innerHTML = '';
-    aiContentInsightsSection.classList.add('hidden');
-    aiContentInsightsText.textContent = '';
-}
-
-
-// --- منطق التحليل الرئيسي ---
-analyzeButton.addEventListener('click', async () => {
-    const url = websiteUrlInput.value.trim();
-    if (!isValidUrl(url)) {
-        errorMessage.textContent = "يرجى إدخال رابط صالح (مثال: https://example.com).";
-        showElement(errorMessage);
-        hideElement(resultsDashboard);
-        return;
-    }
-
-    errorMessage.classList.add('hidden');
-    hideElement(resultsDashboard);
-    showElement(loadingSpinner);
-    currentAnalysisResults = null; // مسح النتائج السابقة
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/analyze`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ url: url }),
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'حدث خطأ ما أثناء التحليل.');
-        }
-
-        const data = await response.json();
-        currentAnalysisResults = data; // تخزين النتائج
-        displayResults(url, data);
-
-    } catch (error) {
-        errorMessage.textContent = `فشل التحليل: ${error.message}`;
-        showElement(errorMessage);
-        console.error('خطأ في التحليل:', error);
-    } finally {
-        hideElement(loadingSpinner);
-    }
-});
-
-function displayResults(url, results) {
-    analyzedUrlSpan.textContent = url;
-    showElement(resultsDashboard);
-
-    // النتائج الإجمالية
-    setScoreBadge(seoScoreDiv, results.seo_quality?.score);
-    setScoreBadge(speedScoreDiv, results.page_speed?.scores?.['Performance Score']);
-    setScoreBadge(uxScoreDiv, results.user_experience?.score);
-
-    // ملخص الذكاء الاصطناعي
-    if (results.ai_insights?.summary) {
-        showElement(aiSummarySection);
-        aiSummaryText.textContent = results.ai_insights.summary;
-    } else {
-        hideElement(aiSummarySection);
-    }
-
-    // سلطة النطاق والثقة
-    const domainData = results.domain_authority || {};
-    domainNameSpan.textContent = domainData.domain || 'N/A';
-    domainAuthorityEstimateSpan.textContent = domainData.domain_authority_estimate || 'N/A';
-    domainAgeSpan.textContent = domainData.domain_age_years !== undefined ? `${domainData.domain_age_years} سنة` : 'N/A';
-    sslStatusSpan.textContent = domainData.ssl_status || 'N/A';
-    blacklistStatusSpan.textContent = domainData.blacklist_status || 'N/A';
-    dnsHealthSpan.textContent = domainData.dns_health || 'N/A';
-
-    // سرعة وأداء الصفحة
-    const pageSpeedData = results.page_speed || {};
-    coreWebVitalsList.innerHTML = '';
-    if (pageSpeedData.metrics) {
-        for (const metric in pageSpeedData.metrics) {
-            if (pageSpeedData.metrics[metric]) {
-                const li = document.createElement('li');
-                li.innerHTML = `<strong>${metric}:</strong> ${pageSpeedData.metrics[metric]}`;
-                coreWebVitalsList.appendChild(li);
+    // تحميل الترجمات من الخادم
+    async function loadTranslations(lang) {
+        try {
+            const response = await fetch(`/translations/${lang}`);
+            if (!response.ok) {
+                throw new Error('Failed to load translations');
             }
+            translations = await response.json();
+            applyTranslations();
+        } catch (error) {
+            console.error('Error loading translations:', error);
+            // fallback to default language if loading fails
+            translations = {
+                "app_title": "Web Analyzer Pro",
+                "analyze_any_website": "Analyze Any Website",
+                "placeholder_url": "https://www.example.com",
+                "analyze_button": "Analyze",
+                "loading_text": "Analyzing...",
+                "analysis_results_for": "Analysis Results for:",
+                "seo_score_title": "SEO Score",
+                "seo_description_placeholder": "...",
+                "speed_score_title": "Speed Score",
+                "speed_description_placeholder": "...",
+                "ux_score_title": "User Experience (UX) Score",
+                "ux_description_placeholder": "...",
+                "domain_authority_title": "Domain Authority & Site Trust",
+                "security_score_title": "Security Score",
+                "ai_summary_title": "AI Summary",
+                "export_pdf_button": "Export PDF",
+                "error_url_required": "Please enter a website URL.",
+                "error_analysis_failed": "An error occurred during analysis. Please try again."
+            };
+            applyTranslations(); // Apply default in case of error
         }
     }
 
-    performanceIssuesList.innerHTML = '';
-    if (pageSpeedData.issues && pageSpeedData.issues.length > 0) {
-        pageSpeedData.issues.forEach(issue => {
-            const li = document.createElement('li');
-            li.textContent = `${issue.title} ${issue.score !== undefined ? `(النتيجة: ${Math.round(issue.score)})` : ''}: ${issue.description || ''}`;
-            if (issue.images && issue.images.length > 0) {
-                li.textContent += ` الصور: ${issue.images.join(', ')}`;
+    // تطبيق الترجمات على عناصر DOM
+    function applyTranslations() {
+        appTitle.textContent = translations.app_title;
+        navAppTitle.textContent = translations.app_title;
+        analyzeAnyWebsiteText.textContent = translations.analyze_any_website;
+        websiteUrlInput.placeholder = translations.placeholder_url;
+        analyzeBtn.textContent = translations.analyze_button;
+        analyzingText.textContent = translations.loading_text;
+        analysisResultsForText.innerHTML = `${translations.analysis_results_for} <span id="analyzed-url-display"></span>`; // Note the span ID
+        exportPdfText.textContent = translations.export_pdf_button;
+
+        seoScoreTitle.textContent = translations.seo_score_title;
+        speedScoreTitle.textContent = translations.speed_score_title;
+        uxScoreTitle.textContent = translations.ux_score_title;
+        domainAuthorityTitle.textContent = translations.domain_authority_title;
+        securityScoreTitle.textContent = translations.security_score_title;
+        aiSummaryTitle.textContent = translations.ai_summary_title;
+
+        // Update language button text
+        langToggleBtn.innerHTML = `<i class="fas fa-globe"></i> ${currentLang.toUpperCase() === 'AR' ? 'EN' : 'AR'}`;
+        document.documentElement.setAttribute('lang', currentLang);
+        document.documentElement.setAttribute('dir', currentLang === 'ar' ? 'rtl' : 'ltr');
+
+        // Apply theme for new elements/if changed
+        applyTheme(currentTheme);
+    }
+
+    // تطبيق الثيم (Dark/Light Mode)
+    function applyTheme(theme) {
+        if (theme === 'dark') {
+            document.body.classList.add('dark-mode');
+            themeToggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
+        } else {
+            document.body.classList.remove('dark-mode');
+            themeToggleBtn.innerHTML = '<i class="fas fa-moon"></i>';
+        }
+        localStorage.setItem('appTheme', theme);
+    }
+
+    // تهيئة التطبيق عند التحميل
+    async function initializeApp() {
+        await loadTranslations(currentLang); // حمل الترجمات أولاً
+        applyTheme(currentTheme); // طبق الثيم
+        // تأكد من إخفاء الأقسام في البداية
+        loadingIndicator.style.display = 'none';
+        resultsSection.style.display = 'none';
+        exportPdfBtn.style.display = 'none';
+    }
+
+    // === معالجات الأحداث (Event Listeners) ===
+
+    // زر التحليل
+    analyzeBtn.addEventListener('click', async () => {
+        const url = websiteUrlInput.value.trim();
+
+        if (!url) {
+            alert(translations.error_url_required);
+            return;
+        }
+
+        // إظهار مؤشر التحميل وإخفاء النتائج القديمة
+        loadingIndicator.style.display = 'block';
+        resultsSection.style.display = 'none';
+        exportPdfBtn.style.display = 'none';
+        analyzedUrlDisplay.textContent = ''; // مسح الرابط السابق
+        // مسح محتوى النتائج السابقة
+        seoScoreElem.textContent = 'N/A';
+        seoDescriptionElem.textContent = translations.seo_description_placeholder;
+        speedScoreElem.textContent = 'N/A';
+        speedDescriptionElem.textContent = translations.speed_description_placeholder;
+        uxScoreElem.textContent = 'N/A';
+        uxDescriptionElem.textContent = translations.ux_description_placeholder;
+        domainAuthorityElem.textContent = 'N/A';
+        domainAuthorityDescElem.textContent = translations.seo_description_placeholder; // Placeholder for now
+        securityScoreElem.textContent = 'N/A';
+        securityDescriptionElem.textContent = translations.seo_description_placeholder; // Placeholder for now
+        aiSummaryContentElem.textContent = '';
+
+
+        try {
+            const response = await fetch('/analyze', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ url: url })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
-            performanceIssuesList.appendChild(li);
-        });
-    } else {
-        const li = document.createElement('li');
-        li.textContent = 'لا توجد مشكلات أداء رئيسية مكتشفة.';
-        li.classList.add('text-green-600', 'dark:text-green-400');
-        performanceIssuesList.appendChild(li);
-    }
-    pagespeedLink.href = pageSpeedData.full_report_link || '#';
 
-    // جودة وهيكل الـ SEO
-    const seoData = results.seo_quality?.elements || {};
-    seoTitleSpan.textContent = seoData.title || 'N/A';
-    seoMetaDescriptionSpan.textContent = seoData.meta_description || 'N/A';
-    seoBrokenLinksSpan.textContent = seoData.broken_links ? seoData.broken_links.length : 'N/A';
-    seoMissingAltSpan.textContent = seoData.image_alt_status ? seoData.image_alt_status.filter(s => s.includes('Missing') || s.includes('Empty')).length : 'N/A';
-    seoInternalLinksSpan.textContent = seoData.internal_links_count || 'N/A';
-    seoExternalLinksSpan.textContent = seoData.external_links_count || 'N/A';
+            const data = await response.json(); // استلام البيانات كـ JSON
 
-    hTagsList.innerHTML = '';
-    if (seoData.h_tags) {
-        for (const tag in seoData.h_tags) {
-            if (seoData.h_tags[tag].length > 0) {
-                const li = document.createElement('li');
-                li.textContent = `${tag}: ${seoData.h_tags[tag].join(', ')}`;
-                hTagsList.appendChild(li);
-            }
+            // تحديث الواجهة بالنتائج المستلمة
+            analyzedUrlDisplay.textContent = url;
+            seoScoreElem.textContent = data.seo_score || 'N/A';
+            seoDescriptionElem.textContent = data.seo_description || translations.seo_description_placeholder;
+            speedScoreElem.textContent = data.speed_score || 'N/A';
+            speedDescriptionElem.textContent = data.speed_description || translations.speed_description_placeholder;
+            uxScoreElem.textContent = data.ux_score || 'N/A';
+            uxDescriptionElem.textContent = data.ux_description || translations.ux_description_placeholder;
+            domainAuthorityElem.textContent = data.domain_authority || 'N/A';
+            domainAuthorityDescElem.textContent = data.domain_authority_desc || translations.seo_description_placeholder;
+            securityScoreElem.textContent = data.security_score || 'N/A';
+            securityDescriptionElem.textContent = data.security_description || translations.seo_description_placeholder;
+            aiSummaryContentElem.textContent = data.ai_summary || '';
+
+
+            resultsSection.style.display = 'block'; // إظهار قسم النتائج
+            exportPdfBtn.style.display = 'block'; // إظهار زر PDF
+
+        } catch (error) {
+            console.error('Error during analysis:', error);
+            alert(translations.error_analysis_failed);
+        } finally {
+            loadingIndicator.style.display = 'none'; // إخفاء مؤشر التحميل
         }
-    }
+    });
 
-    keywordDensityList.innerHTML = '';
-    if (seoData.keyword_density) {
-        for (const keyword in seoData.keyword_density) {
-            const li = document.createElement('li');
-            li.textContent = `${keyword}: ${seoData.keyword_density[keyword]}`;
-            keywordDensityList.appendChild(li);
-        }
-    }
+    // زر تبديل اللغة
+    langToggleBtn.addEventListener('click', () => {
+        currentLang = currentLang === 'ar' ? 'en' : 'ar';
+        localStorage.setItem('appLang', currentLang); // حفظ اللغة في التخزين المحلي
+        loadTranslations(currentLang); // إعادة تحميل وتطبيق الترجمات
+    });
 
-    seoImprovementTipsList.innerHTML = '';
-    if (results.seo_quality?.improvement_tips && results.seo_quality.improvement_tips.length > 0) {
-        results.seo_quality.improvement_tips.forEach(tip => {
-            const li = document.createElement('li');
-            li.textContent = tip;
-            seoImprovementTipsList.appendChild(li);
-        });
-    } else {
-        const li = document.createElement('li');
-        li.textContent = 'يبدو جيدًا! لا توجد مشكلات SEO حرجة مكتشفة بناءً على تحليلنا.';
-        seoImprovementTipsList.appendChild(li);
-    }
+    // زر تبديل الثيم
+    themeToggleBtn.addEventListener('click', () => {
+        currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+        applyTheme(currentTheme);
+    });
 
-    if (results.ai_insights?.seo_improvement_suggestions) {
-        showElement(aiSeoSuggestionsSection);
-        aiSeoSuggestionsText.textContent = results.ai_insights.seo_improvement_suggestions;
-    } else {
-        hideElement(aiSeoSuggestionsSection);
-    }
-
-    // تجربة المستخدم (UX)
-    const uxData = results.user_experience || {};
-    uxIssuesList.innerHTML = '';
-    if (uxData.issues && uxData.issues.length > 0) {
-        uxData.issues.forEach(issue => {
-            const li = document.createElement('li');
-            li.textContent = issue;
-            uxIssuesList.appendChild(li);
-        });
-    } else {
-        const li = document.createElement('li');
-        li.textContent = 'لا توجد مشكلات UX رئيسية مكتشفة بناءً على تحليلنا الاستدلالي.';
-        li.classList.add('text-green-600', 'dark:text-green-400');
-        uxIssuesList.appendChild(li);
-    }
-
-    uxSuggestionsList.innerHTML = '';
-    if (uxData.suggestions && uxData.suggestions.length > 0) {
-        uxData.suggestions.forEach(suggestion => {
-            const li = document.createElement('li');
-            li.textContent = suggestion;
-            uxSuggestionsList.appendChild(li);
-        });
-    }
-
-    if (results.ai_insights?.content_originality_tone) {
-        showElement(aiContentInsightsSection);
-        aiContentInsightsText.textContent = results.ai_insights.content_originality_tone;
-    } else {
-        hideElement(aiContentInsightsSection);
-    }
-}
-
-
-// --- معالجات أحداث أزرار الإجراءات ---
-analyzeAnotherButton.addEventListener('click', () => {
-    clearResults();
-    // العودة إلى أعلى الصفحة أو قسم الإدخال
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-});
-
-exportPdfButton.addEventListener('click', async () => {
-    if (!currentAnalysisResults) {
-        alert("يرجى تحليل موقع ويب أولاً لتوليد تقرير.");
-        return;
-    }
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/generate_report`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ url: websiteUrlInput.value.trim(), results: currentAnalysisResults }),
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'فشل توليد تقرير PDF.');
-        }
-
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        // إنشاء اسم ملف مناسب
-        const filename = `${websiteUrlInput.value.replace(/^(https?:\/\/)?(www\.)?/, '').replace(/\//g, '_')}_analysis_report.pdf`;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url);
-    } catch (error) {
-        alert(`خطأ في توليد PDF: ${error.message}`);
-        console.error('خطأ في توليد PDF:', error);
-    }
+    // === تهيئة التطبيق عند بدء التشغيل ===
+    initializeApp();
 });
