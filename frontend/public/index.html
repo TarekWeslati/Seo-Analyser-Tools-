@@ -1,145 +1,167 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
+<html lang="ar" dir="rtl"> <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Website Analysis Tool</title>
-    <link href="../src/css/tailwind.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <title id="app-title">محلل الويب الاحترافي</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <link rel="stylesheet" href="/static/css/style.css">
+
+    <style>
+        /* الأنماط الأساسية، يمكن نقلها لـ style.css */
+        body {
+            background-color: #f8f9fa; /* Light mode default */
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        body.dark-mode {
+            background-color: #343a40; /* Dark mode background */
+            color: #f8f9fa; /* Dark mode text color */
+        }
+        body.dark-mode .navbar {
+            background-color: #212529 !important;
+        }
+        body.dark-mode .card {
+            background-color: #454d55;
+            color: #f8f9fa;
+            border-color: #5a6268;
+        }
+        body.dark-mode .form-control {
+            background-color: #5a6268;
+            color: #f8f9fa;
+            border-color: #6c757d;
+        }
+        body.dark-mode .form-control::placeholder {
+            color: #ced4da;
+        }
+        .container {
+            margin-top: 30px;
+            margin-bottom: 50px;
+        }
+        .result-card {
+            min-height: 180px; /* لتوحيد ارتفاع البطاقات */
+        }
+        #loading-indicator {
+            display: none; /* مخفي افتراضياً */
+            text-align: center;
+            margin-top: 30px;
+        }
+        #results-section {
+            display: none; /* مخفي افتراضياً */
+            margin-top: 40px;
+        }
+        .score-display {
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+        .ai-summary-card {
+            background-color: #e2f0fb; /* لون خفيف للملخص */
+            border-left: 5px solid #007bff;
+        }
+        body.dark-mode .ai-summary-card {
+            background-color: #2c313a;
+            border-left-color: #007bff;
+        }
+    </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
-    <div class="min-h-screen flex flex-col items-center py-10 px-4">
-        <header class="w-full max-w-4xl flex justify-between items-center mb-10">
-            <h1 class="text-3xl font-bold text-blue-600 dark:text-blue-400">Web Analyzer</h1>
-            <button id="theme-toggle" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
-                <i class="fas fa-moon dark:hidden"></i>
-                <i class="fas fa-sun hidden dark:inline"></i>
-            </button>
-        </header>
-
-        <main class="w-full max-w-4xl bg-white dark:bg-gray-800 shadow-lg rounded-lg p-8">
-            <div id="input-section" class="mb-8">
-                <h2 class="text-2xl font-semibold mb-4 text-center">Analyze Any Website</h2>
-                <div class="flex flex-col sm:flex-row gap-4">
-                    <input type="url" id="website-url" placeholder="Enter website URL (e.g., https://example.com)"
-                           class="flex-grow p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <button id="analyze-button"
-                            class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md shadow-md transition-colors duration-300">
-                        Analyze
-                    </button>
-                </div>
-                <p id="error-message" class="text-red-500 mt-2 text-center hidden"></p>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#" id="nav-app-title">محلل الويب الاحترافي</a>
+            <div class="d-flex ms-auto">
+                <button class="btn btn-outline-light me-2" id="lang-toggle-btn">
+                    <i class="fas fa-globe"></i> AR
+                </button>
+                <button class="btn btn-outline-light" id="theme-toggle-btn">
+                    <i class="fas fa-moon"></i>
+                </button>
             </div>
+        </div>
+    </nav>
 
-            <div id="loading-spinner" class="text-center py-10 hidden">
-                <i class="fas fa-spinner fa-spin text-blue-500 text-4xl"></i>
-                <p class="mt-4 text-lg">Analyzing website, please wait...</p>
+    <div class="container">
+        <h1 class="text-center my-4" id="analyze-any-website-text">تحليل أي موقع ويب</h1>
+
+        <div class="input-group mb-3 shadow-sm">
+            <input type="text" class="form-control form-control-lg" id="website-url" placeholder="https://www.example.com" aria-label="Website URL">
+            <button class="btn btn-primary btn-lg" type="button" id="analyze-btn">تحليل</button>
+        </div>
+
+        <div id="loading-indicator">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden" id="loading-text">جاري التحليل...</span>
             </div>
+            <p class="mt-2" id="analyzing-text"></p>
+        </div>
 
-            <div id="results-dashboard" class="hidden">
-                <h2 class="text-2xl font-semibold mb-6 text-center">Analysis Results for <span id="analyzed-url" class="text-blue-600 dark:text-blue-400"></span></h2>
+        <div id="results-section">
+            <h2 class="my-4" id="analysis-results-for-text"></h2>
+            <span class="lead text-muted" id="analyzed-url-display"></span>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div class="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow text-center">
-                        <h3 class="text-xl font-semibold mb-2">SEO Score</h3>
-                        <div id="seo-score" class="text-4xl font-bold text-blue-600 dark:text-blue-400">N/A</div>
-                    </div>
-                    <div class="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow text-center">
-                        <h3 class="text-xl font-semibold mb-2">Speed Score</h3>
-                        <div id="speed-score" class="text-4xl font-bold text-blue-600 dark:text-blue-400">N/A</div>
-                    </div>
-                    <div class="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow text-center">
-                        <h3 class="text-xl font-semibold mb-2">UX Score</h3>
-                        <div id="ux-score" class="text-4xl font-bold text-blue-600 dark:text-blue-400">N/A</div>
-                    </div>
-                </div>
-
-                <div id="ai-summary-section" class="bg-blue-50 dark:bg-blue-900 p-6 rounded-lg shadow mb-8 hidden">
-                    <h3 class="text-xl font-semibold mb-4 flex items-center"><i class="fas fa-robot mr-3"></i>AI Summary</h3>
-                    <p id="ai-summary-text" class="text-gray-700 dark:text-gray-300"></p>
-                </div>
-
-                <div class="space-y-8">
-                    <div class="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow">
-                        <h3 class="text-xl font-semibold mb-4 flex items-center"><i class="fas fa-shield-alt mr-3 text-green-500"></i>Domain Authority & Site Trust</h3>
-                        <ul class="list-disc list-inside space-y-2">
-                            <li><strong>Domain:</strong> <span id="domain-name"></span></li>
-                            <li><strong>Estimated Domain Authority:</strong> <span id="domain-authority-estimate"></span></li>
-                            <li><strong>Domain Age:</strong> <span id="domain-age"></span></li>
-                            <li><strong>SSL/HTTPS Status:</strong> <span id="ssl-status"></span></li>
-                            <li><strong>Blacklist Status:</strong> <span id="blacklist-status"></span></li>
-                            <li><strong>DNS Health:</strong> <span id="dns-health"></span></li>
-                        </ul>
-                    </div>
-
-                    <div class="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow">
-                        <h3 class="text-xl font-semibold mb-4 flex items-center"><i class="fas fa-tachometer-alt mr-3 text-purple-500"></i>Page Speed & Performance</h3>
-                        <h4 class="font-medium mb-2">Core Web Vitals & Key Metrics:</h4>
-                        <ul id="core-web-vitals" class="list-disc list-inside space-y-2">
-                            </ul>
-                        <h4 class="font-medium mt-4 mb-2">Performance Issues:</h4>
-                        <ul id="performance-issues" class="list-disc list-inside text-red-600 dark:text-red-400 space-y-2">
-                            </ul>
-                        <p class="mt-4 text-sm text-gray-600 dark:text-gray-400">
-                            <a id="pagespeed-link" href="#" target="_blank" class="text-blue-500 hover:underline">View full Google PageSpeed Insights report</a>
-                        </p>
-                    </div>
-
-                    <div class="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow">
-                        <h3 class="text-xl font-semibold mb-4 flex items-center"><i class="fas fa-search mr-3 text-orange-500"></i>SEO Quality & Structure</h3>
-                        <ul class="list-disc list-inside space-y-2 mb-4">
-                            <li><strong>Title Tag:</strong> <span id="seo-title"></span></li>
-                            <li><strong>Meta Description:</strong> <span id="seo-meta-description"></span></li>
-                            <li><strong>Broken Links Detected:</strong> <span id="seo-broken-links"></span></li>
-                            <li><strong>Images Missing Alt:</strong> <span id="seo-missing-alt"></span></li>
-                            <li><strong>Internal Links Count:</strong> <span id="seo-internal-links"></span></li>
-                            <li><strong>External Links Count:</strong> <span id="seo-external-links"></span></li>
-                        </ul>
-                        <h4 class="font-medium mb-2">H Tags Structure:</h4>
-                        <ul id="h-tags-list" class="list-disc list-inside space-y-1 text-sm">
-                            </ul>
-                        <h4 class="font-medium mt-4 mb-2">Keyword Usage (Top 10):</h4>
-                        <ul id="keyword-density-list" class="list-disc list-inside text-sm">
-                            </ul>
-                        <h4 class="font-medium mt-4 mb-2">SEO Improvement Tips:</h4>
-                        <ul id="seo-improvement-tips" class="list-disc list-inside text-green-700 dark:text-green-300 space-y-2">
-                            </ul>
-                        <div id="ai-seo-suggestions-section" class="mt-4 bg-gray-100 dark:bg-gray-700 p-4 rounded-md hidden">
-                            <h5 class="font-semibold mb-2">AI SEO Suggestions:</h5>
-                            <p id="ai-seo-suggestions-text" class="text-gray-700 dark:text-gray-300"></p>
-                        </div>
-                    </div>
-
-                    <div class="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow">
-                        <h3 class="text-xl font-semibold mb-4 flex items-center"><i class="fas fa-user-friends mr-3 text-blue-500"></i>User Experience (UX)</h3>
-                        <h4 class="font-medium mb-2">UX Issues Detected:</h4>
-                        <ul id="ux-issues-list" class="list-disc list-inside text-red-600 dark:text-red-400 space-y-2">
-                            </ul>
-                        <h4 class="font-medium mt-4 mb-2">General UX Suggestions:</h4>
-                        <ul id="ux-suggestions-list" class="list-disc list-inside text-green-700 dark:text-green-300 space-y-2">
-                            </ul>
-                        <div id="ai-content-insights-section" class="mt-4 bg-gray-100 dark:bg-gray-700 p-4 rounded-md hidden">
-                            <h5 class="font-semibold mb-2">AI Content Originality & Tone:</h5>
-                            <p id="ai-content-insights-text" class="text-gray-700 dark:text-gray-300"></p>
+            <div class="row mt-4">
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card result-card shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title" id="seo-score-title"></h5>
+                            <h3 class="score-display text-primary" id="seo-score">N/A</h3>
+                            <p class="card-text text-muted" id="seo-description"></p>
                         </div>
                     </div>
                 </div>
-
-                <div class="mt-8 flex flex-col sm:flex-row justify-center gap-4">
-                    <button id="analyze-another-button"
-                            class="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-semibold rounded-md shadow-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-300">
-                        Analyze Another Site
-                    </button>
-                    <button id="export-pdf-button"
-                            class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-md shadow-md transition-colors duration-300">
-                        Export as PDF
-                    </button>
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card result-card shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title" id="speed-score-title"></h5>
+                            <h3 class="score-display text-success" id="speed-score">N/A</h3>
+                            <p class="card-text text-muted" id="speed-description"></p>
+                        </div>
                     </div>
+                </div>
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card result-card shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title" id="ux-score-title"></h5>
+                            <h3 class="score-display text-info" id="ux-score">N/A</h3>
+                            <p class="card-text text-muted" id="ux-description"></p>
+                        </div>
+                    </div>
+                </div>
+                 <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card result-card shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title" id="domain-authority-title"></h5>
+                            <h3 class="score-display text-warning" id="domain-authority">N/A</h3>
+                            <p class="card-text text-muted" id="domain-authority-desc"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card result-card shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title" id="security-score-title"></h5>
+                            <h3 class="score-display text-danger" id="security-score">N/A</h3>
+                            <p class="card-text text-muted" id="security-description"></p>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </main>
+
+            <div class="card ai-summary-card shadow-sm mt-4">
+                <div class="card-body">
+                    <h5 class="card-title" id="ai-summary-title"></h5>
+                    <p class="card-text" id="ai-summary-content"></p>
+                </div>
+            </div>
+
+            <div class="text-center my-5">
+                <button class="btn btn-success btn-lg shadow-sm" id="export-pdf-btn">
+                    <i class="fas fa-file-pdf me-2"></i> <span id="export-pdf-text">تصدير PDF</span>
+                </button>
+            </div>
+        </div>
     </div>
 
-    <script src="../src/js/main.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="/static/js/main.js"></script>
 </body>
 </html>
-rename Public folder public
