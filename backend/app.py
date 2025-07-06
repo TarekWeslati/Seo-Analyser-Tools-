@@ -16,7 +16,7 @@ from utils.pdf_generator import generate_pdf_report
 # مجلد frontend/ موجود في نفس مستوى مجلد backend/
 # مجلد public/ موجود داخل frontend/
 template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../frontend'))
-static_dir = os.path.a bspath(os.path.join(os.path.dirname(__file__), '../frontend/public'))
+static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../frontend/public'))
 
 # تهيئة تطبيق Flask مع تحديد مسارات القوالب والملفات الثابتة
 app = Flask(__name__,
