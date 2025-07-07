@@ -1,38 +1,30 @@
 import os
 from flask import Flask, render_template, request, jsonify
-
 # تحديد مسارات المجلدات الثابتة والقوالب
 # هذا يعتمد على هيكل مشروعك
 # هنا نفترض أن 'frontend/public' هو المجلد الذي يحتوي على index.html وملفات الـ static (css, js)
 base_dir = os.path.abspath(os.path.dirname(__file__))
 static_folder_path = os.path.join(base_dir, 'frontend', 'public')
 template_folder_path = os.path.join(base_dir, 'frontend', 'public') # index.html موجود هنا
-
 app = Flask(__name__,
             static_folder=static_folder_path,
             template_folder=template_folder_path)
-
 # مسار الصفحة الرئيسية
 @app.route('/')
 def index():
     return render_template('index.html')
-
 # نقطة نهاية API لتحليل الموقع
 @app.route('/analyze', methods=['POST'])
 def analyze_website():
     data = request.get_json()
     url = data.get('url')
-
     if not url:
         return jsonify({'error': 'URL is required'}), 400
-
     print(f"Request received to analyze: {url}") # لغرض التصحيح في السيرفر
-
     # === هذا هو الجزء الذي ستستبدله بمنطق التحليل الحقيقي لاحقًا ===
     # حاليًا، بيانات وهمية (Dummy Data)
     import time
     time.sleep(2) # محاكاة عملية التحليل (انتظر ثانيتين)
-
     dummy_results = {
         "seo_score": "85",
         "seo_description": "أداء SEO جيد، مع توصيات لزيادة الروابط الخلفية وتحسين الكلمات المفتاحية.",
@@ -45,11 +37,8 @@ def analyze_website():
         "security_score": "A+",
         "security_description": "نتائج أمان ممتازة، تم الكشف عن بروتوكولات HTTPS قوية ولا توجد نقاط ضعف معروفة.",
         "ai_summary": "الموقع يتمتع بأداء جيد بشكل عام في جوانب السرعة والأمان، مع الحاجة إلى بعض التحسينات في SEO وتجربة المستخدم لزيادة فعاليته وتصنيفه في محركات البحث."
-    }
     # =============================================================
-
     return jsonify(dummy_results)
-
 # نقطة نهاية API لجلب النصوص حسب اللغة (للتدويل)
 @app.route('/translations/<lang>')
 def get_translations(lang):
@@ -96,6 +85,5 @@ def get_translations(lang):
         }
     }
     return jsonify(translations.get(lang, translations["en"])) # ارجع الإنجليزية كافتراضي
-
 if __name__ == '__main__':
     app.run(debug=True)
