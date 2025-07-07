@@ -1,5 +1,0 @@
-/* هذا هو ملف الإدخال لـ Tailwind CSS. */
-/* سيقوم Tailwind بقراءته وتوليد ملف tailwind.css النهائي. */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
