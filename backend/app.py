@@ -7,12 +7,13 @@ from flask import Flask, render_template, request, jsonify
 # os.path.abspath(...) يحول المسار إلى مسار مطلق
 # os.path.join(...) يبني المسار بطريقة صحيحة لنظام التشغيل (Windows/Linux)
 
-# المسار الأساسي لمجلد مشروعك (حيث يوجد app.py)
+# المسار الأساسي لمجلد app.py (الذي هو الآن داخل مجلد 'backend')
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # تحديد مسار المجلد الذي يحتوي على ملفات الواجهة الأمامية (index.html, css, js)
-# نفترض أن مجلد 'public' داخل مجلد 'frontend' الذي هو بدوره بجانب 'app.py'
-FRONTEND_PUBLIC_DIR = os.path.join(BASE_DIR, 'frontend', 'public')
+# بما أن app.py موجود داخل 'backend'، نحتاج للصعود مجلد واحد ('..')
+# للوصول إلى جذر المشروع، ثم الدخول إلى 'frontend/public'
+FRONTEND_PUBLIC_DIR = os.path.join(BASE_DIR, '..', 'frontend', 'public')
 
 # --- 2. تهيئة تطبيق Flask ---
 # نخبر Flask أين يجد ملفات القوالب (HTML) والملفات الثابتة (CSS/JS/صور)
