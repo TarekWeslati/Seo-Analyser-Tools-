@@ -1,9 +1,15 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  darkMode: 'class', // تفعيل الوضع الليلي بناءً على وجود الكلاس 'dark' على وسم HTML
   content: [
-    "../public/**/*.html", // مسار لملفات HTML التي تحتوي على كلاسات Tailwind
-    "../src/**/*.js",      // مسار لملفات JavaScript التي قد تحتوي على كلاسات Tailwind
+    // هذا المسار يخبر Tailwind بالبحث عن فئاته في ملف index.html
+    // الذي هو موجود في 'public' داخل 'frontend'
+    "./public/**/*.html",
+    // هذا المسار يخبر Tailwind بالبحث عن فئاته في ملفات JS
+    // داخل مجلد 'js' الذي هو داخل 'public'
+    "./public/**/*.js",
+    // إذا كان لديك أي ملفات أخرى تستخدم فيها فئات Tailwind، أضف مساراتها هنا
+    // على سبيل المثال، إذا كان لديك ملفات .jsx أو .ts في مجلد 'src'
+    // "./src/**/*.{js,jsx,ts,tsx}",
   ],
   theme: {
     extend: {},
