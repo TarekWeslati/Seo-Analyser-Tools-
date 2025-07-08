@@ -11,3 +11,5 @@ google-api-python-client
 openai
 weasyprint
 gunicorn
+requests
+beautifulsoup4
