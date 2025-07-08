@@ -78,7 +78,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 "ai_summary_title": "AI Summary",
                 "export_pdf_button": "Export PDF",
                 "error_url_required": "Please enter a website URL.",
-                "error_analysis_failed": "An error occurred during analysis. Please try again."
+                "error_analysis_failed": "An error occurred during analysis. Please try again.",
+                "failed_to_fetch_url": "Failed to fetch content from the provided URL. Please check the URL or try again later."
             };
             applyTranslations(); // Apply default in case of error
         }
@@ -133,6 +134,64 @@ document.addEventListener('DOMContentLoaded', () => {
         exportPdfBtn.style.display = 'none';
     }
 
+    // وظيفة لعرض رسالة خطأ للمستخدم (بدلاً من alert)
+    function showErrorMessage(message) {
+        const errorMessageDiv = document.createElement('div');
+        errorMessageDiv.className = 'alert alert-danger mt-3';
+        errorMessageDiv.setAttribute('role', 'alert');
+        errorMessageDiv.textContent = message;
+        document.querySelector('.container').prepend(errorMessageDiv); // أضفها في بداية الحاوية
+
+        setTimeout(() => {
+            errorMessageDiv.remove(); // إزالة الرسالة بعد 5 ثوانٍ
+        }, 5000);
+    }
+
+    // وظيفة لإنشاء ملخص بالذكاء الاصطناعي
+    async function generateAISummary(analysisResults, targetLang) {
+        aiSummaryContentElem.textContent = translations.loading_text; // عرض نص تحميل للملخص
+
+        const prompt = `
+        Based on the following website analysis results, provide a concise summary in ${targetLang === 'ar' ? 'Arabic' : 'English'}.
+        Focus on the overall performance, key strengths, and areas for improvement.
+        
+        SEO Score: ${analysisResults.seo_score} - ${analysisResults.seo_description}
+        Speed Score: ${analysisResults.speed_score} - ${analysisResults.speed_description}
+        UX Score: ${analysisResults.ux_score} - ${analysisResults.ux_description}
+        Security Score: ${analysisResults.security_score} - ${analysisResults.security_description}
+        Domain Authority: ${analysisResults.domain_authority} - ${analysisResults.domain_authority_desc}
+        `;
+
+        let chatHistory = [];
+        chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+        const payload = { contents: chatHistory };
+        const apiKey = ""; // Canvas will automatically provide this at runtime. DO NOT ADD your API key here.
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+
+            if (result.candidates && result.candidates.length > 0 &&
+                result.candidates[0].content && result.candidates[0].content.parts &&
+                result.candidates[0].content.parts.length > 0) {
+                const text = result.candidates[0].content.parts[0].text;
+                aiSummaryContentElem.textContent = text;
+            } else {
+                aiSummaryContentElem.textContent = translations.error_analysis_failed; // أو رسالة خطأ محددة
+                console.error("AI summary generation failed: Unexpected API response structure.");
+            }
+        } catch (error) {
+            aiSummaryContentElem.textContent = translations.error_analysis_failed; // أو رسالة خطأ محددة
+            console.error("Error calling Gemini API for summary:", error);
+        }
+    }
+
+
     // === معالجات الأحداث (Event Listeners) ===
 
     // زر التحليل
@@ -140,7 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const url = websiteUrlInput.value.trim();
 
         if (!url) {
-            alert(translations.error_url_required);
+            showErrorMessage(translations.error_url_required);
             return;
         }
 
@@ -149,18 +208,19 @@ document.addEventListener('DOMContentLoaded', () => {
         resultsSection.style.display = 'none';
         exportPdfBtn.style.display = 'none';
         analyzedUrlDisplay.textContent = ''; // مسح الرابط السابق
+        aiSummaryContentElem.textContent = ''; // مسح الملخص السابق
+
         // مسح محتوى النتائج السابقة
         seoScoreElem.textContent = 'N/A';
-        seoDescriptionElem.textContent = translations.seo_description_placeholder;
+        seoDescriptionElem.textContent = '';
         speedScoreElem.textContent = 'N/A';
-        speedDescriptionElem.textContent = translations.speed_description_placeholder;
+        speedDescriptionElem.textContent = '';
         uxScoreElem.textContent = 'N/A';
-        uxDescriptionElem.textContent = translations.ux_description_placeholder;
+        uxDescriptionElem.textContent = '';
         domainAuthorityElem.textContent = 'N/A';
-        domainAuthorityDescElem.textContent = translations.seo_description_placeholder; // Placeholder for now
+        domainAuthorityDescElem.textContent = '';
         securityScoreElem.textContent = 'N/A';
-        securityDescriptionElem.textContent = translations.seo_description_placeholder; // Placeholder for now
-        aiSummaryContentElem.textContent = '';
+        securityDescriptionElem.textContent = '';
 
 
         try {
@@ -173,7 +233,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorData = await response.json();
+                throw new Error(errorData.details || translations.error_analysis_failed);
             }
 
             const data = await response.json(); // استلام البيانات كـ JSON
@@ -181,24 +242,26 @@ document.addEventListener('DOMContentLoaded', () => {
             // تحديث الواجهة بالنتائج المستلمة
             analyzedUrlDisplay.textContent = url;
             seoScoreElem.textContent = data.seo_score || 'N/A';
-            seoDescriptionElem.textContent = data.seo_description || translations.seo_description_placeholder;
+            seoDescriptionElem.textContent = data.seo_description || '';
             speedScoreElem.textContent = data.speed_score || 'N/A';
-            speedDescriptionElem.textContent = data.speed_description || translations.speed_description_placeholder;
+            speedDescriptionElem.textContent = data.speed_description || '';
             uxScoreElem.textContent = data.ux_score || 'N/A';
-            uxDescriptionElem.textContent = data.ux_description || translations.ux_description_placeholder;
+            uxDescriptionElem.textContent = data.ux_description || '';
             domainAuthorityElem.textContent = data.domain_authority || 'N/A';
-            domainAuthorityDescElem.textContent = data.domain_authority_desc || translations.seo_description_placeholder;
+            domainAuthorityDescElem.textContent = data.domain_authority_desc || '';
             securityScoreElem.textContent = data.security_score || 'N/A';
-            securityDescriptionElem.textContent = data.security_description || translations.seo_description_placeholder;
-            aiSummaryContentElem.textContent = data.ai_summary || '';
-
-
+            securityDescriptionElem.textContent = data.security_description || '';
+            
             resultsSection.style.display = 'block'; // إظهار قسم النتائج
             exportPdfBtn.style.display = 'block'; // إظهار زر PDF
 
+            // استدعاء وظيفة توليد الملخص بالذكاء الاصطناعي
+            generateAISummary(data, currentLang);
+
+
         } catch (error) {
             console.error('Error during analysis:', error);
-            alert(translations.error_analysis_failed);
+            showErrorMessage(error.message || translations.error_analysis_failed);
         } finally {
             loadingIndicator.style.display = 'none'; // إخفاء مؤشر التحميل
         }
