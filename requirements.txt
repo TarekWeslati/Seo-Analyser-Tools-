@@ -13,3 +13,4 @@ weasyprint
 gunicorn
 requests
 beautifulsoup4
+openai
