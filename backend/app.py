@@ -3,7 +3,9 @@ from flask import Flask, render_template, request, jsonify, url_for
 import requests
 from bs4 import BeautifulSoup
 import time
-import ssl # Required for SSLContext if needed for advanced security checks
+import ssl # Required for SSLContext for advanced security checks
+# Import OpenAI library
+from openai import OpenAI
 
 # --- 1. Define Folder Paths ---
 # This section is crucial for Flask to locate your frontend files.
@@ -30,6 +32,16 @@ app = Flask(__name__,
 # It helps Flask generate correct URLs when deployed.
 if 'RENDER_EXTERNAL_HOSTNAME' in os.environ:
     app.config['SERVER_NAME'] = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+
+# --- Initialize OpenAI Client ---
+# Get API key from environment variables (set on Render.com)
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
+if not OPENAI_API_KEY:
+    print("Warning: OPENAI_API_KEY environment variable not set.")
+    # In a real production app, you might want to raise an error or handle this more robustly.
+
+openai_client = OpenAI(api_key=OPENAI_API_KEY)
+
 
 # --- 3. Basic Analysis Functions ---
 # These functions perform basic web analysis and data collection.
@@ -70,15 +82,18 @@ def analyze_seo(html_content):
     images_without_alt = 0
     for img in soup.find_all('img'):
         if not img.get('alt'):
-            images_without_alt += 1
+            images_without_alt += 25 # Each missing alt reduces score by 25
+            # Max 100 points, so if 4 images missing alt, score is 0 from this part.
+    
     if images_without_alt == 0:
-        seo_score += 25
         description_parts.append("جميع الصور تحتوي على سمات 'alt'.")
-    elif images_without_alt > 0 and images_without_alt < 5:
-        seo_score += 15
-        description_parts.append(f"يوجد {images_without_alt} صورة بدون سمة 'alt'.")
-    else:
+    elif images_without_alt > 0:
         description_parts.append(f"يوجد {images_without_alt} صورة بدون سمة 'alt'. تحتاج لتحسين.")
+    
+    # Adjust SEO score based on missing alt tags
+    seo_score -= (images_without_alt * 25) # Deduct 25 for each missing alt, max deduction 100
+    seo_score = max(0, seo_score) # Ensure score doesn't go below 0
+
 
     return {
         "score": min(seo_score, 100), # Cap score at 100
@@ -233,10 +248,9 @@ def analyze_website():
             "domain_authority_desc": "لا يمكن حساب سلطة النطاق بدون دمج API خارجي مثل Moz أو Ahrefs.",
             "security_score": f"{security_results['score']}/100",
             "security_description": security_results['description'],
-            "ai_summary": "سيتم إنشاء الملخص بواسطة الذكاء الاصطناعي في الواجهة الأمامية بناءً على هذه النتائج."
         }
 
-        # Return results as JSON to the frontend
+        # Return results to frontend. AI summary will be generated via a separate call.
         return jsonify(results)
 
     except Exception as e:
@@ -244,6 +258,53 @@ def analyze_website():
         error_message = f"An unhandled error occurred in analyze_website: {str(e)}"
         print(error_message)
         return jsonify({'error': 'An internal server error occurred.', 'details': error_message}), 500
+
+# NEW API endpoint for AI Summary generation (using OpenAI)
+@app.route('/generate_ai_summary', methods=['POST'])
+def generate_ai_summary_endpoint():
+    if not OPENAI_API_KEY:
+        return jsonify({"error": "OpenAI API key not configured on the server."}), 500
+
+    try:
+        data = request.get_json()
+        analysis_results = data.get('analysis_results')
+        target_lang = data.get('target_lang', 'en')
+
+        if not analysis_results:
+            return jsonify({"error": "Analysis results are required for AI summary."}), 400
+
+        # Construct prompt for OpenAI based on analysis results
+        prompt = f"""
+        Based on the following website analysis results, provide a concise summary in {target_lang}.
+        Focus on the overall performance, key strengths, and areas for improvement.
+        
+        SEO Score: {analysis_results.get('seo_score', 'N/A')} - {analysis_results.get('seo_description', '')}
+        Speed Score: {analysis_results.get('speed_score', 'N/A')} - {analysis_results.get('speed_description', '')}
+        UX Score: {analysis_results.get('ux_score', 'N/A')} - {analysis_results.get('ux_description', '')}
+        Security Score: {analysis_results.get('security_score', 'N/A')} - {analysis_results.get('security_description', '')}
+        Domain Authority: {analysis_results.get('domain_authority', 'N/A')} - {analysis_results.get('domain_authority_desc', '')}
+        """
+
+        # Call OpenAI Chat Completions API
+        chat_completion = openai_client.chat.completions.create(
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt,
+                }
+            ],
+            model="gpt-3.5-turbo", # You can use other models like "gpt-4" if you have access
+            max_tokens=200, # Limit summary length
+            temperature=0.7 # Creativity level
+        )
+
+        ai_summary_text = chat_completion.choices[0].message.content.strip()
+        return jsonify({"summary": ai_summary_text})
+
+    except Exception as e:
+        print(f"Error generating AI summary: {e}")
+        return jsonify({"error": "Failed to generate AI summary.", "details": str(e)}), 500
+
 
 # API endpoint to fetch translations based on language
 @app.route('/translations/<lang>')
