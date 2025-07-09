@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const analyzedUrlDisplay = document.getElementById('analyzed-url-display');
     const exportPdfBtn = document.getElementById('export-pdf-btn');
     const exportPdfText = document.getElementById('export-pdf-text');
-    const errorMessageContainer = document.getElementById('error-message-container'); // جديد
+    const errorMessageContainer = document.getElementById('error-message-container');
 
     // === عناصر عرض النتائج ===
     const seoScoreTitle = document.getElementById('seo-score-title');
@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const speedScoreTitle = document.getElementById('speed-score-title');
     const speedScoreElem = document.getElementById('speed-score');
-    const speedDescriptionElem = document = document.getElementById('speed-description');
+    const speedDescriptionElem = document.getElementById('speed-description');
 
     const uxScoreTitle = document.getElementById('ux-score-title');
     const uxScoreElem = document.getElementById('ux-score');
@@ -45,13 +45,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const themeToggleBtn = document.getElementById('theme-toggle-btn');
 
     // === متغيرات الحالة ===
-    let currentLang = localStorage.getItem('appLang') || 'ar'; // اللغة الافتراضية أو من التخزين المحلي
-    let currentTheme = localStorage.getItem('appTheme') || 'light'; // الثيم الافتراضي أو من التخزين المحلي
-    let translations = {}; // سيتم تحميل الترجمات هنا
+    let currentLang = localStorage.getItem('appLang') || 'ar'; // Default language or from local storage
+    let currentTheme = localStorage.getItem('appTheme') || 'light'; // Default theme or from local storage
+    let translations = {}; // Translations will be loaded here
 
-    // === وظائف مساعدة ===
+    // === Helper Functions ===
 
-    // تحميل الترجمات من الخادم
+    // Load translations from the backend
     async function loadTranslations(lang) {
         console.log(`Loading translations for: ${lang}`);
         try {
@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
             applyTranslations();
         } catch (error) {
             console.error('Error loading translations:', error);
-            // fallback to default language if loading fails
+            // Fallback to default English translations in case of error
             translations = {
                 "app_title": "Web Analyzer Pro",
                 "analyze_any_website": "Analyze Any Website",
@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // تطبيق الترجمات على عناصر DOM
+    // Apply translations to DOM elements
     function applyTranslations() {
         if (!translations.app_title) {
             console.warn('Translations not loaded yet, skipping applyTranslations.');
@@ -117,7 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Translations applied.');
     }
 
-    // تطبيق الثيم (Dark/Light Mode)
+    // Apply theme (Dark/Light Mode)
     function applyTheme(theme) {
         if (theme === 'dark') {
             document.body.classList.add('dark-mode');
@@ -130,18 +130,18 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log(`Theme set to: ${theme}`);
     }
 
-    // تهيئة التطبيق عند التحميل
+    // Initialize the application on load
     async function initializeApp() {
-        await loadTranslations(currentLang); // حمل الترجمات أولاً
-        applyTheme(currentTheme); // طبق الثيم
-        // تأكد من إخفاء الأقسام في البداية
+        await loadTranslations(currentLang); // Load translations first
+        applyTheme(currentTheme); // Apply theme
+        // Ensure sections are hidden initially
         loadingIndicator.style.display = 'none';
         resultsSection.style.display = 'none';
         exportPdfBtn.style.display = 'none';
         console.log('App initialized.');
     }
 
-    // وظيفة لعرض رسالة خطأ للمستخدم
+    // Function to display error messages to the user
     function showErrorMessage(message) {
         // Clear previous messages
         errorMessageContainer.innerHTML = ''; 
@@ -153,62 +153,48 @@ document.addEventListener('DOMContentLoaded', () => {
         errorMessageContainer.appendChild(errorMessageDiv);
 
         setTimeout(() => {
-            errorMessageDiv.remove(); // إزالة الرسالة بعد 5 ثوانٍ
+            errorMessageDiv.remove(); // Remove message after 5 seconds
         }, 5000);
         console.error('Error displayed:', message);
     }
 
-    // وظيفة لإنشاء ملخص بالذكاء الاصطناعي
+    // Function to generate AI Summary by calling the backend
     async function generateAISummary(analysisResults, targetLang) {
-        aiSummaryContentElem.textContent = translations.loading_text; // عرض نص تحميل للملخص
-        console.log('Generating AI summary...');
-
-        const prompt = `
-        Based on the following website analysis results, provide a concise summary in ${targetLang === 'ar' ? 'Arabic' : 'English'}.
-        Focus on the overall performance, key strengths, and areas for improvement.
-        
-        SEO Score: ${analysisResults.seo_score} - ${analysisResults.seo_description}
-        Speed Score: ${analysisResults.speed_score} - ${analysisResults.speed_description}
-        UX Score: ${analysisResults.ux_score} - ${analysisResults.ux_description}
-        Security Score: ${analysisResults.security_score} - ${analysisResults.security_description}
-        Domain Authority: ${analysisResults.domain_authority} - ${analysisResults.domain_authority_desc}
-        `;
-
-        let chatHistory = [];
-        chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-        const payload = { contents: chatHistory };
-        const apiKey = ""; // Canvas will automatically provide this at runtime. DO NOT ADD your API key here.
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+        aiSummaryContentElem.textContent = translations.loading_text; // Display loading text for summary
+        console.log('Generating AI summary via backend...');
 
         try {
-            const response = await fetch(apiUrl, {
+            const response = await fetch('/generate_ai_summary', { // Call new backend endpoint
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    analysis_results: analysisResults,
+                    target_lang: targetLang
+                })
             });
-            const result = await response.json();
 
-            if (result.candidates && result.candidates.length > 0 &&
-                result.candidates[0].content && result.candidates[0].content.parts &&
-                result.candidates[0].content.parts.length > 0) {
-                const text = result.candidates[0].content.parts[0].text;
-                aiSummaryContentElem.textContent = text;
-                console.log('AI summary generated successfully.');
-            } else {
-                aiSummaryContentElem.textContent = translations.error_analysis_failed; // أو رسالة خطأ محددة
-                console.error("AI summary generation failed: Unexpected API response structure.", result);
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.details || translations.error_analysis_failed);
             }
+
+            const data = await response.json();
+            aiSummaryContentElem.textContent = data.summary || translations.error_analysis_failed;
+            console.log('AI summary generated successfully from backend.');
+
         } catch (error) {
-            aiSummaryContentElem.textContent = translations.error_analysis_failed; // أو رسالة خطأ محددة
-            console.error("Error calling Gemini API for summary:", error);
+            aiSummaryContentElem.textContent = translations.error_analysis_failed;
+            console.error("Error calling backend for AI summary:", error);
         }
     }
 
 
-    // === معالجات الأحداث (Event Listeners) ===
+    // === Event Listeners ===
 
-    // زر التحليل
-    if (analyzeBtn) { // التحقق من وجود الزر قبل إضافة المستمع
+    // Analyze button
+    if (analyzeBtn) {
         analyzeBtn.addEventListener('click', async () => {
             console.log('Analyze button clicked.');
             const url = websiteUrlInput.value.trim();
@@ -221,14 +207,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // إظهار مؤشر التحميل وإخفاء النتائج القديمة
+            // Show loading indicator and hide old results
             loadingIndicator.style.display = 'block';
             resultsSection.style.display = 'none';
             exportPdfBtn.style.display = 'none';
-            analyzedUrlDisplay.textContent = ''; // مسح الرابط السابق
-            aiSummaryContentElem.textContent = ''; // مسح الملخص السابق
+            analyzedUrlDisplay.textContent = ''; // Clear previous URL
+            aiSummaryContentElem.textContent = ''; // Clear previous AI summary
 
-            // مسح محتوى النتائج السابقة
+            // Clear previous results content
             seoScoreElem.textContent = 'N/A';
             seoDescriptionElem.textContent = '';
             speedScoreElem.textContent = 'N/A';
@@ -256,10 +242,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     throw new Error(errorData.details || translations.error_analysis_failed);
                 }
 
-                const data = await response.json(); // استلام البيانات كـ JSON
+                const data = await response.json(); // Receive analysis data as JSON
                 console.log('Analysis data received:', data);
 
-                // تحديث الواجهة بالنتائج المستلمة
+                // Update UI with received results
                 analyzedUrlDisplay.textContent = url;
                 seoScoreElem.textContent = data.seo_score || 'N/A';
                 seoDescriptionElem.textContent = data.seo_description || '';
@@ -272,10 +258,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 securityScoreElem.textContent = data.security_score || 'N/A';
                 securityDescriptionElem.textContent = data.security_description || '';
                 
-                resultsSection.style.display = 'block'; // إظهار قسم النتائج
-                exportPdfBtn.style.display = 'block'; // إظهار زر PDF
+                resultsSection.style.display = 'block'; // Show results section
+                exportPdfBtn.style.display = 'block'; // Show PDF export button
 
-                // استدعاء وظيفة توليد الملخص بالذكاء الاصطناعي
+                // Call backend function to generate AI summary
                 generateAISummary(data, currentLang);
 
 
@@ -283,7 +269,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('Error during analysis fetch:', error);
                 showErrorMessage(error.message || translations.error_analysis_failed);
             } finally {
-                loadingIndicator.style.display = 'none'; // إخفاء مؤشر التحميل
+                loadingIndicator.style.display = 'none'; // Hide loading indicator
                 console.log('Analysis process finished.');
             }
         });
@@ -292,19 +278,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    // زر تبديل اللغة
+    // Language toggle button
     if (langToggleBtn) {
         langToggleBtn.addEventListener('click', () => {
             console.log('Language toggle button clicked.');
             currentLang = currentLang === 'ar' ? 'en' : 'ar';
-            localStorage.setItem('appLang', currentLang); // حفظ اللغة في التخزين المحلي
-            loadTranslations(currentLang); // إعادة تحميل وتطبيق الترجمات
+            localStorage.setItem('appLang', currentLang); // Save language to local storage
+            loadTranslations(currentLang); // Reload and apply translations
         });
     } else {
         console.error('Language toggle button not found! Check ID in index.html.');
     }
 
-    // زر تبديل الثيم
+    // Theme toggle button
     if (themeToggleBtn) {
         themeToggleBtn.addEventListener('click', () => {
             console.log('Theme toggle button clicked.');
@@ -315,6 +301,6 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('Theme toggle button not found! Check ID in index.html.');
     }
 
-    // === تهيئة التطبيق عند بدء التشغيل ===
+    // === Initialize App on startup ===
     initializeApp();
 });
