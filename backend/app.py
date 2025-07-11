@@ -3,9 +3,8 @@ from flask import Flask, render_template, request, jsonify, url_for
 import requests
 from bs4 import BeautifulSoup
 import time
-import ssl # Required for SSLContext for advanced security checks
-# Import OpenAI library
-from openai import OpenAI
+import json # Required for handling JSON data for Gemini API call
+from flask_cors import CORS # Import CORS for cross-origin requests
 
 # --- 1. Define Folder Paths ---
 # This section is crucial for Flask to locate your frontend files.
@@ -28,19 +27,18 @@ app = Flask(__name__,
             static_folder=FRONTEND_PUBLIC_DIR,    # CSS/JS/images are also here
             static_url_path='/static')            # Flask will serve files from static_folder under the /static URL prefix
 
+CORS(app) # Enable CORS for all routes - essential for frontend/backend communication
+
 # This line is important for Render.com to ensure url_for (if used) works correctly.
 # It helps Flask generate correct URLs when deployed.
 if 'RENDER_EXTERNAL_HOSTNAME' in os.environ:
     app.config['SERVER_NAME'] = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
 
-# --- Initialize OpenAI Client ---
-# Get API key from environment variables (set on Render.com)
-OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
-if not OPENAI_API_KEY:
-    print("Warning: OPENAI_API_KEY environment variable not set.")
-    # In a real production app, you might want to raise an error or handle this more robustly.
-
-openai_client = OpenAI(api_key=OPENAI_API_KEY)
+# --- Get Google Gemini API Key ---
+# This key must be set as an environment variable on Render.com
+GOOGLE_GEMINI_API_KEY = os.environ.get('GOOGLE_GEMINI_API_KEY')
+if not GOOGLE_GEMINI_API_KEY:
+    print("Warning: GOOGLE_GEMINI_API_KEY environment variable not set. AI summary will not work.")
 
 
 # --- 3. Basic Analysis Functions ---
@@ -49,60 +47,62 @@ openai_client = OpenAI(api_key=OPENAI_API_KEY)
 def analyze_seo(html_content):
     """
     Performs basic SEO analysis: checks for title, meta description, and H1 tags.
+    Provides actionable advice.
     """
     soup = BeautifulSoup(html_content, 'html.parser')
     seo_score = 0
-    description_parts = [] # Use a list to build description
+    advice = []
 
     # Check for page title
     title_tag = soup.find('title')
     if title_tag and title_tag.string and len(title_tag.string.strip()) > 10:
         seo_score += 25
-        description_parts.append("عنوان الصفحة موجود وطوله مناسب.")
+        advice.append("عنوان الصفحة موجود وطوله مناسب. هذا يساعد محركات البحث على فهم محتوى صفحتك.")
     else:
-        description_parts.append("عنوان الصفحة مفقود أو قصير جداً.")
+        advice.append("نصيحة SEO: عنوان الصفحة مفقود أو قصير جداً. يجب إضافة عنوان فريد ووصفي لكل صفحة (أكثر من 10 أحرف).")
 
     # Check for meta description
     meta_description = soup.find('meta', attrs={'name': 'description'})
     if meta_description and meta_description.get('content') and len(meta_description.get('content').strip()) > 50:
         seo_score += 25
-        description_parts.append("الوصف التعريفي (Meta Description) موجود وطوله مناسب.")
+        advice.append("الوصف التعريفي (Meta Description) موجود وطوله مناسب. هذا يشجع المستخدمين على النقر في نتائج البحث.")
     else:
-        description_parts.append("الوصف التعريفي (Meta Description) مفقود أو قصير جداً.")
+        advice.append("نصيحة SEO: الوصف التعريفي (Meta Description) مفقود أو قصير جداً. أضف وصفًا جذابًا وموجزًا (50-160 حرفًا) لكل صفحة.")
 
     # Check for H1 tag
     h1_tag = soup.find('h1')
     if h1_tag and h1_tag.string and len(h1_tag.string.strip()) > 0:
         seo_score += 25
-        description_parts.append("عنوان H1 موجود.")
+        advice.append("عنوان H1 موجود. هذا يساعد في تحديد الموضوع الرئيسي لصفحتك لمحركات البحث.")
     else:
-        description_parts.append("عنوان H1 مفقود.")
+        advice.append("نصيحة SEO: عنوان H1 مفقود. يجب أن تحتوي كل صفحة على عنوان H1 واحد فقط يصف المحتوى الرئيسي.")
 
     # Check for alt attributes on images
     images_without_alt = 0
     for img in soup.find_all('img'):
         if not img.get('alt'):
-            images_without_alt += 25 # Each missing alt reduces score by 25
-            # Max 100 points, so if 4 images missing alt, score is 0 from this part.
+            images_without_alt += 1 # Count missing alt tags
     
     if images_without_alt == 0:
-        description_parts.append("جميع الصور تحتوي على سمات 'alt'.")
+        seo_score += 25
+        advice.append("جميع الصور تحتوي على سمات 'alt'. هذا يحسن إمكانية الوصول و SEO للصور.")
     elif images_without_alt > 0:
-        description_parts.append(f"يوجد {images_without_alt} صورة بدون سمة 'alt'. تحتاج لتحسين.")
+        # Deduct score based on missing alt tags, max deduction 25 (from 25 points)
+        deduction = min(images_without_alt * 5, 25) # Deduct 5 points per missing alt, max 25
+        seo_score -= deduction
+        advice.append(f"نصيحة SEO: يوجد {images_without_alt} صورة بدون سمة 'alt'. أضف نصوصًا وصفية لجميع الصور لتحسين SEO وإمكانية الوصول.")
     
-    # Adjust SEO score based on missing alt tags
-    seo_score -= (images_without_alt * 25) # Deduct 25 for each missing alt, max deduction 100
-    seo_score = max(0, seo_score) # Ensure score doesn't go below 0
-
+    seo_score = max(0, min(seo_score, 100)) # Ensure score is between 0 and 100
 
     return {
-        "score": min(seo_score, 100), # Cap score at 100
-        "description": " ".join(description_parts)
+        "score": seo_score,
+        "description": " ".join(advice)
     }
 
 def analyze_speed(url):
     """
     Performs basic speed analysis: measures initial response time (TTFB).
+    Provides actionable advice.
     """
     start_time = time.time()
     try:
@@ -111,20 +111,20 @@ def analyze_speed(url):
         response_time = (end_time - start_time) * 1000 # in milliseconds
 
         speed_score = 100
-        description = ""
+        advice = []
 
         if response_time > 2000: # More than 2 seconds
             speed_score = 50
-            description = f"وقت استجابة بطيء: {response_time:.2f}ms. قد يؤثر على تجربة المستخدم."
+            advice.append(f"نصيحة السرعة: وقت استجابة بطيء ({response_time:.2f}ms). قد يؤثر على تجربة المستخدم وتصنيف SEO. فكر في تحسين استضافة الخادم أو استخدام CDN.")
         elif response_time > 1000: # More than 1 second
             speed_score = 75
-            description = f"وقت استجابة متوسط: {response_time:.2f}ms. يمكن تحسينه."
+            advice.append(f"نصيحة السرعة: وقت استجابة متوسط ({response_time:.2f}ms). يمكن تحسينه لتقديم تجربة أسرع للمستخدمين.")
         else:
-            description = f"وقت استجابة سريع: {response_time:.2f}ms."
+            advice.append(f"وقت استجابة سريع: {response_time:.2f}ms. أداء خادمك ممتاز.")
 
         return {
             "score": speed_score,
-            "description": description
+            "description": " ".join(advice)
         }
     except requests.exceptions.RequestException as e:
         return {
@@ -135,52 +135,54 @@ def analyze_speed(url):
 def analyze_ux(html_content):
     """
     Performs basic User Experience (UX) analysis: checks for meta viewport.
+    Provides actionable advice.
     """
     soup = BeautifulSoup(html_content, 'html.parser')
     ux_score = 0
-    description_parts = []
+    advice = []
 
     # Check for meta viewport (for mobile responsiveness)
     meta_viewport = soup.find('meta', attrs={'name': 'viewport'})
     if meta_viewport and 'width=device-width' in meta_viewport.get('content', ''):
         ux_score += 100
-        description_parts.append("الموقع يبدو متجاوباً مع الأجهزة المحمولة (meta viewport موجود).")
+        advice.append("الموقع متجاوب مع الأجهزة المحمولة (meta viewport موجود). هذا يضمن تجربة مستخدم جيدة على جميع الشاشات.")
     else:
-        description_parts.append("meta viewport مفقود أو غير صحيح. قد لا يكون الموقع متجاوباً بشكل جيد على الأجهزة المحمولة.")
+        advice.append("نصيحة UX: meta viewport مفقود أو غير صحيح. أضف <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"> في قسم <head> لضمان التجاوبية.")
 
     return {
         "score": ux_score,
-        "description": " ".join(description_parts)
+        "description": " ".join(advice)
     }
 
 def analyze_security(url):
     """
     Performs basic security analysis: checks for HTTPS usage and valid SSL certificate.
+    Provides actionable advice.
     """
     security_score = 0
-    description_parts = []
+    advice = []
 
     if url.startswith('https://'):
         security_score = 70 # Base score for using HTTPS
-        description_parts.append("الموقع يستخدم HTTPS (اتصال آمن).")
+        advice.append("الموقع يستخدم HTTPS (اتصال آمن).")
         try:
             # requests verifies SSL certificates by default
             requests.get(url, timeout=5, verify=True)
             security_score = 100
-            description_parts = ["الموقع يستخدم HTTPS (اتصال آمن) وشهادة SSL صالحة."]
+            advice = ["الموقع يستخدم HTTPS (اتصال آمن) وشهادة SSL صالحة. هذا يعزز الثقة والأمان."]
         except requests.exceptions.SSLError:
             security_score = 50
-            description_parts.append("الموقع يستخدم HTTPS ولكن هناك مشكلة في شهادة SSL.")
+            advice.append("نصيحة الأمان: الموقع يستخدم HTTPS ولكن هناك مشكلة في شهادة SSL. تأكد من أن شهادتك صالحة وغير منتهية الصلاحية.")
         except requests.exceptions.RequestException as e:
             security_score = 0
-            description_parts.append(f"فشل التحقق من HTTPS/SSL: {e}. قد يكون الموقع لا يدعم HTTPS بشكل صحيح أو غير متاح.")
+            advice.append(f"نصيحة الأمان: فشل التحقق من HTTPS/SSL: {e}. قد يكون الموقع لا يدعم HTTPS بشكل صحيح أو غير متاح. HTTPS ضروري للأمان و SEO.")
     else:
         security_score = 0
-        description_parts.append("الموقع لا يستخدم HTTPS. الاتصال غير آمن.")
+        advice.append("نصيحة الأمان: الموقع لا يستخدم HTTPS. الاتصال غير آمن. يجب الانتقال إلى HTTPS لحماية بيانات المستخدمين وتحسين تصنيف SEO.")
 
     return {
         "score": security_score,
-        "description": " ".join(description_parts)
+        "description": " ".join(advice)
     }
 
 # --- 4. Routes and API Endpoints ---
@@ -227,7 +229,6 @@ def analyze_website():
                 "ux_score": "N/A", "ux_description": "فشل جلب المحتوى. قد يكون الرابط غير صالح أو الموقع غير متاح.",
                 "domain_authority": "N/A", "domain_authority_desc": "لا يمكن حساب سلطة النطاق بدون دمج API خارجي.",
                 "security_score": "N/A", "security_description": "فشل جلب المحتوى. قد يكون الرابط غير صالح أو الموقع غير متاح.",
-                "ai_summary": "تعذر تحليل الموقع بسبب مشكلة في الاتصال أو جلب المحتوى."
             }), 400
 
         # Perform analyses
@@ -259,11 +260,11 @@ def analyze_website():
         print(error_message)
         return jsonify({'error': 'An internal server error occurred.', 'details': error_message}), 500
 
-# NEW API endpoint for AI Summary generation (using OpenAI)
+# NEW API endpoint for AI Summary generation (using Google Gemini API)
 @app.route('/generate_ai_summary', methods=['POST'])
 def generate_ai_summary_endpoint():
-    if not OPENAI_API_KEY:
-        return jsonify({"error": "OpenAI API key not configured on the server."}), 500
+    if not GOOGLE_GEMINI_API_KEY:
+        return jsonify({"error": "Google Gemini API key not configured on the server."}), 500
 
     try:
         data = request.get_json()
@@ -273,11 +274,12 @@ def generate_ai_summary_endpoint():
         if not analysis_results:
             return jsonify({"error": "Analysis results are required for AI summary."}), 400
 
-        # Construct prompt for OpenAI based on analysis results
+        # Construct prompt for Gemini based on analysis results
         prompt = f"""
         Based on the following website analysis results, provide a concise summary in {target_lang}.
         Focus on the overall performance, key strengths, and areas for improvement.
-        
+        Provide actionable advice for improvement.
+
         SEO Score: {analysis_results.get('seo_score', 'N/A')} - {analysis_results.get('seo_description', '')}
         Speed Score: {analysis_results.get('speed_score', 'N/A')} - {analysis_results.get('speed_description', '')}
         UX Score: {analysis_results.get('ux_score', 'N/A')} - {analysis_results.get('ux_description', '')}
@@ -285,22 +287,44 @@ def generate_ai_summary_endpoint():
         Domain Authority: {analysis_results.get('domain_authority', 'N/A')} - {analysis_results.get('domain_authority_desc', '')}
         """
 
-        # Call OpenAI Chat Completions API
-        chat_completion = openai_client.chat.completions.create(
-            messages=[
+        # Prepare payload for Gemini API fetch call
+        # Note: chatHistory is a JS concept, in Python we build the dict directly
+        payload = {
+            "contents": [
                 {
                     "role": "user",
-                    "content": prompt,
+                    "parts": [{"text": prompt}]
                 }
-            ],
-            model="gpt-3.5-turbo", # You can use other models like "gpt-4" if you have access
-            max_tokens=200, # Limit summary length
-            temperature=0.7 # Creativity level
-        )
+            ]
+        }
+        
+        gemini_api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GOOGLE_GEMINI_API_KEY}"
 
-        ai_summary_text = chat_completion.choices[0].message.content.strip()
+        # Make the fetch call to Gemini API from Python backend
+        gemini_response = requests.post(gemini_api_url, headers={'Content-Type': 'application/json'}, data=json.dumps(payload))
+        gemini_response.raise_for_status() # Raise an exception for HTTP errors
+
+        gemini_result = gemini_response.json()
+
+        ai_summary_text = ""
+        # Safely access the text content from the Gemini response
+        if gemini_result.get('candidates') and len(gemini_result['candidates']) > 0 and \
+           gemini_result['candidates'][0].get('content') and \
+           gemini_result['candidates'][0]['content'].get('parts') and \
+           len(gemini_result['candidates'][0]['content']['parts']) > 0:
+            ai_summary_text = gemini_result['candidates'][0]['content']['parts'][0]['text']
+        elif gemini_result.get('error'):
+            ai_summary_text = f"خطأ من Gemini API: {gemini_result['error'].get('message', 'خطأ غير معروف')}"
+            print(f"Gemini API Error Response: {gemini_result['error']}")
+        else:
+            print(f"Unexpected Gemini API response structure: {gemini_result}")
+            ai_summary_text = "فشل في توليد الملخص من الذكاء الاصطناعي: استجابة غير متوقعة."
+
         return jsonify({"summary": ai_summary_text})
 
+    except requests.exceptions.RequestException as e:
+        print(f"Error calling Gemini API from backend (network/HTTP issue): {e}")
+        return jsonify({"error": "Failed to connect to AI service.", "details": str(e)}), 500
     except Exception as e:
         print(f"Error generating AI summary: {e}")
         return jsonify({"error": "Failed to generate AI summary.", "details": str(e)}), 500
@@ -357,6 +381,3 @@ if __name__ == '__main__':
     # debug=True is useful for development: it reloads the server on changes and shows detailed errors.
     # It should be set to False in production environments for security and performance reasons.
     app.run(debug=True)
-GOOGLE_GEMINI_API_KEY = os.environ.get('AIzaSyDbsR3sottvIpbnR7LvFHaaQfTeowIMw3I')
-if not GOOGLE_GEMINI_API_KEY:
-    print("Warning: GOOGLE_GEMINI_API_KEY environment variable not set. AI summary will not work.")
