@@ -357,3 +357,6 @@ if __name__ == '__main__':
     # debug=True is useful for development: it reloads the server on changes and shows detailed errors.
     # It should be set to False in production environments for security and performance reasons.
     app.run(debug=True)
+GOOGLE_GEMINI_API_KEY = os.environ.get('AIzaSyDbsR3sottvIpbnR7LvFHaaQfTeowIMw3I')
+if not GOOGLE_GEMINI_API_KEY:
+    print("Warning: GOOGLE_GEMINI_API_KEY environment variable not set. AI summary will not work.")
