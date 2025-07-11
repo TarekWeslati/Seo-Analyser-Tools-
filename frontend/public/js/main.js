@@ -101,7 +101,11 @@ document.addEventListener('DOMContentLoaded', () => {
         websiteUrlInput.placeholder = translations.placeholder_url;
         analyzeBtn.textContent = translations.analyze_button;
         analyzingText.textContent = translations.loading_text;
+        // Update this line to re-set the innerHTML, as analyzed-url-display is a span inside it
         analysisResultsForText.innerHTML = `${translations.analysis_results_for} <span id="analyzed-url-display"></span>`;
+        // Re-get the analyzedUrlDisplay element after updating innerHTML
+        document.getElementById('analyzed-url-display').textContent = websiteUrlInput.value.trim(); // Keep current URL if any
+        
         exportPdfText.textContent = translations.export_pdf_button;
 
         seoScoreTitle.textContent = translations.seo_score_title;
