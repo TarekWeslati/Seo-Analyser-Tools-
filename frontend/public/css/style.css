@@ -1,21 +1,303 @@
-/*
-هذا الملف لـ CSS المخصص.
-يمكنك إضافة أي أنماط هنا لتجاوز أنماط Bootstrap الافتراضية
-أو إضافة أنماط خاصة بك.
-*/
+/* Custom Styles for Web Analyzer Pro */
 
-/* مثال: تحسين شكل حقل الإدخال والزر */
-#website-url {
-    border-top-right-radius: 0.375rem !important; /* لضمان تطابق الزوايا مع Bootstrap RTL */
-    border-bottom-right-radius: 0.375rem !important;
-    border-top-left-radius: 0 !important;
-    border-bottom-left-radius: 0 !important;
+/* --- General Body & Container Styling --- */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: var(--bs-body-bg); /* Use Bootstrap variable for background */
+    color: var(--bs-body-color); /* Use Bootstrap variable for text color */
+    transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transition for dark/light mode */
+    min-height: 100vh; /* Ensure body takes full viewport height */
+    display: flex;
+    flex-direction: column;
 }
 
-#analyze-btn {
-    border-top-left-radius: 0.375rem !important;
-    border-bottom-left-radius: 0.375rem !important;
-    border-top-right-radius: 0 !important;
-    border-bottom-right-radius: 0 !important;
+.container {
+    max-width: 900px; /* Limit content width for better readability */
+    margin-top: 30px;
+    margin-bottom: 30px;
 }
-/* ملاحظة: Bootstrap 5 تتعامل بشكل جيد مع RTL، قد لا تحتاج هذه التجاوزات */
+
+/* --- Navbar Styling --- */
+.navbar {
+    background-color: var(--bs-primary); /* Use Bootstrap primary color for navbar */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Subtle shadow for depth */
+}
+.navbar-brand {
+    font-weight: bold;
+    color: var(--bs-white) !important; /* White text for brand */
+}
+
+/* --- Header Section --- */
+.hero-section {
+    background: linear-gradient(135deg, var(--bs-primary), var(--bs-info)); /* Gradient background */
+    color: white;
+    padding: 60px 20px;
+    border-radius: 15px;
+    margin-bottom: 30px;
+    text-align: center;
+    box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+}
+.hero-section h1 {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    font-weight: 700;
+}
+.hero-section p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+/* --- Input Group & Button Styling --- */
+.input-group {
+    max-width: 600px;
+    margin: 0 auto 30px;
+    position: relative; /* For error message positioning */
+}
+
+.form-control {
+    border-radius: 50px !important; /* Pill shape for input */
+    padding: 15px 25px;
+    font-size: 1.1rem;
+    border: 2px solid var(--bs-gray-400);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.form-control:focus {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
+}
+
+.btn-primary {
+    background-color: var(--bs-primary); /* Bootstrap primary color */
+    border-color: var(--bs-primary);
+    border-radius: 50px !important; /* Pill shape for button */
+    padding: 15px 30px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+    box-shadow: 0 5px 10px rgba(0, 123, 255, 0.3); /* Subtle shadow */
+}
+.btn-primary:hover {
+    background-color: var(--bs-primary-dark); /* Darker shade on hover */
+    border-color: var(--bs-primary-dark);
+    transform: translateY(-2px); /* Slight lift effect */
+    box-shadow: 0 8px 15px rgba(0, 123, 255, 0.4);
+}
+.btn-primary:active {
+    transform: translateY(0); /* Press effect */
+    box-shadow: 0 3px 8px rgba(0, 123, 255, 0.2);
+}
+
+/* --- Loading Indicator --- */
+.loading-indicator {
+    text-align: center;
+    margin-top: 30px;
+    font-size: 1.2rem;
+    color: var(--bs-secondary);
+}
+.spinner-border {
+    color: var(--bs-secondary);
+    width: 3rem;
+    height: 3rem;
+    border-width: .3em;
+}
+
+/* --- Results Section Styling --- */
+.results-section {
+    background-color: var(--bs-body-bg); /* Match body background for seamless look */
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15); /* More prominent shadow for results */
+}
+
+.result-card {
+    background-color: var(--bs-white); /* White background for cards */
+    border-radius: 10px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08); /* Card shadow */
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: 1px solid var(--bs-gray-200); /* Light border */
+}
+.result-card:hover {
+    transform: translateY(-5px); /* Lift on hover */
+    box-shadow: 0 6px 15px rgba(0,0,0,0.12);
+}
+
+.result-card h3 {
+    font-size: 1.6rem;
+    color: var(--bs-dark);
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+}
+.result-card h3 i {
+    margin-inline-end: 10px; /* Space between icon and text */
+    font-size: 1.3em;
+    color: var(--bs-primary); /* Icon color */
+}
+
+.score {
+    font-size: 2.2rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: var(--bs-success); /* Green for good scores */
+}
+.score.low {
+    color: var(--bs-danger); /* Red for low scores */
+}
+.score.medium {
+    color: var(--bs-warning); /* Orange for medium scores */
+}
+
+.description {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--bs-secondary);
+}
+
+/* --- AI Summary Card --- */
+.ai-summary-card {
+    background-color: var(--bs-light); /* Lighter background for summary */
+    border-left: 5px solid var(--bs-success); /* Green border on left */
+    padding: 30px;
+    margin-top: 30px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+.ai-summary-card h3 {
+    color: var(--bs-success);
+}
+.ai-summary-content {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: var(--bs-dark);
+    text-align: justify;
+}
+
+/* --- Export PDF Button --- */
+.export-pdf-btn {
+    width: 100%;
+    padding: 15px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border-radius: 10px;
+    background-color: var(--bs-success); /* Green for export */
+    border-color: var(--bs-success);
+    transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+    box-shadow: 0 5px 10px rgba(40, 167, 69, 0.3);
+}
+.export-pdf-btn:hover {
+    background-color: var(--bs-success-dark);
+    border-color: var(--bs-success-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(40, 167, 69, 0.4);
+}
+
+/* --- Error Message Styling --- */
+.alert-danger {
+    border-radius: 10px;
+    font-weight: bold;
+    text-align: center;
+}
+
+/* --- Theme Toggle Buttons (Language & Dark/Light) --- */
+.theme-lang-toggle {
+    background-color: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 5px;
+    margin-inline-start: 10px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+.theme-lang-toggle:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+}
+.theme-lang-toggle i {
+    margin-inline-end: 5px;
+}
+
+/* --- Footer Styling --- */
+.footer {
+    padding: 20px 0;
+    text-align: center;
+    color: var(--bs-secondary);
+    background-color: var(--bs-light); /* Light background for footer */
+    margin-top: auto; /* Push footer to bottom */
+    border-top: 1px solid var(--bs-gray-200);
+}
+
+/* --- Dark Mode Overrides (Defined in main.js with body.dark-mode) --- */
+body.dark-mode {
+    --bs-body-bg: #212529; /* Dark background */
+    --bs-body-color: #f8f9fa; /* Light text */
+    --bs-light: #343a40; /* Darker light for cards/footer */
+    --bs-white: #dee2e6; /* Off-white for elements */
+    --bs-dark: #f8f9fa; /* Light for dark mode headings */
+    --bs-gray-200: #495057; /* Darker gray for borders */
+    --bs-gray-400: #6c757d; /* Even darker gray */
+}
+
+body.dark-mode .navbar {
+    background-color: #343a40;
+    box-shadow: 0 2px 4px rgba(255,255,255,0.1);
+}
+body.dark-mode .hero-section {
+    background: linear-gradient(135deg, #343a40, #495057);
+    box-shadow: 0 8px 15px rgba(255,255,255,0.1);
+}
+body.dark-mode .form-control {
+    background-color: #495057;
+    color: #f8f9fa;
+    border-color: #6c757d;
+}
+body.dark-mode .form-control::placeholder {
+    color: #adb5bd;
+}
+body.dark-mode .result-card {
+    background-color: #343a40;
+    border: 1px solid #495057;
+    box-shadow: 0 4px 10px rgba(255,255,255,0.08);
+}
+body.dark-mode .result-card h3 {
+    color: #f8f9fa;
+}
+body.dark-mode .description,
+body.dark-mode .footer {
+    color: #adb5bd;
+}
+body.dark-mode .ai-summary-card {
+    background-color: #2c3034;
+    border-left-color: var(--bs-success); /* Keep green border */
+    box-shadow: 0 5px 15px rgba(255,255,255,0.1);
+}
+body.dark-mode .ai-summary-card h3 {
+    color: var(--bs-success);
+}
+body.dark-mode .ai-summary-content {
+    color: #f8f9fa;
+}
+
+/* --- Responsive Adjustments for smaller screens --- */
+@media (max-width: 768px) {
+    .hero-section h1 {
+        font-size: 2rem;
+    }
+    .hero-section p {
+        font-size: 1rem;
+    }
+    .btn-primary, .form-control {
+        font-size: 1rem;
+        padding: 12px 20px;
+    }
+    .score {
+        font-size: 1.8rem;
+    }
+    .result-card h3 {
+        font-size: 1.4rem;
+    }
+    .ai-summary-content {
+        font-size: 1rem;
+    }
+}
