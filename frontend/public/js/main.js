@@ -1,310 +1,383 @@
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM Content Loaded. Initializing Web Analyzer.');
+const API_BASE_URL = 'https://seo-analyser-tools.onrender.com'; // استبدل هذا بالرابط الفعلي لتطبيقك على Render
 
-    // === عناصر DOM الرئيسية ===
-    const appTitle = document.getElementById('app-title');
-    const navAppTitle = document.getElementById('nav-app-title');
-    const analyzeAnyWebsiteText = document.getElementById('analyze-any-website-text');
-    const websiteUrlInput = document.getElementById('website-url');
-    const analyzeBtn = document.getElementById('analyze-btn');
-    const loadingIndicator = document.getElementById('loading-indicator');
-    const analyzingText = document.getElementById('analyzing-text');
-    const resultsSection = document.getElementById('results-section');
-    const analysisResultsForText = document.getElementById('analysis-results-for-text');
-    const analyzedUrlDisplay = document.getElementById('analyzed-url-display');
-    const exportPdfBtn = document.getElementById('export-pdf-btn');
-    const exportPdfText = document.getElementById('export-pdf-text');
-    const errorMessageContainer = document.getElementById('error-message-container');
+const websiteUrlInput = document.getElementById('website-url');
+const analyzeButton = document.getElementById('analyze-button');
+const errorMessage = document.getElementById('error-message');
+const loadingSpinner = document.getElementById('loading-spinner');
+const resultsDashboard = document.getElementById('results-dashboard');
 
-    // === عناصر عرض النتائج ===
-    const seoScoreTitle = document.getElementById('seo-score-title');
-    const seoScoreElem = document.getElementById('seo-score');
-    const seoDescriptionElem = document.getElementById('seo-description');
+const analyzedUrlSpan = document.getElementById('analyzed-url');
+const seoScoreDiv = document.getElementById('seo-score');
+const speedScoreDiv = document.getElementById('speed-score');
+const uxScoreDiv = document.getElementById('ux-score');
 
-    const speedScoreTitle = document.getElementById('speed-score-title');
-    const speedScoreElem = document.getElementById('speed-score');
-    const speedDescriptionElem = document.getElementById('speed-description');
+// ملخص الذكاء الاصطناعي
+const aiSummarySection = document.getElementById('ai-summary-section');
+const aiSummaryText = document.getElementById('ai-summary-text');
 
-    const uxScoreTitle = document.getElementById('ux-score-title');
-    const uxScoreElem = document.getElementById('ux-score');
-    const uxDescriptionElem = document.getElementById('ux-description');
+// سلطة النطاق
+const domainNameSpan = document.getElementById('domain-name');
+const domainAuthorityEstimateSpan = document.getElementById('domain-authority-estimate');
+const domainAgeSpan = document.getElementById('domain-age');
+const sslStatusSpan = document.getElementById('ssl-status');
+const blacklistStatusSpan = document.getElementById('blacklist-status');
+const dnsHealthSpan = document.getElementById('dns-health');
 
-    const domainAuthorityTitle = document.getElementById('domain-authority-title');
-    const domainAuthorityElem = document.getElementById('domain-authority');
-    const domainAuthorityDescElem = document.getElementById('domain-authority-desc');
+// سرعة الصفحة
+const coreWebVitalsList = document.getElementById('core-web-vitals');
+const performanceIssuesList = document.getElementById('performance-issues');
+const pagespeedLink = document.getElementById('pagespeed-link');
 
-    const securityScoreTitle = document.getElementById('security-score-title');
-    const securityScoreElem = document.getElementById('security-score');
-    const securityDescriptionElem = document.getElementById('security-description');
+// SEO
+const seoTitleSpan = document.getElementById('seo-title');
+const seoMetaDescriptionSpan = document.getElementById('seo-meta-description');
+const seoBrokenLinksSpan = document.getElementById('seo-broken-links');
+const seoMissingAltSpan = document.getElementById('seo-missing-alt');
+const seoInternalLinksSpan = document.getElementById('seo-internal-links'); // تم تصحيح هذا السطر
+const seoExternalLinksSpan = document.getElementById('seo-external-links');
+const hTagsList = document.getElementById('h-tags-list');
+const keywordDensityList = document.getElementById('keyword-density-list');
+const seoImprovementTipsList = document.getElementById('seo-improvement-tips');
+const aiSeoSuggestionsSection = document.getElementById('ai-seo-suggestions-section');
+const aiSeoSuggestionsText = document.getElementById('ai-seo-suggestions-text');
 
-    const aiSummaryTitle = document.getElementById('ai-summary-title');
-    const aiSummaryContentElem = document.getElementById('ai-summary-content');
 
-    // === عناصر تبديل اللغة والثيم ===
-    const langToggleBtn = document.getElementById('lang-toggle-btn');
-    const themeToggleBtn = document.getElementById('theme-toggle-btn');
+// تجربة المستخدم (UX)
+const uxIssuesList = document.getElementById('ux-issues-list');
+const uxSuggestionsList = document.getElementById('ux-suggestions-list');
+const aiContentInsightsSection = document.getElementById('ai-content-insights-section');
+const aiContentInsightsText = document.getElementById('ai-content-insights-text');
 
-    // === متغيرات الحالة ===
-    let currentLang = localStorage.getItem('appLang') || 'ar'; // Default language or from local storage
-    let currentTheme = localStorage.getItem('appTheme') || 'light'; // Default theme or from local storage
-    let translations = {}; // Translations will be loaded here
 
-    // === Helper Functions ===
+// أزرار الإجراءات
+const analyzeAnotherButton = document.getElementById('analyze-another-button');
+const exportPdfButton = document.getElementById('export-pdf-button');
 
-    // Load translations from the backend
-    async function loadTranslations(lang) {
-        console.log(`Loading translations for: ${lang}`);
-        try {
-            const response = await fetch(`/translations/${lang}`);
-            if (!response.ok) {
-                throw new Error('Failed to load translations');
+let currentAnalysisResults = null; // تخزين النتائج لتصدير PDF
+
+// --- تبديل الوضع الليلي/النهاري ---
+const themeToggle = document.getElementById('theme-toggle');
+const htmlElement = document.documentElement;
+
+themeToggle.addEventListener('click', () => {
+    htmlElement.classList.toggle('dark');
+    // تخزين تفضيل المستخدم في localStorage
+    if (htmlElement.classList.contains('dark')) {
+        localStorage.setItem('theme', 'dark');
+    } else {
+        localStorage.setItem('theme', 'light');
+    }
+});
+
+// تطبيق الثيم المحفوظ عند التحميل
+if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    htmlElement.classList.add('dark');
+} else {
+    htmlElement.classList.remove('dark');
+}
+
+
+// --- وظائف مساعدة ---
+function showElement(element) {
+    element.classList.remove('hidden');
+}
+
+function hideElement(element) {
+    element.classList.add('hidden');
+}
+
+// وظيفة تحديث شارة النتيجة مع الألوان (الآن تعتمد على CSS لتعيين التدرج)
+function updateScoreBadge(element, score) {
+    element.textContent = score !== null && score !== undefined ? `${Math.round(score)}` : 'N/A';
+    // إزالة أي كلاسات ألوان سابقة إذا كانت موجودة (الآن يتم التحكم في التدرج عبر CSS الثابت)
+    element.classList.remove('score-good', 'score-medium', 'score-bad');
+
+    // يمكننا إضافة كلاسات هنا فقط إذا أردنا تغيير التدرج أو الحدود بناءً على النتيجة
+    // ولكن لطلبك بتوحيد اللون البنفسجي، لن نغير الخلفية المتدرجة هنا.
+    // يمكننا تغيير لون النص أو إضافة حدود مختلفة إذا لزم الأمر.
+    if (score === 'N/A' || score === null || score === undefined) {
+        element.style.backgroundImage = 'linear-gradient(135deg, #6B7280, #9CA3AF)'; // رمادي افتراضي
+    } else {
+        // إذا كان هناك score، استخدم التدرج البنفسجي المحدد في CSS
+        element.style.backgroundImage = ''; // إزالة أي inline style لضمان تطبيق CSS
+    }
+}
+
+
+function isValidUrl(string) {
+    try {
+        new URL(string);
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+function clearResults() {
+    resultsDashboard.classList.add('hidden');
+    errorMessage.classList.add('hidden');
+    websiteUrlInput.value = '';
+    // مسح جميع النصوص والقوائم
+    analyzedUrlSpan.textContent = '';
+    updateScoreBadge(seoScoreDiv, null); // تحديث شارة النتيجة
+    updateScoreBadge(speedScoreDiv, null); // تحديث شارة النتيجة
+    updateScoreBadge(uxScoreDiv, null); // تحديث شارة النتيجة
+
+    aiSummarySection.classList.add('hidden');
+    aiSummaryText.textContent = '';
+
+    domainNameSpan.textContent = '';
+    domainAuthorityEstimateSpan.textContent = '';
+    domainAgeSpan.textContent = '';
+    sslStatusSpan.textContent = '';
+    blacklistStatusSpan.textContent = '';
+    dnsHealthSpan.textContent = '';
+
+    coreWebVitalsList.innerHTML = '';
+    performanceIssuesList.innerHTML = '';
+    pagespeedLink.href = '#';
+
+    seoTitleSpan.textContent = '';
+    seoMetaDescriptionSpan.textContent = '';
+    seoBrokenLinksSpan.textContent = '';
+    seoMissingAltSpan.textContent = '';
+    seoInternalLinksSpan.textContent = '';
+    seoExternalLinksSpan.textContent = '';
+    hTagsList.innerHTML = '';
+    keywordDensityList.innerHTML = '';
+    seoImprovementTipsList.innerHTML = '';
+    aiSeoSuggestionsSection.classList.add('hidden');
+    aiSeoSuggestionsText.textContent = '';
+
+    uxIssuesList.innerHTML = '';
+    uxSuggestionsList.innerHTML = '';
+    aiContentInsightsSection.classList.add('hidden');
+    aiContentInsightsText.textContent = '';
+}
+
+
+// --- منطق التحليل الرئيسي ---
+analyzeButton.addEventListener('click', async () => {
+    const url = websiteUrlInput.value.trim();
+    if (!isValidUrl(url)) {
+        errorMessage.textContent = "يرجى إدخال رابط صالح (مثال: https://example.com).";
+        showElement(errorMessage);
+        hideElement(resultsDashboard);
+        return;
+    }
+
+    errorMessage.classList.add('hidden');
+    hideElement(resultsDashboard);
+    showElement(loadingSpinner);
+    currentAnalysisResults = null; // مسح النتائج السابقة
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/analyze`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ url: url }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'حدث خطأ ما أثناء التحليل.');
+        }
+
+        const data = await response.json();
+        currentAnalysisResults = data; // تخزين النتائج
+        displayResults(url, data);
+
+    } catch (error) {
+        errorMessage.textContent = `فشل التحليل: ${error.message}`;
+        showElement(errorMessage);
+        console.error('خطأ في التحليل:', error);
+    } finally {
+        hideElement(loadingSpinner);
+    }
+});
+
+function displayResults(url, results) {
+    analyzedUrlSpan.textContent = url;
+    showElement(resultsDashboard);
+
+    // النتائج الإجمالية - استخدام وظيفة تحديث الشارة الجديدة
+    updateScoreBadge(seoScoreDiv, results.seo_quality?.score);
+    updateScoreBadge(speedScoreDiv, results.page_speed?.scores?.['Performance Score']);
+    updateScoreBadge(uxScoreDiv, results.user_experience?.score);
+
+    // ملخص الذكاء الاصطناعي
+    if (results.ai_insights?.summary) {
+        showElement(aiSummarySection);
+        aiSummaryText.textContent = results.ai_insights.summary;
+    } else {
+        hideElement(aiSummarySection);
+    }
+
+    // سلطة النطاق والثقة
+    const domainData = results.domain_authority || {};
+    domainNameSpan.textContent = domainData.domain || 'N/A';
+    domainAuthorityEstimateSpan.textContent = domainData.domain_authority_estimate || 'N/A';
+    domainAgeSpan.textContent = domainData.domain_age_years !== undefined ? `${domainData.domain_age_years} سنة` : 'N/A';
+    sslStatusSpan.textContent = domainData.ssl_status || 'N/A';
+    blacklistStatusSpan.textContent = domainData.blacklist_status || 'N/A';
+    dnsHealthSpan.textContent = domainData.dns_health || 'N/A';
+
+    // سرعة وأداء الصفحة
+    const pageSpeedData = results.page_speed || {};
+    coreWebVitalsList.innerHTML = '';
+    if (pageSpeedData.metrics) {
+        for (const metric in pageSpeedData.metrics) {
+            if (pageSpeedData.metrics[metric]) {
+                const li = document.createElement('li');
+                li.innerHTML = `<strong>${metric}:</strong> ${pageSpeedData.metrics[metric]}`;
+                coreWebVitalsList.appendChild(li);
             }
-            translations = await response.json();
-            applyTranslations();
-        } catch (error) {
-            console.error('Error loading translations:', error);
-            // Fallback to default English translations in case of error
-            translations = {
-                "app_title": "Web Analyzer Pro",
-                "analyze_any_website": "Analyze Any Website",
-                "placeholder_url": "https://www.example.com",
-                "analyze_button": "Analyze",
-                "loading_text": "Analyzing...",
-                "analysis_results_for": "Analysis Results for:",
-                "seo_score_title": "SEO Score",
-                "seo_description_placeholder": "",
-                "speed_score_title": "Speed Score",
-                "speed_description_placeholder": "",
-                "ux_score_title": "User Experience (UX) Score",
-                "ux_description_placeholder": "",
-                "domain_authority_title": "Domain Authority & Site Trust",
-                "security_score_title": "Security Score",
-                "ai_summary_title": "AI Summary",
-                "export_pdf_button": "Export PDF",
-                "error_url_required": "Please enter a website URL.",
-                "error_analysis_failed": "An error occurred during analysis. Please try again.",
-                "failed_to_fetch_url": "Failed to fetch content from the provided URL. Please check the URL or try again later."
-            };
-            applyTranslations(); // Apply default in case of error
         }
     }
 
-    // Apply translations to DOM elements
-    function applyTranslations() {
-        if (!translations.app_title) {
-            console.warn('Translations not loaded yet, skipping applyTranslations.');
-            return;
-        }
-        appTitle.textContent = translations.app_title;
-        navAppTitle.textContent = translations.app_title;
-        analyzeAnyWebsiteText.textContent = translations.analyze_any_website;
-        websiteUrlInput.placeholder = translations.placeholder_url;
-        analyzeBtn.textContent = translations.analyze_button;
-        analyzingText.textContent = translations.loading_text;
-        // Update this line to re-set the innerHTML, as analyzed-url-display is a span inside it
-        analysisResultsForText.innerHTML = `${translations.analysis_results_for} <span id="analyzed-url-display"></span>`;
-        // Re-get the analyzedUrlDisplay element after updating innerHTML
-        document.getElementById('analyzed-url-display').textContent = websiteUrlInput.value.trim(); // Keep current URL if any
-        
-        exportPdfText.textContent = translations.export_pdf_button;
-
-        seoScoreTitle.textContent = translations.seo_score_title;
-        speedScoreTitle.textContent = translations.speed_score_title;
-        uxScoreTitle.textContent = translations.ux_score_title;
-        domainAuthorityTitle.textContent = translations.domain_authority_title;
-        securityScoreTitle.textContent = translations.security_score_title;
-        aiSummaryTitle.textContent = translations.ai_summary_title;
-
-        langToggleBtn.innerHTML = `<i class="fas fa-globe"></i> ${currentLang.toUpperCase() === 'AR' ? 'EN' : 'AR'}`;
-        document.documentElement.setAttribute('lang', currentLang);
-        document.documentElement.setAttribute('dir', currentLang === 'ar' ? 'rtl' : 'ltr');
-        console.log('Translations applied.');
-    }
-
-    // Apply theme (Dark/Light Mode)
-    function applyTheme(theme) {
-        if (theme === 'dark') {
-            document.body.classList.add('dark-mode');
-            themeToggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
-        } else {
-            document.body.classList.remove('dark-mode');
-            themeToggleBtn.innerHTML = '<i class="fas fa-moon"></i>';
-        }
-        localStorage.setItem('appTheme', theme);
-        console.log(`Theme set to: ${theme}`);
-    }
-
-    // Initialize the application on load
-    async function initializeApp() {
-        await loadTranslations(currentLang); // Load translations first
-        applyTheme(currentTheme); // Apply theme
-        // Ensure sections are hidden initially
-        loadingIndicator.style.display = 'none';
-        resultsSection.style.display = 'none';
-        exportPdfBtn.style.display = 'none';
-        console.log('App initialized.');
-    }
-
-    // Function to display error messages to the user
-    function showErrorMessage(message) {
-        // Clear previous messages
-        errorMessageContainer.innerHTML = ''; 
-
-        const errorMessageDiv = document.createElement('div');
-        errorMessageDiv.className = 'alert alert-danger mt-3';
-        errorMessageDiv.setAttribute('role', 'alert');
-        errorMessageDiv.textContent = message;
-        errorMessageContainer.appendChild(errorMessageDiv);
-
-        setTimeout(() => {
-            errorMessageDiv.remove(); // Remove message after 5 seconds
-        }, 5000);
-        console.error('Error displayed:', message);
-    }
-
-    // Function to generate AI Summary by calling the backend
-    async function generateAISummary(analysisResults, targetLang) {
-        aiSummaryContentElem.textContent = translations.loading_text; // Display loading text for summary
-        console.log('Generating AI summary via backend...');
-
-        try {
-            const response = await fetch('/generate_ai_summary', { // Call new backend endpoint
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    analysis_results: analysisResults,
-                    target_lang: targetLang
-                })
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.details || translations.error_analysis_failed);
+    performanceIssuesList.innerHTML = '';
+    if (pageSpeedData.issues && pageSpeedData.issues.length > 0) {
+        pageSpeedData.issues.forEach(issue => {
+            const li = document.createElement('li');
+            li.textContent = `${issue.title} ${issue.score !== undefined ? `(النتيجة: ${Math.round(issue.score)})` : ''}: ${issue.description || ''}`;
+            if (issue.images && issue.images.length > 0) {
+                li.textContent += ` الصور: ${issue.images.join(', ')}`;
             }
-
-            const data = await response.json();
-            aiSummaryContentElem.textContent = data.summary || translations.error_analysis_failed;
-            console.log('AI summary generated successfully from backend.');
-
-        } catch (error) {
-            aiSummaryContentElem.textContent = translations.error_analysis_failed;
-            console.error("Error calling backend for AI summary:", error);
-        }
-    }
-
-
-    // === Event Listeners ===
-
-    // Analyze button
-    if (analyzeBtn) {
-        analyzeBtn.addEventListener('click', async () => {
-            console.log('Analyze button clicked.');
-            const url = websiteUrlInput.value.trim();
-
-            // Clear previous error messages
-            errorMessageContainer.innerHTML = '';
-
-            if (!url) {
-                showErrorMessage(translations.error_url_required);
-                return;
-            }
-
-            // Show loading indicator and hide old results
-            loadingIndicator.style.display = 'block';
-            resultsSection.style.display = 'none';
-            exportPdfBtn.style.display = 'none';
-            analyzedUrlDisplay.textContent = ''; // Clear previous URL
-            aiSummaryContentElem.textContent = ''; // Clear previous AI summary
-
-            // Clear previous results content
-            seoScoreElem.textContent = 'N/A';
-            seoDescriptionElem.textContent = '';
-            speedScoreElem.textContent = 'N/A';
-            speedDescriptionElem.textContent = '';
-            uxScoreElem.textContent = 'N/A';
-            uxDescriptionElem.textContent = '';
-            domainAuthorityElem.textContent = 'N/A';
-            domainAuthorityDescElem.textContent = '';
-            securityScoreElem.textContent = 'N/A';
-            securityDescriptionElem.textContent = '';
-
-
-            try {
-                console.log('Sending analysis request to backend...');
-                const response = await fetch('/analyze', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ url: url })
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.details || translations.error_analysis_failed);
-                }
-
-                const data = await response.json(); // Receive analysis data as JSON
-                console.log('Analysis data received:', data);
-
-                // Update UI with received results
-                analyzedUrlDisplay.textContent = url;
-                seoScoreElem.textContent = data.seo_score || 'N/A';
-                seoDescriptionElem.textContent = data.seo_description || '';
-                speedScoreElem.textContent = data.speed_score || 'N/A';
-                speedDescriptionElem.textContent = data.speed_description || '';
-                uxScoreElem.textContent = data.ux_score || 'N/A';
-                uxDescriptionElem.textContent = data.ux_description || '';
-                domainAuthorityElem.textContent = data.domain_authority || 'N/A';
-                domainAuthorityDescElem.textContent = data.domain_authority_desc || '';
-                securityScoreElem.textContent = data.security_score || 'N/A';
-                securityDescriptionElem.textContent = data.security_description || '';
-                
-                resultsSection.style.display = 'block'; // Show results section
-                exportPdfBtn.style.display = 'block'; // Show PDF export button
-
-                // Call backend function to generate AI summary
-                generateAISummary(data, currentLang);
-
-
-            } catch (error) {
-                console.error('Error during analysis fetch:', error);
-                showErrorMessage(error.message || translations.error_analysis_failed);
-            } finally {
-                loadingIndicator.style.display = 'none'; // Hide loading indicator
-                console.log('Analysis process finished.');
-            }
+            performanceIssuesList.appendChild(li);
         });
     } else {
-        console.error('Analyze button not found! Check ID in index.html.');
+        const li = document.createElement('li');
+        li.textContent = 'لا توجد مشكلات أداء رئيسية مكتشفة.';
+        li.classList.add('text-green-600', 'dark:text-green-400');
+        performanceIssuesList.appendChild(li);
+    }
+    pagespeedLink.href = pageSpeedData.full_report_link || '#';
+
+    // جودة وهيكل الـ SEO
+    const seoData = results.seo_quality?.elements || {};
+    seoTitleSpan.textContent = seoData.title || 'N/A';
+    seoMetaDescriptionSpan.textContent = seoData.meta_description || 'N/A';
+    seoBrokenLinksSpan.textContent = seoData.broken_links ? seoData.broken_links.length : 'N/A';
+    seoMissingAltSpan.textContent = seoData.image_alt_status ? seoData.image_alt_status.filter(s => s.includes('Missing') || s.includes('Empty')).length : 'N/A';
+    seoInternalLinksSpan.textContent = seoData.internal_links_count || 'N/A';
+    seoExternalLinksSpan.textContent = seoData.external_links_count || 'N/A';
+
+    hTagsList.innerHTML = '';
+    if (seoData.h_tags) {
+        for (const tag in seoData.h_tags) {
+            if (seoData.h_tags[tag].length > 0) {
+                const li = document.createElement('li');
+                li.textContent = `${tag}: ${seoData.h_tags[tag].join(', ')}`;
+                hTagsList.appendChild(li);
+            }
+        }
     }
 
+    keywordDensityList.innerHTML = '';
+    if (seoData.keyword_density) {
+        for (const keyword in seoData.keyword_density) {
+            const li = document.createElement('li');
+            li.textContent = `${keyword}: ${seoData.keyword_density[keyword]}`;
+            keywordDensityList.appendChild(li);
+        }
+    }
 
-    // Language toggle button
-    if (langToggleBtn) {
-        langToggleBtn.addEventListener('click', () => {
-            console.log('Language toggle button clicked.');
-            currentLang = currentLang === 'ar' ? 'en' : 'ar';
-            localStorage.setItem('appLang', currentLang); // Save language to local storage
-            loadTranslations(currentLang); // Reload and apply translations
+    seoImprovementTipsList.innerHTML = '';
+    if (results.seo_quality?.improvement_tips && results.seo_quality.improvement_tips.length > 0) {
+        results.seo_quality.improvement_tips.forEach(tip => {
+            const li = document.createElement('li');
+            li.textContent = tip;
+            seoImprovementTipsList.appendChild(li);
         });
     } else {
-        console.error('Language toggle button not found! Check ID in index.html.');
+        const li = document.createElement('li');
+        li.textContent = 'لا توجد مشكلات SEO حرجة مكتشفة بناءً على تحليلنا.';
+        seoImprovementTipsList.appendChild(li);
     }
 
-    // Theme toggle button
-    if (themeToggleBtn) {
-        themeToggleBtn.addEventListener('click', () => {
-            console.log('Theme toggle button clicked.');
-            currentTheme = currentTheme === 'light' ? 'dark' : 'light';
-            applyTheme(currentTheme);
+    if (results.ai_insights?.seo_improvement_suggestions) {
+        showElement(aiSeoSuggestionsSection);
+        aiSeoSuggestionsText.textContent = results.ai_insights.seo_improvement_suggestions;
+    } else {
+        hideElement(aiSeoSuggestionsSection);
+    }
+
+    // تجربة المستخدم (UX)
+    const uxData = results.user_experience || {};
+    uxIssuesList.innerHTML = '';
+    if (uxData.issues && uxData.issues.length > 0) {
+        uxData.issues.forEach(issue => {
+            const li = document.createElement('li');
+            li.textContent = issue;
+            uxIssuesList.appendChild(li);
         });
     } else {
-        console.error('Theme toggle button not found! Check ID in index.html.');
+        const li = document.createElement('li');
+        li.textContent = 'لا توجد مشكلات UX رئيسية مكتشفة بناءً على تحليلنا الاستدلالي.';
+        li.classList.add('text-green-600', 'dark:text-green-400');
+        uxIssuesList.appendChild(li);
     }
 
-    // === Initialize App on startup ===
-    initializeApp();
+    uxSuggestionsList.innerHTML = '';
+    if (uxData.suggestions && uxData.suggestions.length > 0) {
+        uxData.suggestions.forEach(suggestion => {
+            const li = document.createElement('li');
+            li.textContent = suggestion;
+            uxSuggestionsList.appendChild(li);
+        });
+    }
+
+    if (results.ai_insights?.content_originality_tone) {
+        showElement(aiContentInsightsSection);
+        aiContentInsightsText.textContent = results.ai_insights.content_originality_tone;
+    } else {
+        hideElement(aiContentInsightsSection);
+    }
+}
+
+
+// --- معالجات أحداث أزرار الإجراءات ---
+analyzeAnotherButton.addEventListener('click', () => {
+    clearResults();
+    // العودة إلى أعلى الصفحة أو قسم الإدخال
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+exportPdfButton.addEventListener('click', async () => {
+    if (!currentAnalysisResults) {
+        alert("يرجى تحليل موقع ويب أولاً لتوليد تقرير.");
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/generate_report`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ url: websiteUrlInput.value.trim(), results: currentAnalysisResults }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'فشل توليد تقرير PDF.');
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        // إنشاء اسم ملف مناسب
+        const filename = `${websiteUrlInput.value.replace(/^(https?:\/\/)?(www\.)?/, '').replace(/\//g, '_')}_analysis_report.pdf`;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+    } catch (error) {
+        alert(`خطأ في توليد PDF: ${error.message}`);
+        console.error('خطأ في توليد PDF:', error);
+    }
 });
