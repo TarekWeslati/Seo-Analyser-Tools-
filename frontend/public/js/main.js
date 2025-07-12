@@ -58,6 +58,7 @@ const aiContentInsightsText = document.getElementById('ai-content-insights-text'
 // Action Buttons
 const analyzeAnotherButton = document.getElementById('analyze-another-button');
 const exportPdfButton = document.getElementById('export-pdf-button'); // This button is now in the main results section
+const upgradeProButton = document.getElementById('upgrade-pro-button'); // Placeholder button
 
 let currentAnalysisResults = null; // Store results for PDF export
 
@@ -92,7 +93,7 @@ function hideElement(element) {
     element.classList.add('hidden');
 }
 
-// Function to update score circle and progress bar
+// Function to update score display (score number, progress bar, and text)
 function updateScoreDisplay(scoreDiv, progressBar, scoreTextEl, score, category) {
     scoreDiv.textContent = score !== null && score !== undefined ? `${Math.round(score)}` : 'N/A';
     let progressWidth = score !== null && score !== undefined ? Math.min(100, Math.max(0, score)) : 0;
