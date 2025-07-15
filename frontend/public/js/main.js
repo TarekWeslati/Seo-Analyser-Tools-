@@ -103,11 +103,19 @@ if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && w
 
 // --- Helper Functions ---
 function showElement(element) {
-    if (element) element.classList.remove('hidden');
+    if (element) {
+        element.classList.remove('hidden');
+        // If the element was hidden by display: none !important, we need to override it
+        element.style.display = ''; // Reset display to its default (e.g., block, flex)
+    }
 }
 
 function hideElement(element) {
-    if (element) element.classList.add('hidden');
+    if (element) {
+        element.classList.add('hidden');
+        // Re-apply display: none !important to ensure it's hidden
+        element.style.display = 'none !important';
+    }
 }
 
 // Function to update score display (score number, progress bar, and text)
@@ -225,7 +233,7 @@ if (analyzeButton) {
         }
 
         hideElement(errorMessage);
-        hideElement(resultsDashboard);
+        hideElement(resultsDashboard); // Ensure results dashboard is hidden before showing spinner
         showElement(loadingSpinner); // Show loading spinner only when analysis starts
         currentAnalysisResults = null; // Clear previous results
 
