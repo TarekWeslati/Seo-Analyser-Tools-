@@ -170,6 +170,7 @@ function clearResults() {
     console.log("Clearing results...");
     hideElement(resultsDashboard);
     hideElement(errorMessage);
+    hideElement(loadingSpinner); // Ensure loading spinner is hidden when clearing results
     websiteUrlInput.value = '';
     
     // Clear all texts and lists
@@ -225,7 +226,7 @@ if (analyzeButton) {
 
         hideElement(errorMessage);
         hideElement(resultsDashboard);
-        showElement(loadingSpinner);
+        showElement(loadingSpinner); // Show loading spinner only when analysis starts
         currentAnalysisResults = null; // Clear previous results
 
         try {
@@ -245,7 +246,6 @@ if (analyzeButton) {
 
             const data = await response.json();
             console.log("Analysis successful, data received:", data);
-            currentAnalysisResults = data; // Store results
             displayResults(url, data);
 
         } catch (error) {
@@ -253,7 +253,7 @@ if (analyzeButton) {
             showElement(errorMessage);
             console.error('Analysis error:', error);
         } finally {
-            hideElement(loadingSpinner);
+            hideElement(loadingSpinner); // Hide loading spinner after analysis (success or failure)
         }
     });
 } else {
@@ -476,3 +476,8 @@ if (upgradeProButton) {
     console.error("Upgrade Pro button not found.");
 }
 
+// Initial state setup when the script loads
+document.addEventListener('DOMContentLoaded', () => {
+    console.log("DOMContentLoaded event fired. Initializing UI state.");
+    clearResults(); // Ensure all result sections and loading spinner are hidden on load
+});
