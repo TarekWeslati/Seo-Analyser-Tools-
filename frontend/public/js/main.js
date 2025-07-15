@@ -1,9 +1,10 @@
 const API_BASE_URL = 'https://seo-analyser-tools.onrender.com'; // Replace with your actual Render app URL
 
-// Check if API_BASE_URL is set
+// Check if API_BASE_URL is still the placeholder
 if (API_BASE_URL === 'https://seo-analyser-tools.onrender.com') {
     console.warn("API_BASE_URL is still the placeholder. Please update it with your actual Render app URL.");
-    // You might want to show a user-facing message here too
+    // Optionally, alert the user or show a message on the UI
+    // alert("Warning: API_BASE_URL is not configured. Please update main.js with your Render app URL.");
 }
 
 // Get DOM elements
@@ -92,6 +93,7 @@ if (themeToggle) {
 
 
 // Apply saved theme on load
+// This ensures the theme is set correctly when the page first loads
 if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
     htmlElement.classList.add('dark');
 } else {
@@ -170,41 +172,42 @@ function clearResults() {
     hideElement(errorMessage);
     websiteUrlInput.value = '';
     
-    analyzedUrlSpan.textContent = '';
+    // Clear all texts and lists
+    if (analyzedUrlSpan) analyzedUrlSpan.textContent = '';
     updateScoreDisplay(domainAuthorityScoreDiv, domainAuthorityProgress, domainAuthorityText, null, 'Domain Authority');
     updateScoreDisplay(performanceScoreDiv, performanceProgress, performanceText, null, 'Performance');
     updateScoreDisplay(seoOverallScoreDiv, seoOverallProgress, seoOverallText, null, 'SEO Score');
 
     hideElement(aiSummarySection);
-    aiSummaryText.textContent = '';
+    if (aiSummaryText) aiSummaryText.textContent = '';
 
-    domainNameSpan.textContent = '';
-    domainAuthorityEstimateSpan.textContent = '';
-    domainAgeSpan.textContent = '';
-    sslStatusSpan.textContent = '';
-    blacklistStatusSpan.textContent = '';
-    dnsHealthSpan.textContent = '';
+    if (domainNameSpan) domainNameSpan.textContent = '';
+    if (domainAuthorityEstimateSpan) domainAuthorityEstimateSpan.textContent = '';
+    if (domainAgeSpan) domainAgeSpan.textContent = '';
+    if (sslStatusSpan) sslStatusSpan.textContent = '';
+    if (blacklistStatusSpan) blacklistStatusSpan.textContent = '';
+    if (dnsHealthSpan) dnsHealthSpan.textContent = '';
 
-    coreWebVitalsList.innerHTML = '';
-    performanceIssuesList.innerHTML = '';
-    pagespeedLink.href = '#';
+    if (coreWebVitalsList) coreWebVitalsList.innerHTML = '';
+    if (performanceIssuesList) performanceIssuesList.innerHTML = '';
+    if (pagespeedLink) pagespeedLink.href = '#';
 
-    seoTitleSpan.textContent = '';
-    seoMetaDescriptionSpan.textContent = '';
-    seoBrokenLinksSpan.textContent = '';
-    seoMissingAltSpan.textContent = '';
-    seoInternalLinksSpan.textContent = '';
-    seoExternalLinksSpan.textContent = '';
-    hTagsList.innerHTML = '';
-    keywordDensityList.innerHTML = '';
-    seoImprovementTipsList.innerHTML = '';
+    if (seoTitleSpan) seoTitleSpan.textContent = '';
+    if (seoMetaDescriptionSpan) seoMetaDescriptionSpan.textContent = '';
+    if (seoBrokenLinksSpan) seoBrokenLinksSpan.textContent = '';
+    if (seoMissingAltSpan) seoMissingAltSpan.textContent = '';
+    if (seoInternalLinksSpan) seoInternalLinksSpan.textContent = '';
+    if (seoExternalLinksSpan) seoExternalLinksSpan.textContent = '';
+    if (hTagsList) hTagsList.innerHTML = '';
+    if (keywordDensityList) keywordDensityList.innerHTML = '';
+    if (seoImprovementTipsList) seoImprovementTipsList.innerHTML = '';
     hideElement(aiSeoSuggestionsSection);
-    aiSeoSuggestionsText.textContent = '';
+    if (aiSeoSuggestionsText) aiSeoSuggestionsText.textContent = '';
 
-    uxIssuesList.innerHTML = '';
-    uxSuggestionsList.innerHTML = '';
+    if (uxIssuesList) uxIssuesList.innerHTML = '';
+    if (uxSuggestionsList) uxSuggestionsList.innerHTML = '';
     hideElement(aiContentInsightsSection);
-    aiContentInsightsText.textContent = '';
+    if (aiContentInsightsText) aiContentInsightsText.textContent = '';
 }
 
 
@@ -282,7 +285,7 @@ function displayResults(url, results) {
     // AI Summary
     if (results.ai_insights?.summary) {
         showElement(aiSummarySection);
-        aiSummaryText.textContent = results.ai_insights.summary;
+        if (aiSummaryText) aiSummaryText.textContent = results.ai_insights.summary;
     } else {
         hideElement(aiSummarySection);
     }
@@ -371,7 +374,7 @@ function displayResults(url, results) {
 
     if (results.ai_insights?.seo_improvement_suggestions) {
         showElement(aiSeoSuggestionsSection);
-        aiSeoSuggestionsText.textContent = results.ai_insights.seo_improvement_suggestions;
+        if (aiSeoSuggestionsText) aiSeoSuggestionsText.textContent = results.ai_insights.seo_improvement_suggestions;
     } else {
         hideElement(aiSeoSuggestionsSection);
     }
@@ -403,7 +406,7 @@ function displayResults(url, results) {
 
     if (results.ai_insights?.content_originality_tone) {
         showElement(aiContentInsightsSection);
-        aiContentInsightsText.textContent = results.ai_insights.content_originality_tone;
+        if (aiContentInsightsText) aiContentInsightsText.textContent = results.ai_insights.content_originality_tone;
     } else {
         hideElement(aiContentInsightsSection);
     }
