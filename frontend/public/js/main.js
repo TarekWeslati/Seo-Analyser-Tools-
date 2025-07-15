@@ -1,5 +1,12 @@
 const API_BASE_URL = 'https://seo-analyser-tools.onrender.com'; // Replace with your actual Render app URL
 
+// Check if API_BASE_URL is set
+if (API_BASE_URL === 'https://seo-analyser-tools.onrender.com') {
+    console.warn("API_BASE_URL is still the placeholder. Please update it with your actual Render app URL.");
+    // You might want to show a user-facing message here too
+}
+
+// Get DOM elements
 const websiteUrlInput = document.getElementById('website-url');
 const analyzeButton = document.getElementById('analyze-button');
 const errorMessage = document.getElementById('error-message');
@@ -21,7 +28,7 @@ const seoOverallText = document.getElementById('seo-overall-text');
 const aiSummarySection = document.getElementById('ai-summary-section');
 const aiSummaryText = document.getElementById('ai-summary-text');
 
-// Domain Authority
+// Domain Authority Details
 const domainNameSpan = document.getElementById('domain-name');
 const domainAuthorityEstimateSpan = document.getElementById('domain-authority-estimate');
 const domainAgeSpan = document.getElementById('domain-age');
@@ -29,12 +36,12 @@ const sslStatusSpan = document.getElementById('ssl-status');
 const blacklistStatusSpan = document.getElementById('blacklist-status');
 const dnsHealthSpan = document.getElementById('dns-health');
 
-// Page Speed
+// Page Speed Details
 const coreWebVitalsList = document.getElementById('core-web-vitals');
 const performanceIssuesList = document.getElementById('performance-issues');
 const pagespeedLink = document.getElementById('pagespeed-link');
 
-// SEO
+// SEO Details
 const seoTitleSpan = document.getElementById('seo-title');
 const seoMetaDescriptionSpan = document.getElementById('seo-meta-description');
 const seoBrokenLinksSpan = document.getElementById('seo-broken-links');
@@ -48,7 +55,7 @@ const aiSeoSuggestionsSection = document.getElementById('ai-seo-suggestions-sect
 const aiSeoSuggestionsText = document.getElementById('ai-seo-suggestions-text');
 
 
-// User Experience (UX)
+// User Experience (UX) Details
 const uxIssuesList = document.getElementById('ux-issues-list');
 const uxSuggestionsList = document.getElementById('ux-suggestions-list');
 const aiContentInsightsSection = document.getElementById('ai-content-insights-section');
@@ -57,24 +64,32 @@ const aiContentInsightsText = document.getElementById('ai-content-insights-text'
 
 // Action Buttons
 const analyzeAnotherButton = document.getElementById('analyze-another-button');
-const exportPdfButton = document.getElementById('export-pdf-button'); // This button is now in the main results section
-const upgradeProButton = document.getElementById('upgrade-pro-button'); // Placeholder button
+const exportPdfButton = document.getElementById('export-pdf-button');
+const upgradeProButton = document.getElementById('upgrade-pro-button');
 
 let currentAnalysisResults = null; // Store results for PDF export
+
+console.log("main.js script loaded.");
 
 // --- Theme Toggle ---
 const themeToggle = document.getElementById('theme-toggle');
 const htmlElement = document.documentElement;
 
-themeToggle.addEventListener('click', () => {
-    htmlElement.classList.toggle('dark');
-    // Store user preference in localStorage
-    if (htmlElement.classList.contains('dark')) {
-        localStorage.setItem('theme', 'dark');
-    } else {
-        localStorage.setItem('theme', 'light');
-    }
-});
+if (themeToggle) {
+    themeToggle.addEventListener('click', () => {
+        console.log("Theme toggle clicked.");
+        htmlElement.classList.toggle('dark');
+        // Store user preference in localStorage
+        if (htmlElement.classList.contains('dark')) {
+            localStorage.setItem('theme', 'dark');
+        } else {
+            localStorage.setItem('theme', 'light');
+        }
+    });
+} else {
+    console.error("Theme toggle button not found.");
+}
+
 
 // Apply saved theme on load
 if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -86,35 +101,35 @@ if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && w
 
 // --- Helper Functions ---
 function showElement(element) {
-    element.classList.remove('hidden');
+    if (element) element.classList.remove('hidden');
 }
 
 function hideElement(element) {
-    element.classList.add('hidden');
+    if (element) element.classList.add('hidden');
 }
 
 // Function to update score display (score number, progress bar, and text)
 function updateScoreDisplay(scoreDiv, progressBar, scoreTextEl, score, category) {
-    scoreDiv.textContent = score !== null && score !== undefined ? `${Math.round(score)}` : 'N/A';
+    if (scoreDiv) scoreDiv.textContent = score !== null && score !== undefined ? `${Math.round(score)}` : 'N/A';
     let progressWidth = score !== null && score !== undefined ? Math.min(100, Math.max(0, score)) : 0;
-    progressBar.style.width = `${progressWidth}%`;
+    if (progressBar) progressBar.style.width = `${progressWidth}%`;
 
     // Remove previous classes
-    progressBar.classList.remove('progress-good', 'progress-medium', 'progress-bad');
+    if (progressBar) progressBar.classList.remove('progress-good', 'progress-medium', 'progress-bad');
 
     let statusText = "Calculating...";
     if (score !== null && score !== undefined) {
         if (score >= 90) {
-            progressBar.classList.add('progress-good');
+            if (progressBar) progressBar.classList.add('progress-good');
             statusText = "Excellent score!";
         } else if (score >= 70) {
-            progressBar.classList.add('progress-good');
+            if (progressBar) progressBar.classList.add('progress-good');
             statusText = "Good score!";
         } else if (score >= 50) {
-            progressBar.classList.add('progress-medium');
+            if (progressBar) progressBar.classList.add('progress-medium');
             statusText = "Average score, needs improvement.";
         } else {
-            progressBar.classList.add('progress-bad');
+            if (progressBar) progressBar.classList.add('progress-bad');
             statusText = "Poor score, critical improvement needed.";
         }
     }
@@ -150,16 +165,17 @@ function isValidUrl(string) {
 }
 
 function clearResults() {
-    resultsDashboard.classList.add('hidden');
-    errorMessage.classList.add('hidden');
+    console.log("Clearing results...");
+    hideElement(resultsDashboard);
+    hideElement(errorMessage);
     websiteUrlInput.value = '';
-    // Clear all texts and lists
+    
     analyzedUrlSpan.textContent = '';
     updateScoreDisplay(domainAuthorityScoreDiv, domainAuthorityProgress, domainAuthorityText, null, 'Domain Authority');
     updateScoreDisplay(performanceScoreDiv, performanceProgress, performanceText, null, 'Performance');
     updateScoreDisplay(seoOverallScoreDiv, seoOverallProgress, seoOverallText, null, 'SEO Score');
 
-    aiSummarySection.classList.add('hidden');
+    hideElement(aiSummarySection);
     aiSummaryText.textContent = '';
 
     domainNameSpan.textContent = '';
@@ -182,60 +198,69 @@ function clearResults() {
     hTagsList.innerHTML = '';
     keywordDensityList.innerHTML = '';
     seoImprovementTipsList.innerHTML = '';
-    aiSeoSuggestionsSection.classList.add('hidden');
+    hideElement(aiSeoSuggestionsSection);
     aiSeoSuggestionsText.textContent = '';
 
     uxIssuesList.innerHTML = '';
     uxSuggestionsList.innerHTML = '';
-    aiContentInsightsSection.classList.add('hidden');
+    hideElement(aiContentInsightsSection);
     aiContentInsightsText.textContent = '';
 }
 
 
 // --- Main Analysis Logic ---
-analyzeButton.addEventListener('click', async () => {
-    const url = websiteUrlInput.value.trim();
-    if (!isValidUrl(url)) {
-        errorMessage.textContent = "Please enter a valid URL (e.g., https://example.com).";
-        showElement(errorMessage);
-        hideElement(resultsDashboard);
-        return;
-    }
-
-    errorMessage.classList.add('hidden');
-    hideElement(resultsDashboard);
-    showElement(loadingSpinner);
-    currentAnalysisResults = null; // Clear previous results
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/analyze`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ url: url }),
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'An error occurred during analysis.');
+if (analyzeButton) {
+    analyzeButton.addEventListener('click', async () => {
+        console.log("Analyze button clicked.");
+        const url = websiteUrlInput.value.trim();
+        if (!isValidUrl(url)) {
+            errorMessage.textContent = "Please enter a valid URL (e.g., https://example.com).";
+            showElement(errorMessage);
+            hideElement(resultsDashboard);
+            return;
         }
 
-        const data = await response.json();
-        currentAnalysisResults = data; // Store results
-        displayResults(url, data);
+        hideElement(errorMessage);
+        hideElement(resultsDashboard);
+        showElement(loadingSpinner);
+        currentAnalysisResults = null; // Clear previous results
 
-    } catch (error) {
-        errorMessage.textContent = `Analysis failed: ${error.message}`;
-        showElement(errorMessage);
-        console.error('Analysis error:', error);
-    } finally {
-        hideElement(loadingSpinner);
-    }
-});
+        try {
+            console.log(`Sending analysis request for URL: ${url}`);
+            const response = await fetch(`${API_BASE_URL}/analyze`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ url: url }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'An error occurred during analysis.');
+            }
+
+            const data = await response.json();
+            console.log("Analysis successful, data received:", data);
+            currentAnalysisResults = data; // Store results
+            displayResults(url, data);
+
+        } catch (error) {
+            errorMessage.textContent = `Analysis failed: ${error.message}`;
+            showElement(errorMessage);
+            console.error('Analysis error:', error);
+        } finally {
+            hideElement(loadingSpinner);
+        }
+    });
+} else {
+    console.error("Analyze button not found.");
+}
+
 
 function displayResults(url, results) {
-    analyzedUrlSpan.textContent = url;
+    console.log("Displaying results:", results);
+    if (analyzedUrlSpan) analyzedUrlSpan.textContent = url;
     showElement(resultsDashboard);
 
     // Overall Scores - Using new updateScoreDisplay function
@@ -264,17 +289,17 @@ function displayResults(url, results) {
 
     // Domain Authority & Trust
     const domainData = results.domain_authority || {};
-    domainNameSpan.textContent = domainData.domain || 'N/A';
-    domainAuthorityEstimateSpan.textContent = domainData.domain_authority_estimate || 'N/A';
-    domainAgeSpan.textContent = domainData.domain_age_years !== undefined ? `${domainData.domain_age_years} years` : 'N/A';
-    sslStatusSpan.textContent = domainData.ssl_status || 'N/A';
-    blacklistStatusSpan.textContent = domainData.blacklist_status || 'N/A';
-    dnsHealthSpan.textContent = domainData.dns_health || 'N/A';
+    if (domainNameSpan) domainNameSpan.textContent = domainData.domain || 'N/A';
+    if (domainAuthorityEstimateSpan) domainAuthorityEstimateSpan.textContent = domainData.domain_authority_estimate || 'N/A';
+    if (domainAgeSpan) domainAgeSpan.textContent = domainData.domain_age_years !== undefined ? `${domainData.domain_age_years} years` : 'N/A';
+    if (sslStatusSpan) sslStatusSpan.textContent = domainData.ssl_status || 'N/A';
+    if (blacklistStatusSpan) blacklistStatusSpan.textContent = domainData.blacklist_status || 'N/A';
+    if (dnsHealthSpan) dnsHealthSpan.textContent = domainData.dns_health || 'N/A';
 
     // Page Speed & Performance
     const pageSpeedData = results.page_speed || {};
-    coreWebVitalsList.innerHTML = '';
-    if (pageSpeedData.metrics) {
+    if (coreWebVitalsList) coreWebVitalsList.innerHTML = '';
+    if (pageSpeedData.metrics && coreWebVitalsList) {
         for (const metric in pageSpeedData.metrics) {
             if (pageSpeedData.metrics[metric]) {
                 const li = document.createElement('li');
@@ -284,8 +309,8 @@ function displayResults(url, results) {
         }
     }
 
-    performanceIssuesList.innerHTML = '';
-    if (pageSpeedData.issues && pageSpeedData.issues.length > 0) {
+    if (performanceIssuesList) performanceIssuesList.innerHTML = '';
+    if (pageSpeedData.issues && pageSpeedData.issues.length > 0 && performanceIssuesList) {
         pageSpeedData.issues.forEach(issue => {
             const li = document.createElement('li');
             li.textContent = `${issue.title} ${issue.score !== undefined ? `(Score: ${Math.round(issue.score)})` : ''}: ${issue.description || ''}`;
@@ -294,25 +319,25 @@ function displayResults(url, results) {
             }
             performanceIssuesList.appendChild(li);
         });
-    } else {
+    } else if (performanceIssuesList) {
         const li = document.createElement('li');
         li.textContent = 'No major performance issues detected.';
         li.classList.add('text-green-600', 'dark:text-green-400');
         performanceIssuesList.appendChild(li);
     }
-    pagespeedLink.href = pageSpeedData.full_report_link || '#';
+    if (pagespeedLink) pagespeedLink.href = pageSpeedData.full_report_link || '#';
 
     // SEO Quality & Structure
     const seoData = results.seo_quality?.elements || {};
-    seoTitleSpan.textContent = seoData.title || 'N/A';
-    seoMetaDescriptionSpan.textContent = seoData.meta_description || 'N/A';
-    seoBrokenLinksSpan.textContent = seoData.broken_links ? seoData.broken_links.length : 'N/A';
-    seoMissingAltSpan.textContent = seoData.image_alt_status ? seoData.image_alt_status.filter(s => s.includes('Missing') || s.includes('Empty')).length : 'N/A';
-    seoInternalLinksSpan.textContent = seoData.internal_links_count || 'N/A';
-    seoExternalLinksSpan.textContent = seoData.external_links_count || 'N/A';
+    if (seoTitleSpan) seoTitleSpan.textContent = seoData.title || 'N/A';
+    if (seoMetaDescriptionSpan) seoMetaDescriptionSpan.textContent = seoData.meta_description || 'N/A';
+    if (seoBrokenLinksSpan) seoBrokenLinksSpan.textContent = seoData.broken_links ? seoData.broken_links.length : 'N/A';
+    if (seoMissingAltSpan) seoMissingAltSpan.textContent = seoData.image_alt_status ? seoData.image_alt_status.filter(s => s.includes('Missing') || s.includes('Empty')).length : 'N/A';
+    if (seoInternalLinksSpan) seoInternalLinksSpan.textContent = seoData.internal_links_count || 'N/A';
+    if (seoExternalLinksSpan) seoExternalLinksSpan.textContent = seoData.external_links_count || 'N/A';
 
-    hTagsList.innerHTML = '';
-    if (seoData.h_tags) {
+    if (hTagsList) hTagsList.innerHTML = '';
+    if (seoData.h_tags && hTagsList) {
         for (const tag in seoData.h_tags) {
             if (seoData.h_tags[tag].length > 0) {
                 const li = document.createElement('li');
@@ -322,8 +347,8 @@ function displayResults(url, results) {
         }
     }
 
-    keywordDensityList.innerHTML = '';
-    if (seoData.keyword_density) {
+    if (keywordDensityList) keywordDensityList.innerHTML = '';
+    if (seoData.keyword_density && keywordDensityList) {
         for (const keyword in seoData.keyword_density) {
             const li = document.createElement('li');
             li.textContent = `${keyword}: ${seoData.keyword_density[keyword]}`;
@@ -331,14 +356,14 @@ function displayResults(url, results) {
         }
     }
 
-    seoImprovementTipsList.innerHTML = '';
-    if (results.seo_quality?.improvement_tips && results.seo_quality.improvement_tips.length > 0) {
+    if (seoImprovementTipsList) seoImprovementTipsList.innerHTML = '';
+    if (results.seo_quality?.improvement_tips && results.seo_quality.improvement_tips.length > 0 && seoImprovementTipsList) {
         results.seo_quality.improvement_tips.forEach(tip => {
             const li = document.createElement('li');
             li.textContent = tip;
             seoImprovementTipsList.appendChild(li);
         });
-    } else {
+    } else if (seoImprovementTipsList) {
         const li = document.createElement('li');
         li.textContent = 'No critical SEO issues detected based on our analysis.';
         seoImprovementTipsList.appendChild(li);
@@ -353,22 +378,22 @@ function displayResults(url, results) {
 
     // User Experience (UX)
     const uxData = results.user_experience || {};
-    uxIssuesList.innerHTML = '';
-    if (uxData.issues && uxData.issues.length > 0) {
+    if (uxIssuesList) uxIssuesList.innerHTML = '';
+    if (uxData.issues && uxData.issues.length > 0 && uxIssuesList) {
         uxData.issues.forEach(issue => {
             const li = document.createElement('li');
             li.textContent = issue;
             uxIssuesList.appendChild(li);
         });
-    } else {
+    } else if (uxIssuesList) {
         const li = document.createElement('li');
         li.textContent = 'No major UX issues detected based on our heuristic analysis.';
         li.classList.add('text-green-600', 'dark:text-green-400');
         uxIssuesList.appendChild(li);
     }
 
-    uxSuggestionsList.innerHTML = '';
-    if (uxData.suggestions && uxData.suggestions.length > 0) {
+    if (uxSuggestionsList) uxSuggestionsList.innerHTML = '';
+    if (uxData.suggestions && uxData.suggestions.length > 0 && uxSuggestionsList) {
         uxData.suggestions.forEach(suggestion => {
             const li = document.createElement('li');
             li.textContent = suggestion;
@@ -386,45 +411,65 @@ function displayResults(url, results) {
 
 
 // --- Action Button Handlers ---
-analyzeAnotherButton.addEventListener('click', () => {
-    clearResults();
-    // Scroll to top or input section
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-});
+if (analyzeAnotherButton) {
+    analyzeAnotherButton.addEventListener('click', () => {
+        console.log("Analyze Another button clicked.");
+        clearResults();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+} else {
+    console.error("Analyze Another button not found.");
+}
 
-exportPdfButton.addEventListener('click', async () => {
-    if (!currentAnalysisResults) {
-        alert("Please analyze a website first to generate a report.");
-        return;
-    }
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/generate_report`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ url: websiteUrlInput.value.trim(), results: currentAnalysisResults }),
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Failed to generate PDF report.');
+if (exportPdfButton) {
+    exportPdfButton.addEventListener('click', async () => {
+        console.log("Export PDF button clicked.");
+        if (!currentAnalysisResults) {
+            alert("Please analyze a website first to generate a report.");
+            return;
         }
 
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        // Create a suitable filename
-        const filename = `${websiteUrlInput.value.replace(/^(https?:\/\/)?(www\.)?/, '').replace(/\//g, '_')}_analysis_report.pdf`;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url);
-    } catch (error) {
-        alert(`Error generating PDF: ${error.message}`);
-        console.error('Error generating PDF:', error);
-    }
-});
+        try {
+            console.log("Sending PDF generation request...");
+            const response = await fetch(`${API_BASE_URL}/generate_report`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ url: websiteUrlInput.value.trim(), results: currentAnalysisResults }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to generate PDF report.');
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const filename = `${websiteUrlInput.value.replace(/^(https?:\/\/)?(www\.)?/, '').replace(/\//g, '_')}_analysis_report.pdf`;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+            console.log("PDF generated and downloaded successfully.");
+        } catch (error) {
+            alert(`Error generating PDF: ${error.message}`);
+            console.error('Error generating PDF:', error);
+        }
+    });
+} else {
+    console.error("Export PDF button not found.");
+}
+
+if (upgradeProButton) {
+    upgradeProButton.addEventListener('click', () => {
+        alert("Upgrade Pro functionality is not yet implemented.");
+        console.log("Upgrade Pro button clicked.");
+    });
+} else {
+    console.error("Upgrade Pro button not found.");
+}
+
