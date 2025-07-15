@@ -1,8 +1,11 @@
 import os
-from flask import Flask, request, jsonify, render_template, send_file, send_from_directory
-from flask_cors import CORS # For handling CORS if frontend is on a different port/domain
+from flask import Flask, request, jsonify, send_file, send_from_directory
+from flask_cors import CORS
+import asyncio # Import asyncio for concurrent operations
+import httpx # Import httpx for async HTTP requests (if services are updated to be async)
 
 # Import services (other files containing analysis logic)
+# Note: For full async benefit, these service functions should also be async and use httpx.AsyncClient
 from services.domain_analysis import get_domain_analysis
 from services.pagespeed_analysis import get_pagespeed_insights
 from services.seo_analysis import perform_seo_analysis
@@ -12,9 +15,6 @@ from utils.url_validator import is_valid_url
 from utils.pdf_generator import generate_pdf_report
 
 # Determine the path for templates and static files
-# app.py is in backend/
-# frontend/ is at the same level as backend/
-# public/ is inside frontend/
 template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../frontend'))
 static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../frontend/public'))
 
@@ -22,12 +22,12 @@ static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../fronten
 app = Flask(__name__,
             template_folder=template_dir,
             static_folder=static_dir,
-            static_url_path='/') # Use '/' to serve static files directly from root URL
-CORS(app) # Enable CORS for all routes
+            static_url_path='/')
+CORS(app)
 
-# Load API keys from environment variables (from .env file locally, or Render settings)
+# Load API keys from environment variables
 app.config['PAGESPEED_API_KEY'] = os.getenv('PAGESPEED_API_KEY')
-app.config['OPENAI_API_KEY'] = os.getenv('OPENAI_API_KEY') # Optional
+app.config['OPENAI_API_KEY'] = os.getenv('OPENAI_API_KEY')
 
 # Route for the homepage, serving index.html directly as a static file
 @app.route('/')
@@ -35,14 +35,13 @@ def index():
     return send_from_directory(app.static_folder, 'index.html')
 
 # Route to serve other static files (CSS, JS, images) from the public folder
-# This route will serve any file within static_folder directly from the root URL
 @app.route('/<path:filename>')
 def serve_static(filename):
     return send_from_directory(app.static_folder, filename)
 
 
 @app.route('/analyze', methods=['POST'])
-def analyze_website():
+async def analyze_website(): # Make the route function async
     data = request.get_json()
     url = data.get('url')
 
@@ -51,25 +50,44 @@ def analyze_website():
 
     results = {}
     try:
-        # 1. Domain Authority & Trust
-        domain_data = get_domain_analysis(url)
+        # Run analysis functions concurrently
+        # IMPORTANT: For this to truly be non-blocking and faster,
+        # get_domain_analysis, get_pagespeed_insights, etc.,
+        # must also be async functions that use an async HTTP client like httpx.AsyncClient.
+        # If they are still using 'requests' (synchronous), this will not provide a speedup,
+        # and might even cause issues if not run in an event loop.
+        # For now, we're making the *route* async to prepare for it.
+
+        # We'll wrap synchronous calls in a thread pool executor to prevent blocking
+        # if the underlying service functions are not yet async.
+        loop = asyncio.get_event_loop()
+        
+        # Define tasks to run concurrently
+        tasks = [
+            loop.run_in_executor(None, get_domain_analysis, url),
+            loop.run_in_executor(None, get_pagespeed_insights, url, app.config['PAGESPEED_API_KEY']),
+            loop.run_in_executor(None, perform_seo_analysis, url),
+            loop.run_in_executor(None, perform_ux_analysis, url)
+        ]
+
+        # Add AI suggestions task if API key is available
+        if app.config.get('OPENAI_API_KEY'):
+            # AI suggestions might depend on initial results, so we'll fetch them separately
+            # or pass the initial results to the AI function after the first batch.
+            # For simplicity, let's assume get_ai_suggestions can be called after the main results.
+            # A more robust solution would be to pass futures or await individual results.
+            pass # We'll call AI after initial results are ready for now.
+
+        domain_data, pagespeed_data, seo_data, ux_data = await asyncio.gather(*tasks)
+
         results['domain_authority'] = domain_data
-
-        # 2. Page Speed & Performance
-        pagespeed_data = get_pagespeed_insights(url, app.config['PAGESPEED_API_KEY'])
         results['page_speed'] = pagespeed_data
-
-        # 3. SEO Quality & Structure
-        seo_data = perform_seo_analysis(url)
         results['seo_quality'] = seo_data
-
-        # 4. User Experience (UX)
-        ux_data = perform_ux_analysis(url)
         results['user_experience'] = ux_data
 
-        # Optional AI Features
-        if app.config.get('OPENAI_API_KEY'): # Check if key exists to enable feature
-            ai_data = get_ai_suggestions(url, results, app.config['OPENAI_API_KEY'])
+        # Now call AI suggestions with the gathered results
+        if app.config.get('OPENAI_API_KEY'):
+            ai_data = await loop.run_in_executor(None, get_ai_suggestions, url, results, app.config['OPENAI_API_KEY'])
             results['ai_insights'] = ai_data
 
         return jsonify(results), 200
@@ -97,6 +115,8 @@ def generate_report():
 
 
 if __name__ == '__main__':
-    # Run the application in debug mode on port 5000
-    # Do not use debug=True in production environment
+    # For local development, you might run with `flask run --host=0.0.0.0`
+    # For production with Gunicorn, you need an async worker like uvicorn.
+    # Example for Gunicorn with uvicorn: gunicorn --worker-class uvicorn.workers.UvicornWorker wsgi:app
+    # Render's default gunicorn command should pick this up if uvicorn is in requirements.txt
     app.run(debug=True, host='0.0.0.0', port=5000)
