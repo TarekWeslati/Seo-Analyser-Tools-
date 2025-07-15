@@ -141,6 +141,11 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* CRITICAL: Ensure these elements are hidden by default via CSS */
+        #loading-spinner, #results-dashboard {
+            display: none !important;
+        }
     </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col items-center">
@@ -174,13 +179,13 @@
                 <p id="error-message" class="text-red-500 mt-4 font-medium hidden"></p>
             </div>
 
-            <!-- Loading spinner - Ensure it has 'hidden' class by default -->
+            <!-- Loading spinner - Now also hidden by critical CSS -->
             <div id="loading-spinner" class="text-center py-20 hidden">
                 <div class="loading-spinner-circle mx-auto mb-4"></div>
                 <p class="mt-4 text-xl font-semibold text-blue-600 dark:text-blue-400">Analyzing website, please wait...</p>
             </div>
 
-            <!-- Results Dashboard - Ensure it has 'hidden' class by default -->
+            <!-- Results Dashboard - Now also hidden by critical CSS -->
             <div id="results-dashboard" class="hidden">
                 <h2 class="text-3xl font-bold mb-8 text-center text-gray-800 dark:text-gray-200">Analysis Results for <span id="analyzed-url" class="text-blue-600 dark:text-blue-400" dir="ltr"></span></h2>
 
