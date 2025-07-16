@@ -1,13 +1,8 @@
 import os
 from datetime import datetime
-from weasyprint import HTML, CSS # Requires system dependencies (see README.md)
-# Or you can use fpdf2 as an alternative if you face issues with weasyprint installation:
-# from fpdf import FPDF
+from weasyprint import HTML, CSS
 
 def generate_pdf_report(url, results):
-    # This is a very basic example. For a professional report, you'd need a well-structured HTML template with CSS.
-    # WeasyPrint converts HTML/CSS to PDF.
-
     report_html = f"""
     <!DOCTYPE html>
     <html lang="en" dir="ltr">
