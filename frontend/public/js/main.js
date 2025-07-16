@@ -113,8 +113,9 @@ function showElement(element) {
 function hideElement(element) {
     if (element) {
         element.classList.add('hidden');
-        // Re-apply display: none !important to ensure it's hidden
-        element.style.display = 'none'; // Use 'none' instead of 'none !important' here to allow showElement to override
+        // Re-apply display: none to ensure it's hidden.
+        // We use 'none' here, not 'none !important', so that showElement can override it.
+        element.style.display = 'none'; 
     }
 }
 
