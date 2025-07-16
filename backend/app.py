@@ -2,7 +2,7 @@ import os
 from flask import Flask, request, jsonify, send_file, send_from_directory
 from flask_cors import CORS
 import asyncio
-import httpx
+import httpx # Required if your service functions are async
 
 # Import services (other files containing analysis logic)
 from services.domain_analysis import get_domain_analysis
@@ -14,14 +14,19 @@ from utils.url_validator import is_valid_url
 from utils.pdf_generator import generate_pdf_report
 
 # Determine the path for templates and static files
+# app.py is in backend/
+# frontend/ is at the same level as backend/
+# public/ is inside frontend/
 template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../frontend'))
 static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../frontend/public'))
 
 # Initialize Flask app with template and static folders
+# static_url_path='/static' means files in static_folder will be served from /static/
+# For example, frontend/public/js/main.js will be accessible at /static/js/main.js
 app = Flask(__name__,
             template_folder=template_dir,
             static_folder=static_dir,
-            static_url_path='/')
+            static_url_path='/static') # Changed to '/static' to explicitly define static file serving
 CORS(app)
 
 # Load API keys from environment variables
@@ -31,16 +36,15 @@ app.config['OPENAI_API_KEY'] = os.getenv('OPENAI_API_KEY')
 # Route for the homepage, serving index.html directly as a static file
 @app.route('/')
 def index():
-    return send_from_directory(app.static_folder, 'index.html')
+    # Render index.html from the template_folder (which is frontend/)
+    # We need to explicitly specify the path within the template folder
+    return send_from_directory(os.path.join(app.template_folder, 'public'), 'index.html')
 
-# Route to serve other static files (CSS, JS, images) from the public folder
-@app.route('/<path:filename>')
-def serve_static(filename):
-    return send_from_directory(app.static_folder, filename)
-
+# Removed the /<path:filename> route because static_url_path handles it
+# If you need specific static routes outside of /static, you can add them.
 
 @app.route('/analyze', methods=['POST'])
-async def analyze_website():
+async def analyze_website(): # Keep async def
     data = request.get_json()
     url = data.get('url')
 
@@ -51,6 +55,8 @@ async def analyze_website():
     try:
         loop = asyncio.get_event_loop()
         
+        # We use run_in_executor to run synchronous (blocking) functions in a separate thread pool
+        # This allows the async route to remain non-blocking for the main event loop
         tasks = [
             loop.run_in_executor(None, get_domain_analysis, url),
             loop.run_in_executor(None, get_pagespeed_insights, url, app.config['PAGESPEED_API_KEY']),
@@ -93,4 +99,7 @@ def generate_report():
 
 
 if __name__ == '__main__':
+    # For local development, you can run: python app.py
+    # For production on Render, ensure your Procfile uses uvicorn worker:
+    # web: uvicorn wsgi:app --host 0.0.0.0 --port $PORT --workers 1
     app.run(debug=True, host='0.0.0.0', port=5000)
