@@ -114,7 +114,7 @@ function hideElement(element) {
     if (element) {
         element.classList.add('hidden');
         // Re-apply display: none !important to ensure it's hidden
-        element.style.display = 'none !important';
+        element.style.display = 'none'; // Use 'none' instead of 'none !important' here to allow showElement to override
     }
 }
 
@@ -254,6 +254,7 @@ if (analyzeButton) {
 
             const data = await response.json();
             console.log("Analysis successful, data received:", data);
+            currentAnalysisResults = data; // Store results
             displayResults(url, data);
 
         } catch (error) {
