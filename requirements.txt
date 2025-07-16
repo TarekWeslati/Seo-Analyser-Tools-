@@ -1,16 +1,15 @@
-flask
-flask-cors
+Flask[async]
+Flask-Cors
 requests
 beautifulsoup4
-html5lib
 lxml
 python-whois
 dnspython
-certifi
 google-api-python-client
 openai
 weasyprint
 gunicorn
-requests
-beautifulsoup4
-openai
+# Add httpx if your service functions are also async
+httpx 
+# Add uvicorn to ensure an async-compatible worker for Gunicorn
+uvicorn
