@@ -1,15 +1,16 @@
 import os
 from flask import Flask, request, jsonify, send_file, send_from_directory
 from flask_cors import CORS
-import asyncio
-import httpx 
+# No need for asyncio or httpx directly in app.py if all calls are synchronous
+# import asyncio
+# import httpx 
 
 # Import services
 from services.domain_analysis import get_domain_analysis
 from services.pagespeed_analysis import get_pagespeed_insights
 from services.seo_analysis import perform_seo_analysis
 from services.ux_analysis import perform_ux_analysis
-from services.ai_suggestions import get_ai_suggestions
+from services.ai_suggestions import get_ai_suggestions # This will also be synchronous
 from utils.url_validator import is_valid_url
 from utils.pdf_generator import generate_pdf_report
 
@@ -34,7 +35,7 @@ def serve_static(filename):
 
 
 @app.route('/analyze', methods=['POST'])
-async def analyze_website():
+def analyze_website(): # Changed from async def to def
     data = request.get_json()
     url = data.get('url')
 
@@ -43,16 +44,11 @@ async def analyze_website():
 
     results = {}
     try:
-        loop = asyncio.get_event_loop()
-        
-        tasks = [
-            loop.run_in_executor(None, get_domain_analysis, url),
-            loop.run_in_executor(None, get_pagespeed_insights, url, app.config['PAGESPEED_API_KEY']),
-            loop.run_in_executor(None, perform_seo_analysis, url),
-            loop.run_in_executor(None, perform_ux_analysis, url)
-        ]
-
-        domain_data, pagespeed_data, seo_data, ux_data = await asyncio.gather(*tasks)
+        # Call synchronous analysis functions directly
+        domain_data = get_domain_analysis(url)
+        pagespeed_data = get_pagespeed_insights(url, app.config['PAGESPEED_API_KEY'])
+        seo_data = perform_seo_analysis(url)
+        ux_data = perform_ux_analysis(url)
 
         results['domain_authority'] = domain_data
         results['page_speed'] = pagespeed_data
@@ -63,7 +59,8 @@ async def analyze_website():
         if results['seo_quality'] and results['seo_quality'].get('elements') and results['seo_quality']['elements'].get('page_text'):
             results['extracted_text_sample'] = results['seo_quality']['elements']['page_text'][:1000]
 
-        ai_data = await get_ai_suggestions(url, results)
+        # Call AI suggestions service (now synchronous)
+        ai_data = get_ai_suggestions(url, results) # No await needed
         results['ai_insights'] = ai_data
 
         return jsonify(results), 200
