@@ -4,25 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Web Analyzer Pro</title>
-    <!-- Link to generated Tailwind CSS -->
-    <link href="/css/tailwind.css" rel="stylesheet">
-    <!-- Link to Font Awesome icons -->
+    <!-- ربط بملف Tailwind CSS الذي تم إنشاؤه -->
+    <link href="/css/style.css" rel="stylesheet"> <!-- تم التعديل هنا ليتوافق مع مخرجات بناء Tailwind -->
+    <!-- ربط بأيقونات Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- Link to Google Fonts - Inter for a modern look -->
+    <!-- ربط بخطوط Google - Inter لمظهر عصري -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap">
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #F8F9FA; /* Light gray background */
-            color: #212529; /* Dark text */
+            background-color: #F8F9FA; /* خلفية رمادية فاتحة */
+            color: #212529; /* نص داكن */
             transition: background-color 0.3s ease, color 0.3s ease;
         }
         .dark body {
-            background-color: #212529; /* Dark background */
-            color: #F8F9FA; /* Light text */
+            background-color: #212529; /* خلفية داكنة */
+            color: #F8F9FA; /* نص فاتح */
         }
 
-        /* Header specific styles */
+        /* أنماط خاصة بالرأس */
         .header-bg {
             background-color: white;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
@@ -32,7 +32,7 @@
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
         }
 
-        /* Card styles matching screenshot */
+        /* أنماط البطاقات المطابقة لقطة الشاشة */
         .result-card {
             background-color: white;
             border-radius: 12px;
@@ -51,7 +51,7 @@
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
         }
 
-        /* Score circle styles (used for icons in the screenshot) */
+        /* أنماط دائرة الأيقونة (تستخدم للأيقونات في لقطة الشاشة) */
         .score-icon-circle {
             width: 70px;
             height: 70px;
@@ -64,11 +64,11 @@
             margin: 0 auto 10px auto;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         }
-        .score-icon-blue { background-color: #007bff; } /* Blue for Domain Authority */
-        .score-icon-green { background-color: #28a745; } /* Green for Performance */
-        .score-icon-orange { background-color: #fd7e14; } /* Orange for SEO Score */
+        .score-icon-blue { background-color: #007bff; } /* أزرق لسلطة النطاق */
+        .score-icon-green { background-color: #28a745; } /* أخضر للأداء */
+        .score-icon-orange { background-color: #fd7e14; } /* برتقالي لنتيجة SEO */
 
-        /* Progress bar */
+        /* شريط التقدم */
         .progress-bar-container {
             width: 100%;
             background-color: #e9ecef;
@@ -88,9 +88,9 @@
         .progress-medium { background-color: #ffc107; }
         .progress-bad { background-color: #dc3545; }
 
-        /* Export PDF Button */
+        /* زر تصدير PDF */
         #export-pdf-button {
-            background-color: #28a745; /* Green */
+            background-color: #28a745; /* أخضر */
             box-shadow: 0 4px 10px rgba(40, 167, 69, 0.4);
             transition: all 0.2s ease;
         }
@@ -100,9 +100,9 @@
             box-shadow: 0 6px 15px rgba(40, 167, 69, 0.6);
         }
 
-        /* Analyze Button */
+        /* زر التحليل */
         #analyze-button {
-            background-color: #007bff; /* Blue */
+            background-color: #007bff; /* أزرق */
             box-shadow: 0 4px 10px rgba(0, 123, 255, 0.4);
             transition: all 0.2s ease;
         }
@@ -112,9 +112,9 @@
             box-shadow: 0 6px 15px rgba(0, 123, 255, 0.6);
         }
 
-        /* Upgrade Pro Button (Placeholder) */
+        /* زر الترقية إلى Pro (عنصر نائب) */
         #upgrade-pro-button {
-            background-color: #6f42c1; /* Purple */
+            background-color: #6f42c1; /* بنفسجي */
             box-shadow: 0 4px 10px rgba(111, 66, 193, 0.4);
             transition: all 0.2s ease;
         }
@@ -124,7 +124,7 @@
             box-shadow: 0 6px 15px rgba(111, 66, 193, 0.6);
         }
 
-        /* Loading spinner */
+        /* مؤشر التحميل الدائري */
         .loading-spinner-circle {
             border: 4px solid rgba(0, 0, 0, 0.1);
             border-left-color: #007bff;
@@ -142,7 +142,7 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* CRITICAL: Ensure these elements are hidden by default via CSS */
+        /* هام: تأكد من إخفاء هذه العناصر افتراضياً عبر CSS */
         #loading-spinner, #results-dashboard {
             display: none !important;
         }
@@ -179,17 +179,17 @@
                 <p id="error-message" class="text-red-500 mt-4 font-medium hidden"></p>
             </div>
 
-            <!-- Loading spinner - Now also hidden by critical CSS -->
+            <!-- مؤشر التحميل - الآن مخفي أيضاً بواسطة CSS الحاسم -->
             <div id="loading-spinner" class="text-center py-20 hidden">
                 <div class="loading-spinner-circle mx-auto mb-4"></div>
                 <p class="mt-4 text-xl font-semibold text-blue-600 dark:text-blue-400">Analyzing website, please wait...</p>
             </div>
 
-            <!-- Results Dashboard - Now also hidden by critical CSS -->
+            <!-- لوحة النتائج - الآن مخفية أيضاً بواسطة CSS الحاسم -->
             <div id="results-dashboard" class="hidden">
                 <h2 class="text-3xl font-bold mb-8 text-center text-gray-800 dark:text-gray-200">Analysis Results for <span id="analyzed-url" class="text-blue-600 dark:text-blue-400" dir="ltr"></span></h2>
 
-                <!-- Overall Scores - Matching Screenshot Design -->
+                <!-- النتائج الإجمالية - مطابقة لتصميم لقطة الشاشة -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
                     <div class="p-6 result-card text-center">
                         <div class="score-icon-circle score-icon-blue"><i class="fas fa-shield-alt"></i></div>
@@ -222,22 +222,22 @@
                     </div>
                 </div>
 
-                <!-- Export PDF Button - Prominent as in screenshot -->
+                <!-- زر تصدير PDF - بارز كما في لقطة الشاشة -->
                 <div class="text-center mb-12">
                     <button id="export-pdf-button" class="px-8 py-4 rounded-lg text-white font-bold text-xl">
                         <i class="fas fa-file-pdf mr-2"></i>Export PDF Report
                     </button>
                 </div>
 
-                <!-- AI Summary Section -->
+                <!-- قسم ملخص الذكاء الاصطناعي -->
                 <div id="ai-summary-section" class="bg-blue-50 dark:bg-blue-900 p-8 rounded-xl shadow-md mb-12 hidden">
                     <h3 class="text-2xl font-bold mb-5 flex items-center text-blue-800 dark:text-blue-200"><i class="fas fa-robot mr-3 text-3xl"></i>AI Summary ✨</h3>
                     <p id="ai-summary-text" class="text-gray-700 dark:text-gray-300 leading-relaxed text-lg"></p>
                 </div>
 
-                <!-- Analysis Categories -->
+                <!-- فئات التحليل -->
                 <div class="space-y-10">
-                    <!-- 1. Domain Authority & Trust Details -->
+                    <!-- 1. تفاصيل سلطة النطاق والثقة -->
                     <div class="p-8 rounded-xl shadow-lg result-card">
                         <h3 class="text-2xl font-bold mb-6 flex items-center text-blue-700 dark:text-blue-400"><i class="fas fa-shield-alt mr-3 text-2xl"></i>Domain Authority & Trust</h3>
                         <ul class="list-disc pl-6 space-y-3 text-lg text-gray-700 dark:text-gray-300">
@@ -250,23 +250,23 @@
                         </ul>
                     </div>
 
-                    <!-- 2. Page Speed & Performance Details -->
+                    <!-- 2. تفاصيل سرعة الصفحة والأداء -->
                     <div class="p-8 rounded-xl shadow-lg result-card">
                         <h3 class="text-2xl font-bold mb-6 flex items-center text-purple-700 dark:text-purple-400"><i class="fas fa-tachometer-alt mr-3 text-2xl"></i>Page Speed & Performance</h3>
                         <h4 class="font-semibold mb-3 text-gray-700 dark:text-gray-200">Core Web Vitals & Key Metrics:</h4>
                         <ul id="core-web-vitals" class="list-disc pl-6 space-y-2 text-lg text-gray-700 dark:text-gray-300">
-                            <!-- Populated by JS -->
+                            <!-- يتم ملؤها بواسطة JS -->
                         </ul>
                         <h4 class="font-semibold mt-6 mb-3 text-gray-700 dark:text-gray-200">Performance Issues:</h4>
                         <ul id="performance-issues" class="list-disc pl-6 text-red-600 dark:text-red-400 space-y-2 text-lg">
-                            <!-- Populated by JS -->
+                            <!-- يتم ملؤها بواسطة JS -->
                         </ul>
                         <p class="mt-6 text-base text-gray-600 dark:text-gray-400">
                             <a id="pagespeed-link" href="#" target="_blank" class="text-blue-500 hover:underline font-medium" style="direction: ltr;">View Full Google PageSpeed Insights Report <i class="fas fa-external-link-alt ml-1"></i></a>
                         </p>
                     </div>
 
-                    <!-- 3. SEO Quality & Structure Details -->
+                    <!-- 3. تفاصيل جودة وهيكل SEO -->
                     <div class="p-8 rounded-xl shadow-lg result-card">
                         <h3 class="text-2xl font-bold mb-6 flex items-center text-orange-700 dark:text-orange-400"><i class="fas fa-search mr-3 text-2xl"></i>SEO Quality & Structure</h3>
                         <ul class="list-disc pl-6 space-y-3 text-lg text-gray-700 dark:text-gray-300 mb-6">
@@ -279,15 +279,15 @@
                         </ul>
                         <h4 class="font-semibold mt-6 mb-3 text-gray-700 dark:text-gray-200">H-Tag Structure (Headings):</h4>
                         <ul id="h-tags-list" class="list-disc pl-6 space-y-2 text-base text-gray-700 dark:text-gray-300">
-                            <!-- Populated by JS -->
+                            <!-- يتم ملؤها بواسطة JS -->
                         </ul>
                         <h4 class="font-semibold mt-6 mb-3 text-gray-700 dark:text-gray-200">Keyword Usage (Top 10):</h4>
                         <ul id="keyword-density-list" class="list-disc pl-6 text-base text-gray-700 dark:text-gray-300">
-                            <!-- Populated by JS -->
+                            <!-- يتم ملؤها بواسطة JS -->
                         </ul>
                         <h4 class="font-semibold mt-6 mb-3 text-gray-700 dark:text-gray-200">SEO Improvement Tips:</h4>
                         <ul id="seo-improvement-tips" class="list-disc pl-6 text-green-700 dark:text-green-300 space-y-2 text-lg">
-                            <!-- Populated by JS -->
+                            <!-- يتم ملؤها بواسطة JS -->
                         </ul>
                         <div id="ai-seo-suggestions-section" class="mt-6 bg-gray-100 dark:bg-gray-700 p-5 rounded-lg shadow-inner hidden">
                             <h5 class="font-bold mb-3 text-gray-800 dark:text-gray-200">AI SEO Suggestions: ✨</h5>
@@ -295,16 +295,16 @@
                         </div>
                     </div>
 
-                    <!-- 4. User Experience (UX) Details -->
+                    <!-- 4. تفاصيل تجربة المستخدم (UX) -->
                     <div class="p-8 rounded-xl shadow-lg result-card">
                         <h3 class="text-2xl font-bold mb-6 flex items-center text-teal-700 dark:text-teal-400"><i class="fas fa-user-friends mr-3 text-2xl"></i>User Experience (UX)</h3>
-                        <h4 class="font-semibold mb-3 text-gray-700 dark:text-gray-200">Detected UX Issues:</h4>
+                        <h4 class="font-semibold mt-6 mb-3 text-gray-700 dark:text-gray-200">Detected UX Issues:</h4>
                         <ul id="ux-issues-list" class="list-disc pl-6 text-red-600 dark:text-red-400 space-y-2 text-lg">
-                            <!-- Populated by JS -->
+                            <!-- يتم ملؤها بواسطة JS -->
                         </ul>
                         <h4 class="font-semibold mt-6 mb-3 text-gray-700 dark:text-gray-200">General UX Suggestions:</h4>
                         <ul id="ux-suggestions-list" class="list-disc pl-6 text-green-700 dark:text-green-300 space-y-2 text-lg">
-                            <!-- Populated by JS -->
+                            <!-- يتم ملؤها بواسطة JS -->
                         </ul>
                         <div id="ai-content-insights-section" class="mt-6 bg-gray-100 dark:bg-gray-700 p-5 rounded-lg shadow-inner hidden">
                             <h5 class="font-bold mb-3 text-gray-800 dark:text-gray-200">AI Content Insights (Originality & Tone): ✨</h5>
@@ -313,7 +313,7 @@
                     </div>
                 </div>
 
-                <!-- Action Buttons -->
+                <!-- أزرار الإجراءات -->
                 <div class="mt-12 flex flex-col sm:flex-row justify-center gap-6">
                     <button id="analyze-another-button"
                             class="px-8 py-4 font-semibold rounded-lg text-lg bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow-md hover:shadow-lg transition-all duration-200">
@@ -324,7 +324,7 @@
         </main>
     </div>
 
-    <!-- Link to main JavaScript file -->
+    <!-- ربط بملف JavaScript الرئيسي -->
     <script src="/js/main.js"></script>
 </body>
 </html>
