@@ -1,4 +1,4 @@
-Flask[async]
+Flask
 Flask-Cors
 requests
 beautifulsoup4
@@ -11,3 +11,5 @@ weasyprint
 gunicorn
 httpx
 html5lib
+certifi # تأكد من وجوده
+pyOpenSSL # أضف هذا السطر
