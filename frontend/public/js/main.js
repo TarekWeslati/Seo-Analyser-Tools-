@@ -3,8 +3,6 @@ const API_BASE_URL = 'https://seo-analyser-tools.onrender.com'; // Replace with 
 // Check if API_BASE_URL is still the placeholder
 if (API_BASE_URL === 'https://seo-analyser-tools.onrender.com') {
     console.warn("API_BASE_URL is still the placeholder. Please update it with your actual Render app URL.");
-    // Optionally, alert the user or show a message on the UI
-    // alert("Warning: API_BASE_URL is not configured. Please update main.js with your Render app URL.");
 }
 
 // Get DOM elements
@@ -25,7 +23,7 @@ const seoOverallScoreDiv = document.getElementById('seo-overall-score');
 const seoOverallProgress = document.getElementById('seo-overall-progress');
 const seoOverallText = document.getElementById('seo-overall-text');
 
-// AI Summary
+// AI Summary Elements
 const aiSummarySection = document.getElementById('ai-summary-section');
 const aiSummaryText = document.getElementById('ai-summary-text');
 
@@ -105,17 +103,16 @@ if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && w
 function showElement(element) {
     if (element) {
         element.classList.remove('hidden');
-        // If the element was hidden by display: none !important, we need to override it
         element.style.display = ''; // Reset display to its default (e.g., block, flex)
+        console.log(`Element shown: ${element.id}`); // Debug log
     }
 }
 
 function hideElement(element) {
     if (element) {
         element.classList.add('hidden');
-        // Re-apply display: none to ensure it's hidden.
-        // We use 'none' here, not 'none !important', so that showElement can override it.
-        element.style.display = 'none'; 
+        element.style.display = 'none'; // Explicitly hide using style
+        console.log(`Element hidden: ${element.id}`); // Debug log
     }
 }
 
@@ -176,7 +173,7 @@ function isValidUrl(string) {
 }
 
 function clearResults() {
-    console.log("Clearing results...");
+    console.log("Clearing results and resetting UI state...");
     hideElement(resultsDashboard);
     hideElement(errorMessage);
     hideElement(loadingSpinner); // Ensure loading spinner is hidden when clearing results
@@ -223,13 +220,15 @@ function clearResults() {
 
 // --- Main Analysis Logic ---
 if (analyzeButton) {
+    console.log("Analyze button element found. Attaching event listener."); // Debug log
     analyzeButton.addEventListener('click', async () => {
-        console.log("Analyze button clicked.");
+        console.log("Analyze button clicked. Starting analysis process."); // Debug log
         const url = websiteUrlInput.value.trim();
         if (!isValidUrl(url)) {
             errorMessage.textContent = "Please enter a valid URL (e.g., https://example.com).";
             showElement(errorMessage);
             hideElement(resultsDashboard);
+            console.log("Invalid URL entered."); // Debug log
             return;
         }
 
@@ -239,7 +238,7 @@ if (analyzeButton) {
         currentAnalysisResults = null; // Clear previous results
 
         try {
-            console.log(`Sending analysis request for URL: ${url}`);
+            console.log(`Sending analysis request to ${API_BASE_URL}/analyze for URL: ${url}`); // Debug log
             const response = await fetch(`${API_BASE_URL}/analyze`, {
                 method: 'POST',
                 headers: {
@@ -250,35 +249,34 @@ if (analyzeButton) {
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.error || 'An error occurred during analysis.');
+                throw new Error(errorData.error || `Server responded with status ${response.status}.`);
             }
 
             const data = await response.json();
-            console.log("Analysis successful, data received:", data);
+            console.log("Analysis successful, data received:", data); // Debug log
             currentAnalysisResults = data; // Store results
             displayResults(url, data);
 
         } catch (error) {
             errorMessage.textContent = `Analysis failed: ${error.message}`;
             showElement(errorMessage);
-            console.error('Analysis error:', error);
+            console.error('Analysis error:', error); // Debug log
         } finally {
             hideElement(loadingSpinner); // Hide loading spinner after analysis (success or failure)
+            console.log("Analysis process finished. Loading spinner hidden."); // Debug log
         }
     });
 } else {
-    console.error("Analyze button not found.");
+    console.error("Analyze button element NOT found. Check index.html ID."); // Critical debug log
 }
 
 
 function displayResults(url, results) {
-    console.log("Displaying results:", results);
+    console.log("Displaying results on dashboard:", results); // Debug log
     if (analyzedUrlSpan) analyzedUrlSpan.textContent = url;
     showElement(resultsDashboard);
 
     // Overall Scores - Using new updateScoreDisplay function
-    // For Domain Authority, we'll use a placeholder score as it's hard to get real DA for free.
-    // Let's map domain age to a score for demonstration.
     let domainAgeScore = 0;
     if (results.domain_authority?.domain_age_years !== 'N/A') {
         const age = parseInt(results.domain_authority.domain_age_years);
@@ -382,6 +380,7 @@ function displayResults(url, results) {
         seoImprovementTipsList.appendChild(li);
     }
 
+    // Display AI SEO Suggestions
     if (results.ai_insights?.seo_improvement_suggestions) {
         showElement(aiSeoSuggestionsSection);
         if (aiSeoSuggestionsText) aiSeoSuggestionsText.textContent = results.ai_insights.seo_improvement_suggestions;
@@ -414,6 +413,7 @@ function displayResults(url, results) {
         });
     }
 
+    // Display AI Content Insights
     if (results.ai_insights?.content_originality_tone) {
         showElement(aiContentInsightsSection);
         if (aiContentInsightsText) aiContentInsightsText.textContent = results.ai_insights.content_originality_tone;
@@ -425,25 +425,27 @@ function displayResults(url, results) {
 
 // --- Action Button Handlers ---
 if (analyzeAnotherButton) {
+    console.log("Analyze Another button element found. Attaching event listener."); // Debug log
     analyzeAnotherButton.addEventListener('click', () => {
-        console.log("Analyze Another button clicked.");
+        console.log("Analyze Another button clicked."); // Debug log
         clearResults();
         window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 } else {
-    console.error("Analyze Another button not found.");
+    console.error("Analyze Another button element NOT found."); // Critical debug log
 }
 
 if (exportPdfButton) {
+    console.log("Export PDF button element found. Attaching event listener."); // Debug log
     exportPdfButton.addEventListener('click', async () => {
-        console.log("Export PDF button clicked.");
+        console.log("Export PDF button clicked."); // Debug log
         if (!currentAnalysisResults) {
             alert("Please analyze a website first to generate a report.");
             return;
         }
 
         try {
-            console.log("Sending PDF generation request...");
+            console.log("Sending PDF generation request..."); // Debug log
             const response = await fetch(`${API_BASE_URL}/generate_report`, {
                 method: 'POST',
                 headers: {
@@ -467,27 +469,28 @@ if (exportPdfButton) {
             a.click();
             a.remove();
             window.URL.revokeObjectURL(url);
-            console.log("PDF generated and downloaded successfully.");
+            console.log("PDF generated and downloaded successfully."); // Debug log
         } catch (error) {
             alert(`Error generating PDF: ${error.message}`);
-            console.error('Error generating PDF:', error);
+            console.error('Error generating PDF:', error); // Debug log
         }
     });
 } else {
-    console.error("Export PDF button not found.");
+    console.error("Export PDF button element NOT found."); // Critical debug log
 }
 
 if (upgradeProButton) {
+    console.log("Upgrade Pro button element found. Attaching event listener."); // Debug log
     upgradeProButton.addEventListener('click', () => {
         alert("Upgrade Pro functionality is not yet implemented.");
-        console.log("Upgrade Pro button clicked.");
+        console.log("Upgrade Pro button clicked."); // Debug log
     });
 } else {
-    console.error("Upgrade Pro button not found.");
+    console.error("Upgrade Pro button element NOT found."); // Critical debug log
 }
 
 // Initial state setup when the script loads
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("DOMContentLoaded event fired. Initializing UI state.");
+    console.log("DOMContentLoaded event fired. Initializing UI state."); // Debug log
     clearResults(); // Ensure all result sections and loading spinner are hidden on load
 });
