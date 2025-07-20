@@ -9,7 +9,7 @@ from services.domain_analysis import get_domain_analysis
 from services.pagespeed_analysis import get_pagespeed_insights
 from services.seo_analysis import perform_seo_analysis
 from services.ux_analysis import perform_ux_analysis
-from services.ai_suggestions import get_ai_suggestions
+from services.ai_suggestions import get_ai_suggestions # New import
 from utils.url_validator import is_valid_url
 from utils.pdf_generator import generate_pdf_report
 
@@ -21,27 +21,31 @@ template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../front
 static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../frontend/public'))
 
 # Initialize Flask app with template and static folders
-# static_url_path='/static' means files in static_folder will be served from /static/
-# For example, frontend/public/js/main.js will be accessible at /static/js/main.js
+# static_url_path='/' means files in static_folder will be served directly from the root
+# For example, frontend/public/js/main.js will be accessible at /js/main.js
 app = Flask(__name__,
             template_folder=template_dir,
             static_folder=static_dir,
-            static_url_path='/static') # Changed to '/static' to explicitly define static file serving
+            static_url_path='/') 
 CORS(app)
 
 # Load API keys from environment variables
 app.config['PAGESPEED_API_KEY'] = os.getenv('PAGESPEED_API_KEY')
-app.config['OPENAI_API_KEY'] = os.getenv('OPENAI_API_KEY')
+# No need to load OPENAI_API_KEY/GEMINI_API_KEY here, it's handled by Canvas runtime for LLM calls
 
 # Route for the homepage, serving index.html directly as a static file
 @app.route('/')
 def index():
-    # Render index.html from the template_folder (which is frontend/)
-    # We need to explicitly specify the path within the template folder
-    return send_from_directory(os.path.join(app.template_folder, 'public'), 'index.html')
+    # Render index.html from the static_folder (which is frontend/public/)
+    return send_from_directory(app.static_folder, 'index.html')
 
-# Removed the /<path:filename> route because static_url_path handles it
-# If you need specific static routes outside of /static, you can add them.
+# Route to serve other static files (CSS, JS, images) from the public folder
+# This route is needed if static_url_path is not set to '/' or if you have
+# files directly under public/ (like main.js, tailwind.css)
+@app.route('/<path:filename>')
+def serve_static(filename):
+    return send_from_directory(app.static_folder, filename)
+
 
 @app.route('/analyze', methods=['POST'])
 async def analyze_website(): # Keep async def
@@ -70,10 +74,17 @@ async def analyze_website(): # Keep async def
         results['page_speed'] = pagespeed_data
         results['seo_quality'] = seo_data
         results['user_experience'] = ux_data
+        
+        # Add a placeholder for extracted text sample for AI analysis
+        # In a real scenario, you would extract a text sample during SEO/UX analysis
+        # For now, we'll use a dummy or simplified version
+        results['extracted_text_sample'] = "This is a sample text extracted from the website for AI analysis. It would typically contain the main content of the page."
+        if results['seo_quality'] and results['seo_quality'].get('elements') and results['seo_quality']['elements'].get('page_text'):
+            results['extracted_text_sample'] = results['seo_quality']['elements']['page_text'][:1000] # Use first 1000 chars of extracted text
 
-        if app.config.get('OPENAI_API_KEY'):
-            ai_data = await loop.run_in_executor(None, get_ai_suggestions, url, results, app.config['OPENAI_API_KEY'])
-            results['ai_insights'] = ai_data
+        # Call AI suggestions service
+        ai_data = await get_ai_suggestions(url, results) # This is now an async call
+        results['ai_insights'] = ai_data
 
         return jsonify(results), 200
 
@@ -101,5 +112,5 @@ def generate_report():
 if __name__ == '__main__':
     # For local development, you can run: python app.py
     # For production on Render, ensure your Procfile uses uvicorn worker:
-    # web: uvicorn wsgi:app --host 0.0.0.0 --port $PORT --workers 1
+    # web: gunicorn backend.app:app --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT
     app.run(debug=True, host='0.0.0.0', port=5000)
