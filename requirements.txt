@@ -10,5 +10,4 @@ openai
 weasyprint
 gunicorn
 httpx
-uvicorn
 html5lib
