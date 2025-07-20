@@ -11,4 +11,4 @@ weasyprint
 gunicorn
 httpx
 uvicorn
-html5lib # أضف هذا السطر
+html5lib
