@@ -1,8 +1,9 @@
 import json
 import httpx
+import os # Import os module
 
-# This function will interact with the Gemini API
-async def get_ai_suggestions(url: str, analysis_results: dict):
+# This function will interact with the Gemini API (now synchronously)
+def get_ai_suggestions(url: str, analysis_results: dict): 
     """
     Generates AI-powered summaries, SEO suggestions, and content insights
     based on the website analysis results using the Gemini API.
@@ -13,8 +14,6 @@ async def get_ai_suggestions(url: str, analysis_results: dict):
         "content_originality_tone": "N/A"
     }
 
-    # Prepare analysis data for the LLM
-    # We'll simplify the results to make the prompt manageable for the LLM
     simplified_results = {
         "url": url,
         "domain_authority": {
@@ -41,15 +40,18 @@ async def get_ai_suggestions(url: str, analysis_results: dict):
             "issues": analysis_results.get('user_experience', {}).get('issues', []),
             "suggestions": analysis_results.get('user_experience', {}).get('suggestions', [])
         },
-        "extracted_text_sample": analysis_results.get('extracted_text_sample', 'No text extracted.') # Assuming this is added to analysis_results
+        "extracted_text_sample": analysis_results.get('extracted_text_sample', 'No text extracted.')
     }
 
-    # Convert simplified_results to a JSON string for the prompt
     results_json_string = json.dumps(simplified_results, indent=2, ensure_ascii=False)
 
     # Gemini API configuration
-    # The API key will be provided by the Canvas environment at runtime
-    api_key = "" 
+    # Read API key from environment variable
+    api_key = os.getenv("GEMINI_API_KEY") # Read from environment variable
+    if not api_key:
+        print("GEMINI_API_KEY environment variable not set. AI suggestions will be N/A.")
+        return ai_insights # Return empty insights if API key is missing
+
     api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
 
     # --- Prompt for Overall Summary ---
@@ -85,39 +87,47 @@ async def get_ai_suggestions(url: str, analysis_results: dict):
     """
     content_ux_payload = {"contents": [{"role": "user", "parts": [{"text": content_ux_prompt}]}]}
 
-    # Make API calls concurrently
-    async with httpx.AsyncClient() as client:
-        try:
-            summary_response = await client.post(api_url, json=summary_payload, timeout=60)
-            summary_response.raise_for_status() # Raise an exception for HTTP errors
-            summary_result = summary_response.json()
-            if summary_result.get('candidates') and summary_result['candidates'][0].get('content') and summary_result['candidates'][0]['content'].get('parts'):
-                ai_insights["summary"] = summary_result['candidates'][0]['content']['parts'][0]['text']
-            else:
-                print(f"Gemini API (summary) returned unexpected structure: {summary_result}")
+    # Make API calls synchronously
+    try:
+        summary_response = httpx.post(api_url, json=summary_payload, timeout=60)
+        summary_response.raise_for_status()
+        summary_result = summary_response.json()
+        if summary_result.get('candidates') and summary_result['candidates'][0].get('content') and summary_result['candidates'][0]['content'].get('parts'):
+            ai_insights["summary"] = summary_result['candidates'][0]['content']['parts'][0]['text']
+        else:
+            print(f"Gemini API (summary) returned unexpected structure: {summary_result}")
 
-            seo_response = await client.post(api_url, json=seo_payload, timeout=60)
-            seo_response.raise_for_status()
-            seo_result = seo_response.json()
-            if seo_result.get('candidates') and seo_result['candidates'][0].get('content') and seo_result['candidates'][0]['content'].get('parts'):
-                ai_insights["seo_improvement_suggestions"] = seo_result['candidates'][0]['content']['parts'][0]['text']
-            else:
-                print(f"Gemini API (SEO) returned unexpected structure: {seo_result}")
+        seo_response = httpx.post(api_url, json=seo_payload, timeout=60)
+        seo_response.raise_for_status()
+        seo_result = seo_response.json()
+        if seo_result.get('candidates') and seo_result['candidates'][0].get('content') and seo_result['candidates'][0]['content'].get('parts'):
+            ai_insights["seo_improvement_suggestions"] = seo_result['candidates'][0]['content']['parts'][0]['text']
+        else:
+            print(f"Gemini API (SEO) returned unexpected structure: {seo_result}")
 
-            content_ux_response = await client.post(api_url, json=content_ux_payload, timeout=60)
-            content_ux_response.raise_for_status()
-            content_ux_result = content_ux_response.json()
-            if content_ux_result.get('candidates') and content_ux_result['candidates'][0].get('content') and content_ux_result['candidates'][0]['content'].get('parts'):
-                ai_insights["content_originality_tone"] = content_ux_result['candidates'][0]['content']['parts'][0]['text']
-            else:
-                print(f"Gemini API (content/UX) returned unexpected structure: {content_ux_result}")
+        content_ux_response = httpx.post(api_url, json=content_ux_payload, timeout=60)
+        content_ux_response.raise_for_status()
+        content_ux_result = content_ux_response.json()
+        if content_ux_result.get('candidates') and content_ux_result['candidates'][0].get('content') and content_ux_result['candidates'][0]['content'].get('parts'):
+            ai_insights["content_originality_tone"] = content_ux_result['candidates'][0]['content']['parts'][0]['text']
+        else:
+            print(f"Gemini API (content/UX) returned unexpected structure: {content_ux_result}")
 
-        except httpx.HTTPStatusError as e:
-            print(f"HTTP error during Gemini API call: {e.response.status_code} - {e.response.text}")
-            # You might want to set a more specific error message in ai_insights
-        except httpx.RequestError as e:
-            print(f"Request error during Gemini API call: {e}")
-        except Exception as e:
-            print(f"An unexpected error occurred during Gemini API call: {e}")
+    except httpx.HTTPStatusError as e:
+        print(f"HTTP error during Gemini API call: {e.response.status_code} - {e.response.text}")
+        # Set N/A for AI insights if there's an API error
+        ai_insights["summary"] = f"Error: {e.response.status_code} - {e.response.text}"
+        ai_insights["seo_improvement_suggestions"] = f"Error: {e.response.status_code} - {e.response.text}"
+        ai_insights["content_originality_tone"] = f"Error: {e.response.status_code} - {e.response.text}"
+    except httpx.RequestError as e:
+        print(f"Request error during Gemini API call: {e}")
+        ai_insights["summary"] = f"Request Error: {e}"
+        ai_insights["seo_improvement_suggestions"] = f"Request Error: {e}"
+        ai_insights["content_originality_tone"] = f"Request Error: {e}"
+    except Exception as e:
+        print(f"An unexpected error occurred during Gemini API call: {e}")
+        ai_insights["summary"] = f"Unexpected Error: {e}"
+        ai_insights["seo_improvement_suggestions"] = f"Unexpected Error: {e}"
+        ai_insights["content_originality_tone"] = f"Unexpected Error: {e}"
 
     return ai_insights
