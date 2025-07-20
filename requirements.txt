@@ -9,7 +9,5 @@ google-api-python-client
 openai
 weasyprint
 gunicorn
-# Add httpx if your service functions are also async
-httpx 
-# Add uvicorn to ensure an async-compatible worker for Gunicorn
+httpx
 uvicorn
