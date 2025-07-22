@@ -1,78 +1,95 @@
 import requests
+import os
 
 def get_pagespeed_insights(url, api_key):
-    api_url = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed"
+    pagespeed_results = {
+        "scores": {
+            "Performance Score": "N/A",
+            "Accessibility Score": "N/A",
+            "Best Practices Score": "N/A",
+            "SEO Score": "N/A"
+        },
+        "core_web_vitals": {
+            "Largest Contentful Paint (LCP)": "N/A",
+            "Cumulative Layout Shift (CLS)": "N/A",
+            "First Input Delay (FID)": "N/A"
+        },
+        "issues": [],
+        "pagespeed_report_link": f"https://developers.google.com/speed/pagespeed/insights/?url={url}"
+    }
+
+    if not api_key:
+        print("PAGESPEED_API_KEY environment variable not set. PageSpeed Insights will be N/A.")
+        return pagespeed_results
+
+    pagespeed_url = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed"
     params = {
         'url': url,
         'key': api_key,
-        'strategy': 'desktop', # Can also run for 'mobile'
-        'category': ['PERFORMANCE', 'ACCESSIBILITY', 'BEST_PRACTICES', 'SEO'] # Get all categories
+        'strategy': 'desktop', # يمكن تغييرها إلى 'mobile' أو تركها ديناميكية
+        'category': ['PERFORMANCE', 'ACCESSIBILITY', 'BEST_PRACTICES', 'SEO']
     }
-    
+
     try:
-        response = requests.get(api_url, params=params)
-        response.raise_for_status() # Raise an exception for HTTP errors
+        # زيادة المهلة لطلب HTTPX لـ PageSpeed API
+        response = requests.get(pagespeed_url, params=params, timeout=120) # زيادة المهلة إلى 120 ثانية
+        response.raise_for_status() # رفع استثناء لأخطاء HTTP (4xx أو 5xx)
         data = response.json()
 
-        # Extract Core Web Vitals (LCP, FID, CLS) - often from metrics
-        # Note: FID is a lab data metric, not always available directly as CWV from PageSpeed API v5.
-        # It's more of a field data metric. We'll focus on lab metrics here.
-        lighthouse_result = data.get('lighthouseResult', {})
-        audits = lighthouse_result.get('audits', {})
+        lighthouse = data.get('lighthouseResult', {})
+        audits = lighthouse.get('audits', {})
+        categories = lighthouse.get('categories', {})
 
-        metrics = {
-            "First Contentful Paint": audits.get('first-contentful-paint', {}).get('displayValue'),
-            "Largest Contentful Paint": audits.get('largest-contentful-paint', {}).get('displayValue'),
-            "Cumulative Layout Shift": audits.get('cumulative-layout-shift', {}).get('displayValue'),
-            "Total Blocking Time": audits.get('total-blocking-time', {}).get('displayValue'), # Proxy for FID impact
-            "Speed Index": audits.get('speed-index', {}).get('displayValue'),
-        }
+        # تحديث النقاط
+        for category in params['category']:
+            score_key = f"{category.replace('_', ' ').title()} Score"
+            score = categories.get(category, {}).get('score')
+            if score is not None:
+                pagespeed_results['scores'][score_key] = int(score * 100)
 
-        # Identify issues
-        performance_issues = []
-        for audit_id, audit_data in audits.items():
-            if audit_data.get('score') is not None and audit_data['score'] < 0.9: # Below 90% score
-                if 'details' in audit_data and 'items' in audit_data['details']:
-                    # Look for specific types of issues
-                    if audit_id in ['large-payloads', 'unnecessary-javascript', 'unnecessary-css', 'uses-optimized-images']:
-                        performance_issues.append({
-                            "title": audit_data.get('title'),
-                            "description": audit_data.get('description'),
-                            "score": audit_data.get('score')
-                        })
-                    elif audit_id == 'server-response-time':
-                        performance_issues.append({
-                            "title": "Server Response Time",
-                            "description": "Ensure your server response time is fast.",
-                            "score": audit_data.get('score')
-                        })
-                    elif audit_id == 'uses-optimized-images' and audit_data.get('details', {}).get('items'):
-                        heavy_images = [item.get('url') for item in audit_data['details']['items'] if item.get('totalBytes') > 100 * 1024] # Example: >100KB
-                        if heavy_images:
-                            performance_issues.append({
-                                "title": "Heavy Images Detected",
-                                "images": heavy_images,
-                                "description": "Optimize these images for faster loading."
-                            })
+        # Core Web Vitals
+        metrics = lighthouse.get('audits', {}).get('metrics', {}).get('details', {}).get('items', [])
+        for metric in metrics:
+            if metric.get('id') == 'largest-contentful-paint':
+                pagespeed_results['core_web_vitals']['Largest Contentful Paint (LCP)'] = metric.get('displayValue', 'N/A')
+            elif metric.get('id') == 'cumulative-layout-shift':
+                pagespeed_results['core_web_vitals']['Cumulative Layout Shift (CLS)'] = metric.get('displayValue', 'N/A')
+            elif metric.get('id') == 'first-input-delay':
+                pagespeed_results['core_web_vitals']['First Input Delay (FID)'] = metric.get('displayValue', 'N/A')
 
-        # Overall scores
-        scores = {
-            "Performance Score": lighthouse_result.get('categories', {}).get('performance', {}).get('score') * 100,
-            "Accessibility Score": lighthouse_result.get('categories', {}).get('accessibility', {}).get('score') * 100,
-            "Best Practices Score": lighthouse_result.get('categories', {}).get('best-practices', {}).get('score') * 100,
-            "SEO Score": lighthouse_result.get('categories', {}).get('seo', {}).get('score') * 100,
-        }
+        # Performance Issues (مثال: استخدام 'diagnostics' أو 'details' من التدقيقات)
+        # هذا الجزء قد يحتاج لتعديل بناءً على بنية استجابة PageSpeed الفعلية
+        # للحصول على قائمة بالمشاكل، عادة ما ننظر إلى التدقيقات التي لديها 'score' أقل من 1
+        # ونستخرج منها معلومات ذات صلة.
+        pagespeed_results['issues'] = []
+        for audit_key, audit_value in audits.items():
+            if audit_value.get('score') is not None and audit_value.get('score') < 1:
+                # محاولة استخراج عنوان المشكلة أو وصفها
+                title = audit_value.get('title')
+                description = audit_value.get('description')
+                if title and "Learn more" in title: # إزالة "Learn more"
+                    title = title.split("Learn more")[0].strip()
+                
+                if title and title not in pagespeed_results['issues']: # تجنب التكرار
+                    pagespeed_results['issues'].append(title)
+                elif description and description not in pagespeed_results['issues']:
+                    pagespeed_results['issues'].append(description)
+        
+        # إذا لم يتم العثور على مشاكل محددة
+        if not pagespeed_results['issues']:
+            pagespeed_results['issues'].append("No critical performance issues detected by PageSpeed Insights.")
 
-        return {
-            "metrics": metrics,
-            "scores": scores,
-            "issues": performance_issues,
-            "full_report_link": f"https://developers.google.com/speed/pagespeed/insights/?url={url}"
-        }
+        return pagespeed_results
 
     except requests.exceptions.RequestException as e:
         print(f"Error fetching PageSpeed Insights: {e}")
-        return {"error": f"Could not fetch PageSpeed Insights: {e}"}
-    except Exception as e:
-        print(f"An unexpected error occurred in PageSpeed analysis: {e}")
-        return {"error": f"An unexpected error occurred: {e}"}
+        # إذا كان الخطأ 429، نطبع رسالة خاصة
+        if isinstance(e, requests.exceptions.HTTPError) and e.response.status_code == 429:
+            print("PageSpeed Insights API quota exceeded. Please wait or check your Google Cloud Console.")
+            pagespeed_results['issues'].append("PageSpeed Insights API quota exceeded. Scores and issues are N/A.")
+        else:
+            pagespeed_results['issues'].append(f"Failed to fetch PageSpeed Insights: {e}. Scores and issues are N/A.")
+        
+        # نرجع النتائج مع القيم الافتراضية "N/A"
+        return pagespeed_results
+
