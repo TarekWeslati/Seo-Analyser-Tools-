@@ -1,7 +1,7 @@
 import os
 from flask import Flask, request, jsonify, send_file, send_from_directory
 from flask_cors import CORS
-
+import json # تأكد من استيراد json
 # Import services
 from services.domain_analysis import get_domain_analysis
 from services.pagespeed_analysis import get_pagespeed_insights
@@ -11,8 +11,10 @@ from services.ai_suggestions import get_ai_suggestions
 from utils.url_validator import is_valid_url
 from utils.pdf_generator import generate_pdf_report
 
-template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../frontend'))
-static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../frontend/public'))
+# تحديد المسارات الصحيحة للملفات الثابتة والقوالب
+# تأكد أن هذه المسارات صحيحة بالنسبة لهيكل مشروعك
+template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../frontend/public')) # مجلد القوالب هو public داخل frontend
+static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../frontend/public')) # مجلد الملفات الثابتة هو public داخل frontend
 
 app = Flask(__name__,
             template_folder=template_dir,
@@ -21,27 +23,33 @@ app = Flask(__name__,
 CORS(app)
 
 app.config['PAGESPEED_API_KEY'] = os.getenv('PAGESPEED_API_KEY')
-
-@app.route('/')
-def index():
-    return send_from_directory(app.static_folder, 'index.html')
-
-@app.route('/<path:filename>')
-def serve_static(filename):
-    return send_from_directory(app.static_folder, filename)
+# لا تحتاج لتعيين GEMINI_API_KEY هنا، لأنه يتم قراءته مباشرة في ai_suggestions.py
 
 # متغير عالمي مؤقت لتخزين آخر نتائج التحليل
 # هذا ليس الحل الأمثل لتطبيق متعدد المستخدمين، لكنه سيعمل للغرض الحالي
-# في بيئة إنتاجية حقيقية، ستحتاج إلى حل إدارة حالة أكثر قوة (مثل قاعدة بيانات)
 last_analysis_results = {} 
+
+# المسار الجذر لخدمة ملفات الواجهة الأمامية
+@app.route('/')
+def index():
+    # تأكد من أن index.html موجود في مجلد static_folder
+    return send_from_directory(app.static_folder, 'index.html')
+
+# مسار لخدمة الملفات الثابتة الأخرى (مثل CSS و JS)
+# هذا المسار سيتعامل مع أي طلب لا يطابق المسار الجذر
+@app.route('/<path:filename>')
+def serve_static(filename):
+    # تأكد من أن الملفات موجودة في مجلد static_folder
+    return send_from_directory(app.static_folder, filename)
 
 @app.route('/analyze', methods=['POST'])
 def analyze_website(): 
-    global last_analysis_results # الإعلان عن استخدام المتغير العالمي
+    global last_analysis_results 
     data = request.get_json()
     url = data.get('url')
 
     if not url or not is_valid_url(url):
+        # تأكد من أن الاستجابة هي JSON حتى لو كان هناك خطأ في الإدخال
         return jsonify({"error": "Invalid URL provided."}), 400
 
     results = {}
@@ -56,9 +64,10 @@ def analyze_website():
         results['seo_quality'] = seo_data
         results['user_experience'] = ux_data
         
-        results['extracted_text_sample'] = "This is a sample text extracted from the website for AI analysis. It would typically contain the main content of the page."
+        # التأكد من أن extracted_text_sample دائماً موجود
+        results['extracted_text_sample'] = "No text extracted for AI analysis."
         if results['seo_quality'] and results['seo_quality'].get('elements') and results['seo_quality']['elements'].get('page_text'):
-            results['extracted_text_sample'] = results['seo_quality']['elements']['page_text'][:1000]
+            results['extracted_text_sample'] = results['seo_quality']['elements']['page_text'][:1000] # اقتطاع النص لتجنب الأحمال الكبيرة
 
         ai_data = get_ai_suggestions(url, results)
         results['ai_insights'] = ai_data
@@ -68,15 +77,14 @@ def analyze_website():
 
     except Exception as e:
         print(f"Error during analysis: {e}")
+        # تأكد من أن الاستجابة هي JSON حتى لو كان هناك خطأ في المعالجة
         return jsonify({"error": "An unexpected error occurred during analysis.", "details": str(e)}), 500
 
 @app.route('/generate_report', methods=['POST'])
 def generate_report():
-    global last_analysis_results # الإعلان عن استخدام المتغير العالمي
-    url = request.get_json().get('url') # احصل على URL من طلب الواجهة الأمامية
+    global last_analysis_results 
+    url = request.get_json().get('url') 
 
-    # استخدم النتائج المحفوظة بدلاً من تلك التي يتم إرسالها من الواجهة الأمامية
-    # هذا يضمن أن البيانات كاملة وموثوقة
     analysis_results = last_analysis_results 
 
     if not analysis_results or not url:
@@ -91,4 +99,6 @@ def generate_report():
 
 
 if __name__ == '__main__':
+    # عند التشغيل محلياً، تأكد من استخدام نفس المنفذ الذي تتوقعه Render (عادة 10000 في الإنتاج)
+    # لكن 5000 جيد للتطوير المحلي
     app.run(debug=True, host='0.0.0.0', port=5000)
