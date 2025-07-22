@@ -1,16 +1,13 @@
 import os
 from flask import Flask, request, jsonify, send_file, send_from_directory
 from flask_cors import CORS
-# No need for asyncio or httpx directly in app.py if all calls are synchronous
-# import asyncio
-# import httpx 
 
 # Import services
 from services.domain_analysis import get_domain_analysis
 from services.pagespeed_analysis import get_pagespeed_insights
 from services.seo_analysis import perform_seo_analysis
 from services.ux_analysis import perform_ux_analysis
-from services.ai_suggestions import get_ai_suggestions # This will also be synchronous
+from services.ai_suggestions import get_ai_suggestions
 from utils.url_validator import is_valid_url
 from utils.pdf_generator import generate_pdf_report
 
@@ -33,9 +30,14 @@ def index():
 def serve_static(filename):
     return send_from_directory(app.static_folder, filename)
 
+# متغير عالمي مؤقت لتخزين آخر نتائج التحليل
+# هذا ليس الحل الأمثل لتطبيق متعدد المستخدمين، لكنه سيعمل للغرض الحالي
+# في بيئة إنتاجية حقيقية، ستحتاج إلى حل إدارة حالة أكثر قوة (مثل قاعدة بيانات)
+last_analysis_results = {} 
 
 @app.route('/analyze', methods=['POST'])
-def analyze_website(): # Changed from async def to def
+def analyze_website(): 
+    global last_analysis_results # الإعلان عن استخدام المتغير العالمي
     data = request.get_json()
     url = data.get('url')
 
@@ -44,7 +46,6 @@ def analyze_website(): # Changed from async def to def
 
     results = {}
     try:
-        # Call synchronous analysis functions directly
         domain_data = get_domain_analysis(url)
         pagespeed_data = get_pagespeed_insights(url, app.config['PAGESPEED_API_KEY'])
         seo_data = perform_seo_analysis(url)
@@ -59,10 +60,10 @@ def analyze_website(): # Changed from async def to def
         if results['seo_quality'] and results['seo_quality'].get('elements') and results['seo_quality']['elements'].get('page_text'):
             results['extracted_text_sample'] = results['seo_quality']['elements']['page_text'][:1000]
 
-        # Call AI suggestions service (now synchronous)
-        ai_data = get_ai_suggestions(url, results) # No await needed
+        ai_data = get_ai_suggestions(url, results)
         results['ai_insights'] = ai_data
 
+        last_analysis_results = results # حفظ النتائج في المتغير العالمي
         return jsonify(results), 200
 
     except Exception as e:
@@ -71,9 +72,12 @@ def analyze_website(): # Changed from async def to def
 
 @app.route('/generate_report', methods=['POST'])
 def generate_report():
-    data = request.get_json()
-    analysis_results = data.get('results')
-    url = data.get('url')
+    global last_analysis_results # الإعلان عن استخدام المتغير العالمي
+    url = request.get_json().get('url') # احصل على URL من طلب الواجهة الأمامية
+
+    # استخدم النتائج المحفوظة بدلاً من تلك التي يتم إرسالها من الواجهة الأمامية
+    # هذا يضمن أن البيانات كاملة وموثوقة
+    analysis_results = last_analysis_results 
 
     if not analysis_results or not url:
         return jsonify({"error": "Missing analysis results or URL for report generation."}), 400
