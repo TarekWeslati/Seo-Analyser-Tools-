@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, jsonify, send_file, send_from_directory
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import json 
 
@@ -12,44 +12,31 @@ from services.ai_suggestions import get_ai_suggestions
 from utils.url_validator import is_valid_url
 from utils.pdf_generator import generate_pdf_report
 
-# تحديد المسارات الصحيحة للملفات الثابتة والقوالب
-template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../frontend/public'))
-static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../frontend/public'))
-
-app = Flask(__name__,
-            template_folder=template_dir,
-            static_folder=static_dir,
-            static_url_path='/') 
-CORS(app)
+# لا نحتاج لـ template_folder أو static_folder بعد الآن
+app = Flask(__name__)
+CORS(app) # تمكين CORS لجميع المسارات بشكل افتراضي
 
 app.config['PAGESPEED_API_KEY'] = os.getenv('PAGESPEED_API_KEY')
 
 last_analysis_results = {} 
 
-@app.route('/')
-def index():
-    print("Serving index.html") # تسجيل: عند طلب الصفحة الرئيسية
-    return send_from_directory(app.static_folder, 'index.html')
-
-@app.route('/<path:filename>')
-def serve_static(filename):
-    print(f"Serving static file: {filename}") # تسجيل: عند طلب ملف ثابت
-    return send_from_directory(app.static_folder, filename)
+# إزالة مسارات خدمة الملفات الثابتة (/, /<path:filename>)
+# لأن هذه الخدمة ستكون مخصصة للـ API فقط
 
 @app.route('/analyze', methods=['POST'])
 def analyze_website(): 
     global last_analysis_results 
-    print("Received /analyze POST request.") # تسجيل: عند استلام طلب التحليل
+    print("Received /analyze POST request.") 
     data = request.get_json()
     url = data.get('url')
 
     if not url or not is_valid_url(url):
-        print(f"Invalid URL provided: {url}") # تسجيل: إذا كان URL غير صالح
+        print(f"Invalid URL provided: {url}") 
         return jsonify({"error": "Invalid URL provided."}), 400
 
     results = {}
     try:
-        print(f"Starting analysis for URL: {url}") # تسجيل: بدء التحليل
+        print(f"Starting analysis for URL: {url}") 
         
         print("Getting domain analysis...")
         domain_data = get_domain_analysis(url)
@@ -82,32 +69,32 @@ def analyze_website():
         print("AI suggestions complete.")
 
         last_analysis_results = results 
-        print("Analysis complete. Returning results.") # تسجيل: انتهاء التحليل بنجاح
+        print("Analysis complete. Returning results.") 
         return jsonify(results), 200
 
     except Exception as e:
-        print(f"Critical Error during analysis: {e}", exc_info=True) # تسجيل: خطأ حرج مع تتبع المكدس
+        print(f"Critical Error during analysis: {e}", exc_info=True) 
         return jsonify({"error": "An unexpected error occurred during analysis.", "details": str(e)}), 500
 
 @app.route('/generate_report', methods=['POST'])
 def generate_report():
     global last_analysis_results 
-    print("Received /generate_report POST request.") # تسجيل: عند استلام طلب تقرير PDF
+    print("Received /generate_report POST request.") 
     url = request.get_json().get('url') 
 
     analysis_results = last_analysis_results 
 
     if not analysis_results or not url:
-        print("Missing analysis results or URL for report generation.") # تسجيل: خطأ في بيانات التقرير
+        print("Missing analysis results or URL for report generation.") 
         return jsonify({"error": "Missing analysis results or URL for report generation."}), 400
 
     try:
-        print(f"Generating PDF report for URL: {url}") # تسجيل: بدء توليد PDF
+        print(f"Generating PDF report for URL: {url}") 
         pdf_path = generate_pdf_report(url, analysis_results)
-        print("PDF report generated. Sending file.") # تسجيل: انتهاء توليد PDF
+        print("PDF report generated. Sending file.") 
         return send_file(pdf_path, as_attachment=True, download_name=f"{url.replace('https://', '').replace('http://', '')}_analysis_report.pdf", mimetype='application/pdf')
     except Exception as e:
-        print(f"Error generating PDF report: {e}", exc_info=True) # تسجيل: خطأ في توليد PDF
+        print(f"Error generating PDF report: {e}", exc_info=True) 
         return jsonify({"error": "Failed to generate PDF report.", "details": str(e)}), 500
 
 
