@@ -3,9 +3,16 @@ from flask import Flask, request, jsonify, send_file, send_from_directory
 from flask_cors import CORS
 import json 
 
+# Import services
+from backend.services.domain_analysis import get_domain_analysis # تأكد من المسار الكامل
+from backend.services.pagespeed_analysis import get_pagespeed_insights # تأكد من المسار الكامل
+from backend.services.seo_analysis import perform_seo_analysis # تأكد من المسار الكامل
+from backend.services.ux_analysis import perform_ux_analysis # تأكد من المسار الكامل
+from backend.services.ai_suggestions import get_ai_suggestions # تأكد من المسار الكامل
+from backend.utils.url_validator import is_valid_url # **هذا هو التغيير الرئيسي**
+from backend.utils.pdf_generator import generate_pdf_report # تأكد من المسار الكامل
+
 # تحديد المسارات الصحيحة للملفات الثابتة والقوالب
-# بما أن backend/app.py هو في مجلد backend، والـ frontend في مجلد frontend
-# نحتاج للعودة خطوة للخلف ثم الدخول إلى مجلد frontend
 template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../frontend/public'))
 static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../frontend/public'))
 
@@ -38,7 +45,7 @@ def analyze_website():
     data = request.get_json()
     url = data.get('url')
 
-    if not url or not is_valid_url(url):
+    if not url or not is_valid_url(url): # هنا يتم استخدام is_valid_url
         print(f"Invalid URL provided: {url}") 
         return jsonify({"error": "Invalid URL provided."}), 400
 
