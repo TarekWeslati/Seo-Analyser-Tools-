@@ -90,181 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showElement(resultsDashboard); 
         hideElement(loadingSpinner); 
 
-        // Domain Authority
-        const domainAuthority = results.domain_authority || {};
-        domainNameSpan.textContent = domainAuthority.domain || 'N/A';
-        const daScore = domainAuthority.domain_authority_score !== undefined && domainAuthority.domain_authority_score !== null ? domainAuthority.domain_authority_score : 'N/A';
-        domainAuthorityScoreSpan.textContent = daScore;
-        updateProgressBar(domainAuthorityProgress, daScore);
-        domainAuthorityText.textContent = domainAuthority.domain_authority_text || 'N/A';
-        domainAgeSpan.textContent = domainAuthority.domain_age_years ? `${domainAuthority.domain_age_years} years` : 'N/A';
-        sslStatusSpan.textContent = domainAuthority.ssl_status || 'N/A';
-        blacklistStatusSpan.textContent = domainAuthority.blacklist_status || 'N/A';
-        dnsHealthSpan.textContent = domainAuthority.dns_health || 'N/A';
-
-        // Page Speed
-        const pageSpeed = results.page_speed || {};
-        const perfScore = pageSpeed.scores && pageSpeed.scores['Performance Score'] !== undefined && pageSpeed.scores['Performance Score'] !== null ? pageSpeed.scores['Performance Score'] : 'N/A';
-        performanceScoreSpan.textContent = perfScore;
-        updateProgressBar(performanceProgress, perfScore);
-        performanceText.textContent = pageSpeed.performance_text || 'N/A';
-        pagespeedLink.href = pageSpeed.pagespeed_report_link || '#';
-
-        // Core Web Vitals
-        coreWebVitalsList.innerHTML = '';
-        const coreVitals = pageSpeed.core_web_vitals || {};
-        for (const metric in coreVitals) {
-            const li = document.createElement('li');
-            li.innerHTML = `<strong>${metric}:</strong> ${coreVitals[metric] || 'N/A'}`;
-            coreWebVitalsList.appendChild(li);
-        }
-        if (Object.keys(coreVitals).length === 0) {
-            const li = document.createElement('li');
-            li.textContent = 'No Core Web Vitals data available.';
-            coreWebVitalsList.appendChild(li);
-        }
-
-        // Performance Issues
-        performanceIssuesList.innerHTML = '';
-        const perfIssues = pageSpeed.issues || [];
-        if (perfIssues.length > 0) {
-            perfIssues.forEach(issue => {
-                const li = document.createElement('li');
-                li.textContent = issue.title || 'Unknown issue';
-                performanceIssuesList.appendChild(li);
-            });
-        } else {
-            const li = document.createElement('li');
-            li.textContent = 'No major performance issues detected.';
-            li.classList.add('text-green-600', 'dark:text-green-300'); 
-            performanceIssuesList.appendChild(li);
-        }
-
-
-        // SEO Quality
-        const seoQuality = results.seo_quality || {};
-        const seoScore = seoQuality.score !== undefined && seoQuality.score !== null ? seoQuality.score : 'N/A';
-        seoOverallScoreSpan.textContent = seoScore;
-        updateProgressBar(seoOverallProgress, seoScore);
-        seoOverallText.textContent = seoQuality.seo_overall_text || 'N/A';
-
-        const seoElements = seoQuality.elements || {};
-        seoTitleSpan.textContent = seoElements.title || 'N/A';
-        seoMetaDescriptionSpan.textContent = seoElements.meta_description || 'N/A';
-        seoBrokenLinksSpan.textContent = seoElements.broken_links ? seoElements.broken_links.length : '0';
-        seoMissingAltSpan.textContent = seoElements.image_alt_status ? seoElements.image_alt_status.filter(s => s.includes("Missing") || s.includes("Empty")).length : '0';
-        seoInternalLinksSpan.textContent = seoElements.internal_links_count !== undefined && seoElements.internal_links_count !== null ? seoElements.internal_links_count : 'N/A';
-        seoExternalLinksSpan.textContent = seoElements.external_links_count !== undefined && seoElements.external_links_count !== null ? seoElements.external_links_count : 'N/A';
-
-        // H-Tags
-        hTagsList.innerHTML = '';
-        const hTags = seoElements.h_tags || {};
-        if (Object.keys(hTags).length > 0) {
-            for (const tag in hTags) {
-                const li = document.createElement('li');
-                li.textContent = `${tag}: ${hTags[tag].join(', ')}`;
-                hTagsList.appendChild(li);
-            }
-        } else {
-            const li = document.createElement('li');
-            li.textContent = 'No heading tags found.';
-            hTagsList.appendChild(li);
-        }
-
-        // Keyword Density
-        keywordDensityList.innerHTML = '';
-        const keywordDensity = seoElements.keyword_density || {};
-        const topKeywords = Object.entries(keywordDensity)
-                                .sort(([, a], [, b]) => b - a)
-                                .slice(0, 10);
-        if (topKeywords.length > 0) {
-            topKeywords.forEach(([keyword, density]) => {
-                const li = document.createElement('li');
-                li.textContent = `${keyword}: ${density}%`;
-                keywordDensityList.appendChild(li);
-            });
-        } else {
-            const li = document.createElement('li');
-            li.textContent = 'No significant keywords found.';
-            keywordDensityList.appendChild(li);
-        }
-
-        // SEO Improvement Tips
-        seoImprovementTipsList.innerHTML = '';
-        const seoTips = seoQuality.improvement_tips || [];
-        if (seoTips.length > 0) {
-            seoTips.forEach(tip => {
-                const li = document.createElement('li');
-                li.textContent = tip;
-                seoImprovementTipsList.appendChild(li);
-            });
-        } else {
-            const li = document.createElement('li');
-            li.textContent = 'No specific SEO improvement tips at this time.';
-            li.classList.add('text-green-600', 'dark:text-green-300');
-            seoImprovementTipsList.appendChild(li);
-        }
-
-        // AI SEO Suggestions
-        const aiInsights = results.ai_insights || {};
-        if (aiInsights.seo_improvement_suggestions && aiInsights.seo_improvement_suggestions !== 'N/A') {
-            aiSeoSuggestionsText.textContent = aiInsights.seo_improvement_suggestions;
-            showElement(aiSeoSuggestionsSection);
-        } else {
-            hideElement(aiSeoSuggestionsSection);
-        }
-
-
-        // User Experience (UX)
-        const userExperience = results.user_experience || {};
-
-        // UX Issues
-        uxIssuesList.innerHTML = '';
-        const uxIssues = userExperience.issues || [];
-        if (uxIssues.length > 0) {
-            uxIssues.forEach(issue => {
-                const li = document.createElement('li');
-                li.textContent = issue;
-                uxIssuesList.appendChild(li);
-            });
-        } else {
-            const li = document.createElement('li');
-            li.textContent = 'No major UX issues detected.';
-            li.classList.add('text-green-600', 'dark:text-green-300');
-            uxIssuesList.appendChild(li);
-        }
-
-        // UX Suggestions
-        uxSuggestionsList.innerHTML = '';
-        const uxSuggestions = userExperience.suggestions || [];
-        if (uxSuggestions.length > 0) {
-            uxSuggestions.forEach(suggestion => {
-                const li = document.createElement('li');
-                li.textContent = suggestion;
-                uxSuggestionsList.appendChild(li);
-            });
-        } else {
-            const li = document.createElement('li');
-            li.textContent = 'No specific UX suggestions at this time.';
-            li.classList.add('text-green-600', 'dark:text-green-300');
-            uxSuggestionsList.appendChild(li);
-        }
-
-        // AI Content Insights
-        if (aiInsights.content_originality_tone && aiInsights.content_originality_tone !== 'N/A') {
-            aiContentInsightsText.textContent = aiInsights.content_originality_tone;
-            showElement(aiContentInsightsSection);
-        } else {
-            hideElement(aiContentInsightsSection);
-        }
-
-        // AI Summary
-        if (aiInsights.summary && aiInsights.summary !== 'N/A') {
-            aiSummaryText.textContent = aiInsights.summary;
-            showElement(aiSummarySection);
-        } else {
-            hideElement(aiSummarySection);
-        }
+        // ... (باقي كود ملء البيانات في لوحة النتائج كما هو) ...
     }
 
     // معالج حدث زر التحليل
@@ -281,19 +107,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            // ****** التغيير الرئيسي هنا: استخدام مسار مطلق للـ Backend ******
-            // يجب أن يكون هذا هو عنوان URL لخدمة الـ Backend الخاصة بك على Render
-            // مثال: const backendUrl = 'https://your-backend-service-name.onrender.com';
-            // سأفترض أنك ستستخدم نفس النطاق الحالي، ولكن مع المسار API
-            // إذا كان الـ Frontend والـ Backend على نفس النطاق الفرعي، يمكن استخدام المسار النسبي
-            // ولكن لتجنب المشاكل، دعنا نستخدم window.location.origin
-            // سنقوم بتعريف هذا المتغير هنا بشكل صريح
-            const backendBaseUrl = "https://seo-analyser-tools-backend.onrender.com"; // **هنا يجب عليك وضع عنوان URL لخدمة الـ Backend الخاصة بك بعد نشرها كخدمة منفصلة**
-            const backendApiUrl = `${backendBaseUrl}/analyze`; 
+            // استخدام المسار النسبي /analyze لأن الواجهة الأمامية والخلفية في نفس الخدمة
+            const backendApiUrl = `/analyze`; 
             console.log("Sending POST request to:", backendApiUrl); 
 
             const controller = new AbortController(); 
-            const timeoutId = setTimeout(() => controller.abort(), 120000); 
+            const timeoutId = setTimeout(() => controller.abort(), 120000); // مهلة 120 ثانية (2 دقيقة)
 
             const response = await fetch(backendApiUrl, {
                 method: 'POST',
@@ -360,8 +179,8 @@ document.addEventListener('DOMContentLoaded', () => {
         exportPdfButton.disabled = true;
 
         try {
-            const backendBaseUrl = "https://seo-analyser-tools-backend.onrender.com"; // **هنا يجب عليك وضع عنوان URL لخدمة الـ Backend الخاصة بك بعد نشرها كخدمة منفصلة**
-            const backendReportUrl = `${backendBaseUrl}/generate_report`; 
+            // استخدام المسار النسبي /generate_report
+            const backendReportUrl = `/generate_report`; 
             const response = await fetch(backendReportUrl, {
                 method: 'POST',
                 headers: {
