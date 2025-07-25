@@ -1,1 +1,15 @@
-
+Flask
+Flask-Cors
+requests
+beautifulsoup4
+lxml
+python-whois
+dnspython
+google-api-python-client
+openai
+weasyprint
+gunicorn
+httpx
+html5lib
+certifi # تأكد من وجوده
+pyOpenSSL # أضف هذا السطر
