@@ -1,27 +1,35 @@
 import os
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, send_from_directory
 from flask_cors import CORS
 import json 
 
-# Import services
-from services.domain_analysis import get_domain_analysis
-from services.pagespeed_analysis import get_pagespeed_insights
-from services.seo_analysis import perform_seo_analysis
-from services.ux_analysis import perform_ux_analysis
-from services.ai_suggestions import get_ai_suggestions
-from utils.url_validator import is_valid_url
-from utils.pdf_generator import generate_pdf_report
+# تحديد المسارات الصحيحة للملفات الثابتة والقوالب
+# بما أن backend/app.py هو في مجلد backend، والـ frontend في مجلد frontend
+# نحتاج للعودة خطوة للخلف ثم الدخول إلى مجلد frontend
+template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../frontend/public'))
+static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../frontend/public'))
 
-# لا نحتاج لـ template_folder أو static_folder بعد الآن
-app = Flask(__name__)
-CORS(app) # تمكين CORS لجميع المسارات بشكل افتراضي
+app = Flask(__name__,
+            template_folder=template_dir,
+            static_folder=static_dir,
+            static_url_path='/') 
+CORS(app)
 
 app.config['PAGESPEED_API_KEY'] = os.getenv('PAGESPEED_API_KEY')
 
 last_analysis_results = {} 
 
-# إزالة مسارات خدمة الملفات الثابتة (/, /<path:filename>)
-# لأن هذه الخدمة ستكون مخصصة للـ API فقط
+# المسار الجذر لخدمة ملفات الواجهة الأمامية
+@app.route('/')
+def index():
+    print("Serving index.html") 
+    return send_from_directory(app.static_folder, 'index.html')
+
+# مسار لخدمة الملفات الثابتة الأخرى (مثل CSS و JS)
+@app.route('/<path:filename>')
+def serve_static(filename):
+    print(f"Serving static file: {filename}") 
+    return send_from_directory(app.static_folder, filename)
 
 @app.route('/analyze', methods=['POST'])
 def analyze_website(): 
