@@ -11,5 +11,5 @@ weasyprint
 gunicorn
 httpx
 html5lib
-certifi # تأكد من وجوده
-pyOpenSSL # أضف هذا السطر
+certifi
+pyOpenSSL
