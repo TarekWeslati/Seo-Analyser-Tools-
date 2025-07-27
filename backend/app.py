@@ -3,36 +3,40 @@ from flask import Flask, request, jsonify, send_file, send_from_directory
 from flask_cors import CORS
 import json 
 
-# Import services
-from backend.services.domain_analysis import get_domain_analysis # تأكد من المسار الكامل
-from backend.services.pagespeed_analysis import get_pagespeed_insights # تأكد من المسار الكامل
-from backend.services.seo_analysis import perform_seo_analysis # تأكد من المسار الكامل
-from backend.services.ux_analysis import perform_ux_analysis # تأكد من المسار الكامل
-from backend.services.ai_suggestions import get_ai_suggestions # تأكد من المسار الكامل
-from backend.utils.url_validator import is_valid_url # **هذا هو التغيير الرئيسي**
-from backend.utils.pdf_generator import generate_pdf_report # تأكد من المسار الكامل
+# Import services and utilities with full relative paths from the project root.
+# Gunicorn runs from the project root, so imports need to be relative to that.
+# Since app.py is inside the 'backend' folder, we need to prefix imports with 'backend.'
+from backend.services.domain_analysis import get_domain_analysis
+from backend.services.pagespeed_analysis import get_pagespeed_insights
+from backend.services.seo_analysis import perform_seo_analysis
+from backend.services.ux_analysis import perform_ux_analysis
+from backend.services.ai_suggestions import get_ai_suggestions
+from backend.utils.url_validator import is_valid_url # <--- هذا هو الاستيراد الذي يسبب المشكلة
+from backend.utils.pdf_generator import generate_pdf_report
 
-# تحديد المسارات الصحيحة للملفات الثابتة والقوالب
-template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../frontend/public'))
-static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../frontend/public'))
+# Define the correct paths for static files and templates.
+# Since app.py is inside the 'backend' folder, to reach 'frontend/public',
+# we need to go up one level (from 'backend' to the root) and then into 'frontend/public'.
+template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'frontend', 'public'))
+static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'frontend', 'public'))
 
 app = Flask(__name__,
             template_folder=template_dir,
             static_folder=static_dir,
             static_url_path='/') 
-CORS(app)
+CORS(app) # Enable CORS for all routes by default
 
 app.config['PAGESPEED_API_KEY'] = os.getenv('PAGESPEED_API_KEY')
 
 last_analysis_results = {} 
 
-# المسار الجذر لخدمة ملفات الواجهة الأمامية
+# Route to serve the main frontend HTML file
 @app.route('/')
 def index():
     print("Serving index.html") 
     return send_from_directory(app.static_folder, 'index.html')
 
-# مسار لخدمة الملفات الثابتة الأخرى (مثل CSS و JS)
+# Route to serve other static files (like CSS and JS)
 @app.route('/<path:filename>')
 def serve_static(filename):
     print(f"Serving static file: {filename}") 
@@ -45,7 +49,8 @@ def analyze_website():
     data = request.get_json()
     url = data.get('url')
 
-    if not url or not is_valid_url(url): # هنا يتم استخدام is_valid_url
+    # Use the is_valid_url function here
+    if not url or not is_valid_url(url): 
         print(f"Invalid URL provided: {url}") 
         return jsonify({"error": "Invalid URL provided."}), 400
 
