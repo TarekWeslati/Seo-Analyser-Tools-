@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const analyzeAnotherButton = document.getElementById('analyze-another-button');
     const exportPdfButton = document.getElementById('export-pdf-button');
     const themeToggle = document.getElementById('theme-toggle');
+    const languageSelect = document.getElementById('language-select'); // New: Language select element
 
     // Dashboard elements (as they are)
     const domainNameSpan = document.getElementById('domain-name');
@@ -30,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const seoOverallProgress = document.getElementById('seo-overall-progress');
     const seoOverallText = document.getElementById('seo-overall-text');
     const seoTitleSpan = document.getElementById('seo-title');
-    const seoMetaDescriptionSpan = document.getElementById('seo-meta-description');
+    const seoMetaDescriptionSpan = document = document.getElementById('seo-meta-description');
     const seoBrokenLinksSpan = document.getElementById('seo-broken-links');
     const seoMissingAltSpan = document.getElementById('seo-missing-alt');
     const seoInternalLinksSpan = document.getElementById('seo-internal-links');
@@ -48,6 +49,86 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const aiSummarySection = document.getElementById('ai-summary-section');
     const aiSummaryText = document.getElementById('ai-summary-text');
+
+    let translations = {}; // Stores loaded translations
+    let currentLanguage = localStorage.getItem('lang') || 'en'; // Get saved language or default to English
+
+    // Function to fetch and load translations
+    async function loadTranslations(lang) {
+        try {
+            const response = await fetch(`/locales/${lang}.json`);
+            if (!response.ok) {
+                throw new Error(`Failed to load translations for ${lang}.`);
+            }
+            translations = await response.json();
+            applyTranslations();
+            localStorage.setItem('lang', lang); // Save selected language
+        } catch (error) {
+            console.error('Error loading translations:', error);
+            // Fallback to default language if loading fails
+            if (lang !== 'en') {
+                loadTranslations('en');
+            }
+        }
+    }
+
+    // Function to apply translations to elements with data-translate attribute
+    function applyTranslations() {
+        document.querySelectorAll('[data-translate]').forEach(element => {
+            const key = element.getAttribute('data-translate');
+            if (translations[key]) {
+                element.textContent = translations[key];
+            }
+        });
+        // Special handling for placeholder
+        websiteUrlInput.placeholder = translations['analyzeWebsiteTitle'] || "Enter website URL (e.g., https://)";
+        // Update text for N/A or loading messages if they are not dynamically set by results
+        document.getElementById('domain-authority-text').textContent = translations['calculatingMessage'];
+        document.getElementById('performance-text').textContent = translations['calculatingMessage'];
+        document.getElementById('seo-overall-text').textContent = translations['calculatingMessage'];
+        
+        // Update specific list items if they are showing default loading messages
+        if (coreWebVitalsList.children.length === 1 && coreWebVitalsList.children[0].getAttribute('data-translate') === 'loadingMessage') {
+            coreWebVitalsList.children[0].textContent = translations['loadingMessage'];
+        }
+        if (performanceIssuesList.children.length === 1 && performanceIssuesList.children[0].getAttribute('data-translate') === 'loadingMessage') {
+            performanceIssuesList.children[0].textContent = translations['loadingMessage'];
+        }
+        if (hTagsList.children.length === 1 && hTagsList.children[0].getAttribute('data-translate') === 'loadingMessage') {
+            hTagsList.children[0].textContent = translations['loadingMessage'];
+        }
+        if (keywordDensityList.children.length === 1 && keywordDensityList.children[0].getAttribute('data-translate') === 'loadingMessage') {
+            keywordDensityList.children[0].textContent = translations['loadingMessage'];
+        }
+        if (seoImprovementTipsList.children.length === 1 && seoImprovementTipsList.children[0].getAttribute('data-translate') === 'loadingMessage') {
+            seoImprovementTipsList.children[0].textContent = translations['loadingMessage'];
+        }
+        if (uxIssuesList.children.length === 1 && uxIssuesList.children[0].getAttribute('data-translate') === 'loadingMessage') {
+            uxIssuesList.children[0].textContent = translations['loadingMessage'];
+        }
+        if (uxSuggestionsList.children.length === 1 && uxSuggestionsList.children[0].getAttribute('data-translate') === 'loadingMessage') {
+            uxSuggestionsList.children[0].textContent = translations['loadingMessage'];
+        }
+        aiSeoSuggestionsText.textContent = translations['loadingAiSuggestions'];
+        aiContentInsightsText.textContent = translations['loadingAiInsights'];
+        aiSummaryText.textContent = translations['loadingAiSummary'];
+
+        // Update N/A messages if they are currently set to N/A
+        if (domainNameSpan.textContent === 'N/A') domainNameSpan.textContent = 'N/A'; // Keep N/A for now, will be updated by results
+        if (domainAuthorityScoreSpan.textContent === 'N/A') domainAuthorityScoreSpan.textContent = 'N/A';
+        if (domainAgeSpan.textContent === 'N/A') domainAgeSpan.textContent = 'N/A';
+        if (sslStatusSpan.textContent === 'N/A') sslStatusSpan.textContent = 'N/A';
+        if (blacklistStatusSpan.textContent === 'N/A') blacklistStatusSpan.textContent = 'N/A';
+        if (dnsHealthSpan.textContent === 'N/A') dnsHealthSpan.textContent = 'N/A';
+        if (performanceScoreSpan.textContent === 'N/A') performanceScoreSpan.textContent = 'N/A';
+        if (seoOverallScoreSpan.textContent === 'N/A') seoOverallScoreSpan.textContent = 'N/A';
+        if (seoTitleSpan.textContent === 'N/A') seoTitleSpan.textContent = 'N/A';
+        if (seoMetaDescriptionSpan.textContent === 'N/A') seoMetaDescriptionSpan.textContent = 'N/A';
+        if (seoBrokenLinksSpan.textContent === 'N/A') seoBrokenLinksSpan.textContent = 'N/A';
+        if (seoMissingAltSpan.textContent === 'N/A') seoMissingAltSpan.textContent = 'N/A';
+        if (seoInternalLinksSpan.textContent === 'N/A') seoInternalLinksSpan.textContent = 'N/A';
+        if (seoExternalLinksSpan.textContent === 'N/A') seoExternalLinksSpan.textContent = 'N/A';
+    }
 
 
     // Helper functions to show/hide elements
@@ -96,8 +177,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const daScore = domainAuthority.domain_authority_score !== undefined && domainAuthority.domain_authority_score !== null ? domainAuthority.domain_authority_score : 'N/A';
         domainAuthorityScoreSpan.textContent = daScore;
         updateProgressBar(domainAuthorityProgress, daScore);
-        domainAuthorityText.textContent = domainAuthority.domain_authority_text || 'N/A';
-        domainAgeSpan.textContent = domainAuthority.domain_age_years ? `${domainAuthority.domain_age_years} years` : 'N/A';
+        domainAuthorityText.textContent = domainAuthority.domain_authority_text || translations['calculatingMessage']; // Use translation
+        domainAgeSpan.textContent = domainAuthority.domain_age_years ? `${domainAuthority.domain_age_years} ${translations['yearsText'] || 'years'}` : 'N/A';
         sslStatusSpan.textContent = domainAuthority.ssl_status || 'N/A';
         blacklistStatusSpan.textContent = domainAuthority.blacklist_status || 'N/A';
         dnsHealthSpan.textContent = domainAuthority.dns_health || 'N/A';
@@ -107,20 +188,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const perfScore = pageSpeed.scores && pageSpeed.scores['Performance Score'] !== undefined && pageSpeed.scores['Performance Score'] !== null ? pageSpeed.scores['Performance Score'] : 'N/A';
         performanceScoreSpan.textContent = perfScore;
         updateProgressBar(performanceProgress, perfScore);
-        performanceText.textContent = pageSpeed.performance_text || 'N/A';
+        performanceText.textContent = pageSpeed.performance_text || translations['calculatingMessage']; // Use translation
         pagespeedLink.href = pageSpeed.pagespeed_report_link || '#';
 
         // Core Web Vitals
         coreWebVitalsList.innerHTML = '';
         const coreVitals = pageSpeed.core_web_vitals || {};
-        for (const metric in coreVitals) {
+        if (Object.keys(coreVitals).length > 0) {
+            for (const metric in coreVitals) {
+                const li = document.createElement('li');
+                li.innerHTML = `<strong>${metric}:</strong> ${coreVitals[metric] || 'N/A'}`;
+                coreWebVitalsList.appendChild(li);
+            }
+        } else {
             const li = document.createElement('li');
-            li.innerHTML = `<strong>${metric}:</strong> ${coreVitals[metric] || 'N/A'}`;
-            coreWebVitalsList.appendChild(li);
-        }
-        if (Object.keys(coreVitals).length === 0) {
-            const li = document.createElement('li');
-            li.textContent = 'No Core Web Vitals data available.';
+            li.textContent = translations['noCoreWebVitals']; // Use translation
             coreWebVitalsList.appendChild(li);
         }
 
@@ -135,7 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         } else {
             const li = document.createElement('li');
-            li.textContent = 'No major performance issues detected.';
+            li.textContent = translations['noPerformanceIssues']; // Use translation
             li.classList.add('text-green-600', 'dark:text-green-300'); 
             performanceIssuesList.appendChild(li);
         }
@@ -146,7 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const seoScore = seoQuality.score !== undefined && seoQuality.score !== null ? seoQuality.score : 'N/A';
         seoOverallScoreSpan.textContent = seoScore;
         updateProgressBar(seoOverallProgress, seoScore);
-        seoOverallText.textContent = seoQuality.seo_overall_text || 'N/A';
+        seoOverallText.textContent = seoQuality.seo_overall_text || translations['calculatingMessage']; // Use translation
 
         const seoElements = seoQuality.elements || {};
         seoTitleSpan.textContent = seoElements.title || 'N/A';
@@ -167,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } else {
             const li = document.createElement('li');
-            li.textContent = 'No heading tags found.';
+            li.textContent = translations['noHeadingTags']; // Use translation
             hTagsList.appendChild(li);
         }
 
@@ -185,7 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         } else {
             const li = document.createElement('li');
-            li.textContent = 'No significant keywords found.';
+            li.textContent = translations['noKeywordsFound']; // Use translation
             keywordDensityList.appendChild(li);
         }
 
@@ -200,7 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         } else {
             const li = document.createElement('li');
-            li.textContent = 'No specific SEO improvement tips at this time.';
+            li.textContent = translations['noSeoTips']; // Use translation
             li.classList.add('text-green-600', 'dark:text-green-300');
             seoImprovementTipsList.appendChild(li);
         }
@@ -229,7 +311,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         } else {
             const li = document.createElement('li');
-            li.textContent = 'No major UX issues detected.';
+            li.textContent = translations['noUxIssues']; // Use translation
             li.classList.add('text-green-600', 'dark:text-green-300');
             uxIssuesList.appendChild(li);
         }
@@ -245,7 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         } else {
             const li = document.createElement('li');
-            li.textContent = 'No specific UX suggestions at this time.';
+            li.textContent = translations['noUxSuggestions']; // Use translation
             li.classList.add('text-green-600', 'dark:text-green-300');
             uxSuggestionsList.appendChild(li);
         }
@@ -276,22 +358,22 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log("Analyze button clicked. URL:", url); 
 
         if (!url) {
-            displayError('Please enter a website URL.');
+            displayError(translations['pleaseEnterUrl'] || 'Please enter a website URL.'); // Use translation
             return;
         }
 
         try {
-            // Use relative path for API calls as frontend and backend are served from the same service
             const backendApiUrl = `/analyze`; 
             console.log("Sending POST request to:", backendApiUrl); 
 
             const controller = new AbortController(); 
-            const timeoutId = setTimeout(() => controller.abort(), 120000); // 120 seconds (2 minutes) timeout
+            const timeoutId = setTimeout(() => controller.abort(), 120000); 
 
             const response = await fetch(backendApiUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Accept-Language': currentLanguage // Send current language to backend
                 },
                 body: JSON.stringify({ url }),
                 signal: controller.signal 
@@ -306,9 +388,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error("Backend response not OK. Raw text:", errorText); 
                 try {
                     const errorData = JSON.parse(errorText); 
-                    throw new Error(errorData.error || `Server error: ${response.status}`);
+                    throw new Error(errorData.error || `${translations['serverError'] || 'Server error'}: ${response.status}`); // Use translation
                 } catch (jsonError) {
-                    throw new Error(`Server returned non-JSON error (Status: ${response.status}): ${errorText.substring(0, 100)}...`);
+                    throw new Error(`${translations['serverReturnedNonJson'] || 'Server returned non-JSON error'} (Status: ${response.status}): ${errorText.substring(0, 100)}...`); // Use translation
                 }
             }
 
@@ -323,11 +405,11 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('Analysis failed:', error);
             if (error.name === 'AbortError') {
-                displayError('Analysis timed out. The server took too long to respond. Please try again later.');
+                displayError(translations['analysisTimedOut'] || 'Analysis timed out. The server took too long to respond. Please try again later.'); // Use translation
             } else if (error instanceof TypeError && error.message.includes('Network request failed')) {
-                displayError('Network error. Could not connect to the server. Please check your internet connection and try again.');
+                displayError(translations['networkError'] || 'Network error. Could not connect to the server. Please check your internet connection and try again.'); // Use translation
             } else {
-                displayError(`Analysis failed: ${error.message}. Please try again later.`);
+                displayError(`${translations['analysisFailed'] || 'Analysis failed'}: ${error.message}. ${translations['pleaseTryAgain'] || 'Please try again later.'}`); // Use translation
             }
             hideElement(loadingSpinner); 
         }
@@ -345,27 +427,27 @@ document.addEventListener('DOMContentLoaded', () => {
     exportPdfButton.addEventListener('click', async () => {
         const currentUrl = analyzedUrlSpan.textContent;
         if (!currentUrl || !window.lastAnalysisResults) {
-            displayError('No analysis results to export. Please run an analysis first.');
+            displayError(translations['noAnalysisResults'] || 'No analysis results to export. Please run an analysis first.'); // Use translation
             return;
         }
 
-        exportPdfButton.textContent = 'Generating PDF...';
+        exportPdfButton.textContent = translations['generatingPdf'] || 'Generating PDF...'; // Use translation
         exportPdfButton.disabled = true;
 
         try {
-            // Use relative path for API calls
             const backendReportUrl = `/generate_report`; 
             const response = await fetch(backendReportUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Accept-Language': currentLanguage // Send current language to backend
                 },
                 body: JSON.stringify({ url: currentUrl, results: window.lastAnalysisResults }),
             });
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to generate PDF report.');
+                throw new Error(errorData.error || translations['failedToGeneratePdf'] || 'Failed to generate PDF report.'); // Use translation
             }
 
             const blob = await response.blob();
@@ -376,13 +458,13 @@ document.addEventListener('DOMContentLoaded', () => {
             document.body.appendChild(a);
             a.click();
             a.remove();
-                window.URL.revokeObjectURL(downloadUrl);
+            window.URL.revokeObjectURL(downloadUrl);
 
         } catch (error) {
             console.error('PDF export failed:', error);
-            displayError(`PDF export failed: ${error.message}`);
+            displayError(`${translations['pdfExportFailed'] || 'PDF export failed'}: ${error.message}`); // Use translation
         } finally {
-            exportPdfButton.textContent = 'Export PDF Report';
+            exportPdfButton.textContent = translations['exportPdfButton'] || 'Export PDF Report'; // Use translation
             exportPdfButton.disabled = false;
         }
     });
@@ -402,4 +484,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (savedTheme === 'dark') {
         document.body.classList.add('dark');
     }
+
+    // Language selection change event
+    languageSelect.addEventListener('change', (event) => {
+        currentLanguage = event.target.value;
+        loadTranslations(currentLanguage);
+    });
+
+    // Initialize translations and theme on page load
+    loadTranslations(currentLanguage);
+    languageSelect.value = currentLanguage; // Set dropdown to current language
 });
