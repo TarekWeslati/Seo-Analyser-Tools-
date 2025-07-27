@@ -4,19 +4,15 @@ from flask_cors import CORS
 import json 
 
 # Import services and utilities with full relative paths from the project root.
-# Gunicorn runs from the project root, so imports need to be relative to that.
-# Since app.py is inside the 'backend' folder, we need to prefix imports with 'backend.'
 from backend.services.domain_analysis import get_domain_analysis
 from backend.services.pagespeed_analysis import get_pagespeed_insights
 from backend.services.seo_analysis import perform_seo_analysis
 from backend.services.ux_analysis import perform_ux_analysis
 from backend.services.ai_suggestions import get_ai_suggestions
-from backend.utils.url_validator import is_valid_url # <--- هذا هو الاستيراد الذي يسبب المشكلة
+from backend.utils.url_validator import is_valid_url
 from backend.utils.pdf_generator import generate_pdf_report
 
 # Define the correct paths for static files and templates.
-# Since app.py is inside the 'backend' folder, to reach 'frontend/public',
-# we need to go up one level (from 'backend' to the root) and then into 'frontend/public'.
 template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'frontend', 'public'))
 static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'frontend', 'public'))
 
@@ -24,7 +20,7 @@ app = Flask(__name__,
             template_folder=template_dir,
             static_folder=static_dir,
             static_url_path='/') 
-CORS(app) # Enable CORS for all routes by default
+CORS(app)
 
 app.config['PAGESPEED_API_KEY'] = os.getenv('PAGESPEED_API_KEY')
 
@@ -49,7 +45,6 @@ def analyze_website():
     data = request.get_json()
     url = data.get('url')
 
-    # Use the is_valid_url function here
     if not url or not is_valid_url(url): 
         print(f"Invalid URL provided: {url}") 
         return jsonify({"error": "Invalid URL provided."}), 400
@@ -93,7 +88,8 @@ def analyze_website():
         return jsonify(results), 200
 
     except Exception as e:
-        print(f"Critical Error during analysis: {e}", exc_info=True) 
+        # تم تغيير هذا السطر لإزالة exc_info من print
+        print(f"Critical Error during analysis: {e}") 
         return jsonify({"error": "An unexpected error occurred during analysis.", "details": str(e)}), 500
 
 @app.route('/generate_report', methods=['POST'])
@@ -114,7 +110,8 @@ def generate_report():
         print("PDF report generated. Sending file.") 
         return send_file(pdf_path, as_attachment=True, download_name=f"{url.replace('https://', '').replace('http://', '')}_analysis_report.pdf", mimetype='application/pdf')
     except Exception as e:
-        print(f"Error generating PDF report: {e}", exc_info=True) 
+        # تم تغيير هذا السطر لإزالة exc_info من print
+        print(f"Error generating PDF report: {e}") 
         return jsonify({"error": "Failed to generate PDF report.", "details": str(e)}), 500
 
 
