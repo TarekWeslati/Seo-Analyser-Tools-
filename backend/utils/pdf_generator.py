@@ -1,120 +1,110 @@
 import os
-from datetime import datetime
 from weasyprint import HTML, CSS
+from jinja2 import Environment, FileSystemLoader
 
 def generate_pdf_report(url, results):
-    report_html = f"""
-    <!DOCTYPE html>
-    <html lang="en" dir="ltr">
-    <head>
-        <meta charset="UTF-8">
-        <title>Website Analysis Report for {url}</title>
-        <style>
-            body {{ font-family: 'Inter', sans-serif; margin: 20px; direction: ltr; text-align: left; }}
-            h1, h2, h3 {{ color: #333; }}
-            .section {{ margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px; }}
-            .score-badge {{
-                display: inline-block; padding: 8px 12px; border-radius: 5px; font-weight: bold;
-                color: white; text-align: center; margin-right: 10px; /* For button spacing */
-            }}
-            .score-good {{ background-color: #28a745; }} /* Green */
-            .score-medium {{ background-color: #ffc107; }} /* Yellow */
-            .score-bad {{ background-color: #dc3545; }} /* Red */
-            ul {{ list-style-type: disc; margin-left: 20px; }}
-            li {{ margin-bottom: 5px; }}
-        </style>
-    </head>
-    <body>
-        <h1 style="text-align: center;">Website Analysis Report</h1>
-        <p><strong>URL:</strong> {url}</p>
-        <p><strong>Report Date:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+    # تحديد مسار القوالب (مجلد 'templates' داخل 'backend/utils')
+    # بما أن pdf_generator.py موجود في backend/utils، فإن القوالب يجب أن تكون بجانبه
+    template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'templates'))
+    env = Environment(loader=FileSystemLoader(template_dir))
+    template = env.get_template('report_template.html')
 
-        <div class="section">
-            <h2>Overall Scores</h2>
-            <p>
-                SEO Score: <span class="score-badge {'score-good' if results.get('seo_quality',{{}}).get('score',0) >= 70 else 'score-medium' if results.get('seo_quality',{{}}).get('score',0) >= 40 else 'score-bad'}">{results.get('seo_quality',{{}}).get('score', 'N/A')}/100</span>
-                Performance Score: <span class="score-badge {'score-good' if results.get('page_speed',{{}}).get('scores',{{}}).get('Performance Score',0) >= 70 else 'score-medium' if results.get('page_speed',{{}}).get('scores',{{}}).get('Performance Score',0) >= 40 else 'score-bad'}">{results.get('page_speed',{{}}).get('scores',{{}}).get('Performance Score', 'N/A')}</span>
-                UX Score: <span class="score-badge {'score-good' if results.get('user_experience',{{}}).get('score',0) >= 70 else 'score-medium' if results.get('user_experience',{{}}).get('score',0) >= 40 else 'score-bad'}">{results.get('user_experience',{{}}).get('score', 'N/A')}/100</span>
-            </p>
-            {f"<h3>AI Summary:</h3><p>{results.get('ai_insights',{{}}).get('summary', 'N/A')}</p>" if results.get('ai_insights',{{}}).get('summary') else ''}
-        </div>
+    # تحضير البيانات للقالب
+    # هنا يجب التأكد من أن جميع البيانات التي يتم الوصول إليها في القالب
+    # هي من أنواع قابلة للطباعة أو قابلة للتجزئة إذا كانت تستخدم كمفاتيح
+    # خاصة عند الوصول إلى العناصر المتداخلة.
+    # سنقوم بتبسيط الوصول إلى البيانات لضمان التوافق.
 
-        <div class="section">
-            <h2>1. Domain Authority & Website Trust</h2>
-            <p>Domain: {results.get('domain_authority',{{}}).get('domain', 'N/A')}</p>
-            <ul>
-                <li>Estimated Domain Authority: {results.get('domain_authority',{{}}).get('domain_authority_estimate', 'N/A')}</li>
-                <li>Domain Age: {results.get('domain_authority',{{}}).get('domain_age_years', 'N/A')} years</li>
-                <li>SSL/HTTPS Status: {results.get('domain_authority',{{}}).get('ssl_status', 'N/A')}</li>
-                <li>Blacklist Status: {results.get('domain_authority',{{}}).get('blacklist_status', 'N/A')}</li>
-                <li>DNS Health: {results.get('domain_authority',{{}}).get('dns_health', 'N/A')}</li>
-            </ul>
-        </div>
+    # التأكد من أن scores و issues هي قواميس أو قوائم فارغة إذا كانت غير موجودة
+    pagespeed_scores = results.get('page_speed', {}).get('scores', {})
+    pagespeed_issues = results.get('page_speed', {}).get('issues', [])
+    core_web_vitals = results.get('page_speed', {}).get('core_web_vitals', {})
 
-        <div class="section">
-            <h2>2. Page Speed & Performance</h2>
-            <h3>Core Web Vitals & Key Performance Metrics:</h3>
-            <ul>
-                {f"<li>First Contentful Paint (FCP): {results.get('page_speed',{{}}).get('metrics',{{}}).get('First Contentful Paint', 'N/A')}</li>" if results.get('page_speed',{{}}).get('metrics',{{}}).get('First Contentful Paint') else ''}
-                {f"<li>Largest Contentful Paint (LCP): {results.get('page_speed',{{}}).get('metrics',{{}}).get('Largest Contentful Paint', 'N/A')}</li>" if results.get('page_speed',{{}}).get('metrics',{{}}).get('Largest Contentful Paint') else ''}
-                {f"<li>Cumulative Layout Shift (CLS): {results.get('page_speed',{{}}).get('metrics',{{}}).get('Cumulative Layout Shift', 'N/A')}</li>" if results.get('page_speed',{{}}).get('metrics',{{}}).get('Cumulative Layout Shift') else ''}
-                {f"<li>Total Blocking Time (TBT): {results.get('page_speed',{{}}).get('metrics',{{}}).get('Total Blocking Time', 'N/A')}</li>" if results.get('page_speed',{{}}).get('metrics',{{}}).get('Total Blocking Time') else ''}
-                {f"<li>Speed Index: {results.get('page_speed',{{}}).get('metrics',{{}}).get('Speed Index', 'N/A')}</li>" if results.get('page_speed',{{}}).get('metrics',{{}}).get('Speed Index') else ''}
-            </ul>
-            <h3>Performance Issues:</h3>
-            <ul>
-                {''.join([f"<li>{{{{issue['title']}}}} (Score: {{{{issue.get('score', 'N/A')}}}}): {{{{issue.get('description', '')}}}}</li>" for issue in results.get('page_speed',{{}}).get('issues', [])]) if results.get('page_speed',{{}}).get('issues', []) else '<li>No major performance issues detected.</li>'}
-            </ul>
-            <p style="text-align: left;"><a href="{results.get('page_speed',{{}}).get('full_report_link', '#')}">View Full Google PageSpeed Insights Report</a></p>
-        </div>
+    seo_elements = results.get('seo_quality', {}).get('elements', {})
+    seo_improvement_tips = results.get('seo_quality', {}).get('improvement_tips', [])
+    h_tags = seo_elements.get('h_tags', {})
+    keyword_density = seo_elements.get('keyword_density', {})
 
-        <div class="section">
-            <h2>3. SEO Quality & Structure</h2>
-            <ul>
-                <li>Title Tag: <span dir="ltr">{results.get('seo_quality',{{}}).get('elements',{{}}).get('title', 'N/A')}</span></li>
-                <li>Meta Description: <span dir="ltr">{results.get('seo_quality',{{}}).get('elements',{{}}).get('meta_description', 'N/A')}</span></li>
-                <li>Broken Links Found: {len(results.get('seo_quality',{{}}).get('elements',{{}}).get('broken_links', []))}</li>
-                <li>Images Missing Alt: {len([s for s in results.get('seo_quality',{{}}).get('elements',{{}}).get('image_alt_status', []) if "Missing" in s or "Empty" in s])} missing/empty</li>
-                <li>Internal Links Count: {results.get('seo_quality',{{}}).get('elements',{{}}).get('internal_links_count', 'N/A')}</li>
-                <li>External Links Count: {results.get('seo_quality',{{}}).get('elements',{{}}).get('external_links_count', 'N/A')}</li>
-            </ul>
-            <h3>H-Tag Structure (Headings):</h3>
-            <ul>
-                {f"<li>H1: {{{{', '.join(results.get('seo_quality',{{}}).get('elements',{{}}).get('h_tags',{{}}).get('H1',[]))}}}}</li>" if results.get('seo_quality',{{}}).get('elements',{{}}).get('h_tags',{{}}).get('H1') else ''}
-                {f"<li>H2: {{{{', '.join(results.get('seo_quality',{{}}).get('elements',{{}}).get('h_tags',{{}}).get('H2',[]))}}}}</li>" if results.get('seo_quality',{{}}).get('elements',{{}}).get('h_tags',{{}}).get('H2') else ''}
-                {f"<li>H3: {{{{', '.join(results.get('seo_quality',{{}}).get('elements',{{}}).get('h_tags',{{}}).get('H3',[]))}}}}</li>" if results.get('seo_quality',{{}}).get('elements',{{}}).get('h_tags',{{}}).get('H3') else ''}
-                <!-- Add H4-H6 if necessary -->
-            </ul>
-            <h3>SEO Improvement Tips:</h3>
-            <ul>
-                {''.join([f"<li>{{{{tip}}}}</li>" for tip in results.get('seo_quality',{{}}).get('improvement_tips', [])]) if results.get('seo_quality',{{}}).get('improvement_tips', []) else '<li>Looks good! No critical SEO issues detected based on our analysis.</li>'}
-            </ul>
-            {f"<h3>AI SEO Suggestions:</h3><p>{results.get('ai_insights',{{}}).get('seo_improvement_suggestions', 'N/A')}</p>" if results.get('ai_insights',{{}}).get('seo_improvement_suggestions') else ''}
-        </div>
+    ux_issues = results.get('user_experience', {}).get('issues', [])
+    ux_suggestions = results.get('user_experience', {}).get('suggestions', [])
 
-        <div class="section">
-            <h2>4. User Experience (UX)</h2>
-            <h3>Detected UX Issues:</h3>
-            <ul>
-                {''.join([f"<li>{{{{issue}}}}</li>" for issue in results.get('user_experience',{{}}).get('issues', [])]) if results.get('user_experience',{{}}).get('issues', []) else '<li>No major UX issues detected based on our heuristic analysis.</li>'}
-            </ul>
-            <h3>General UX Suggestions:</h3>
-            <ul>
-                {''.join([f"<li>{{{{suggestion}}}}</li>" for suggestion in results.get('user_experience',{{}}).get('suggestions', [])])}
-            </ul>
-            {f"<h3>AI Content Insights:</h3><p>{results.get('ai_insights',{{}}).get('content_originality_tone', 'N/A')}</p>" if results.get('ai_insights',{{}}).get('content_originality_tone') else ''}
-        </div>
+    # تحويل القواميس إلى قوائم من أزواج (key, value) لتجنب TypeError في بعض الحالات
+    # هذا يضمن أن Jinja2 يتعامل معها كقوائم يمكن تكرارها
+    formatted_h_tags = []
+    for tag, content_list in h_tags.items():
+        formatted_h_tags.append(f"{tag}: {', '.join(content_list)}")
 
-    </body>
-    </html>
-    """
-    # Create a temporary directory for the PDF
-    temp_dir = 'temp_reports'
-    os.makedirs(temp_dir, exist_ok=True)
-    pdf_filename = f"{url.replace('https://', '').replace('http://', '').replace('/', '_')}_report.pdf"
-    pdf_path = os.path.join(temp_dir, pdf_filename)
+    formatted_keyword_density = []
+    # فرز الكلمات الرئيسية حسب الكثافة
+    sorted_keywords = sorted(keyword_density.items(), key=lambda item: item[1], reverse=True)[:10]
+    for keyword, density in sorted_keywords:
+        formatted_keyword_density.append(f"{keyword}: {density}%")
 
-    # Convert HTML to PDF
-    HTML(string=report_html).write_pdf(pdf_path)
+    # تحويل Core Web Vitals إلى قائمة من السلاسل النصية
+    formatted_core_web_vitals = []
+    for metric, value in core_web_vitals.items():
+        formatted_core_web_vitals.append(f"{metric}: {value}")
 
+    # بناء سياق البيانات للقالب
+    context = {
+        'url': url,
+        'results': results, # نمرر النتائج الكاملة أيضاً، ولكن نستخدم المتغيرات المحضرة للوصول الآمن
+        'domain_authority': results.get('domain_authority', {}),
+        'page_speed': {
+            'scores': pagespeed_scores,
+            'issues': pagespeed_issues,
+            'core_web_vitals': formatted_core_web_vitals, # استخدام النسخة المحضرة
+            'pagespeed_report_link': results.get('page_speed', {}).get('pagespeed_report_link', '#')
+        },
+        'seo_quality': {
+            'score': results.get('seo_quality', {}).get('score', 'N/A'),
+            'seo_overall_text': results.get('seo_quality', {}).get('seo_overall_text', 'N/A'),
+            'elements': {
+                'title': seo_elements.get('title', 'N/A'),
+                'meta_description': seo_elements.get('meta_description', 'N/A'),
+                'broken_links': seo_elements.get('broken_links', []),
+                'image_alt_status': seo_elements.get('image_alt_status', []),
+                'internal_links_count': seo_elements.get('internal_links_count', 'N/A'),
+                'external_links_count': seo_elements.get('external_links_count', 'N/A'),
+                'h_tags': formatted_h_tags, # استخدام النسخة المحضرة
+                'keyword_density': formatted_keyword_density, # استخدام النسخة المحضرة
+            },
+            'improvement_tips': seo_improvement_tips,
+        },
+        'user_experience': {
+            'issues': ux_issues,
+            'suggestions': ux_suggestions,
+        },
+        'ai_insights': results.get('ai_insights', {}),
+    }
+
+    # رندر القالب ببيانات السياق
+    html_content = template.render(context)
+
+    # إنشاء ملف PDF
+    pdf_path = os.path.join(template_dir, 'report.pdf') # يمكن حفظه في مجلد مؤقت
+    HTML(string=html_content).write_pdf(pdf_path, stylesheets=[CSS(string='''
+        body { font-family: sans-serif; margin: 20mm; }
+        h1, h2, h3 { color: #1e40af; } /* blue-700 */
+        .section { margin-bottom: 15mm; border: 1px solid #e2e8f0; padding: 10mm; border-radius: 5mm; }
+        .score-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 5px;
+            font-weight: bold;
+            color: white;
+            margin-left: 5px;
+        }
+        .score-good { background-color: #10B981; } /* green-500 */
+        .score-medium { background-color: #FBBF24; } /* yellow-400 */
+        .score-bad { background-color: #EF4444; } /* red-500 */
+        ul { list-style-type: disc; margin-left: 20px; }
+        li { margin-bottom: 5px; }
+        strong { font-weight: bold; }
+        .ai-section { background-color: #eff6ff; border-left: 5px solid #60a5fa; padding: 10px; margin-top: 10px; border-radius: 5px; } /* blue-100 & blue-400 */
+        .ai-section p { color: #1e40af; } /* blue-700 */
+        a { color: #2563eb; text-decoration: none; } /* blue-600 */
+    ''')])
+    
     return pdf_path
+
