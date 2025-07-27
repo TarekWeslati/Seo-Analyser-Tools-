@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEO Analysis Report - {{ url }}</title>
+    <style>
+        body { font-family: sans-serif; margin: 20mm; line-height: 1.6; color: #333; }
+        h1, h2, h3 { color: #1e40af; margin-bottom: 5mm; }
+        h1 { font-size: 28px; text-align: center; margin-bottom: 15mm; }
+        h2 { font-size: 22px; border-bottom: 1px solid #ccc; padding-bottom: 2mm; margin-top: 10mm; }
+        h3 { font-size: 18px; margin-top: 8mm; }
+        .section { margin-bottom: 15mm; border: 1px solid #e2e8f0; padding: 10mm; border-radius: 5mm; background-color: #f9fafb; }
+        .score-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 5px;
+            font-weight: bold;
+            color: white;
+            margin-left: 5px;
+        }
+        .score-good { background-color: #10B981; } /* Tailwind green-500 */
+        .score-medium { background-color: #FBBF24; } /* Tailwind yellow-400 */
+        .score-bad { background-color: #EF4444; } /* Tailwind red-500 */
+        ul { list-style-type: disc; margin-left: 20px; padding-left: 0; }
+        li { margin-bottom: 5px; }
+        strong { font-weight: bold; }
+        .ai-section { background-color: #eff6ff; border-left: 5px solid #60a5fa; padding: 10px; margin-top: 10px; border-radius: 5px; }
+        .ai-section p { color: #1e40af; }
+        a { color: #2563eb; text-decoration: none; }
+        .data-point { margin-bottom: 5px; }
+        .data-point strong { display: inline-block; width: 150px; }
+    </style>
+</head>
+<body>
+    <h1>SEO Analysis Report for {{ url }}</h1>
+
+    <div class="section">
+        <h2>Domain Authority</h2>
+        <p class="data-point"><strong>Domain:</strong> {{ domain_authority.domain | default('N/A') }}</p>
+        <p class="data-point"><strong>Score:</strong> 
+            <span class="score-badge {% if domain_authority.domain_authority_score is not none and domain_authority.domain_authority_score >= 70 %}score-good{% elif domain_authority.domain_authority_score is not none and domain_authority.domain_authority_score >= 40 %}score-medium{% else %}score-bad{% endif %}">
+                {{ domain_authority.domain_authority_score | default('N/A') }}/100
+            </span>
+        </p>
+        <p class="data-point"><strong>Text:</strong> {{ domain_authority.domain_authority_text | default('N/A') }}</p>
+        <p class="data-point"><strong>Domain Age:</strong> {{ domain_authority.domain_age_years | default('N/A') }} years</p>
+        <p class="data-point"><strong>SSL Status:</strong> {{ domain_authority.ssl_status | default('N/A') }}</p>
+        <p class="data-point"><strong>Blacklist Status:</strong> {{ domain_authority.blacklist_status | default('N/A') }}</p>
+        <p class="data-point"><strong>DNS Health:</strong> {{ domain_authority.dns_health | default('N/A') }}</p>
+    </div>
+
+    <div class="section">
+        <h2>Page Speed</h2>
+        <p class="data-point"><strong>Performance Score:</strong> 
+            <span class="score-badge {% if page_speed.scores and page_speed.scores['Performance Score'] is not none and page_speed.scores['Performance Score'] >= 70 %}score-good{% elif page_speed.scores and page_speed.scores['Performance Score'] is not none and page_speed.scores['Performance Score'] >= 40 %}score-medium{% else %}score-bad{% endif %}">
+                {{ page_speed.scores.get('Performance Score', 'N/A') }}/100
+            </span>
+        </p>
+        <p class="data-point"><strong>Text:</strong> {{ page_speed.performance_text | default('N/A') }}</p>
+        <h3>Core Web Vitals:</h3>
+        <ul>
+            {% if page_speed.core_web_vitals %}
+                {% for vital in page_speed.core_web_vitals %}
+                    <li>{{ vital }}</li>
+                {% endfor %}
+            {% else %}
+                <li>No Core Web Vitals data available.</li>
+            {% endif %}
+        </ul>
+        <h3>Potential Issues:</h3>
+        <ul>
+            {% if page_speed.issues %}
+                {% for issue in page_speed.issues %}
+                    <li>{{ issue.title | default('Unknown issue') }}</li>
+                {% endfor %}
+            {% else %}
+                <li>No major performance issues detected.</li>
+            {% endif %}
+        </ul>
+        {% if page_speed.pagespeed_report_link and page_speed.pagespeed_report_link != '#' %}
+            <p><a href="{{ page_speed.pagespeed_report_link }}" target="_blank">View Full PageSpeed Report</a></p>
+        {% endif %}
+    </div>
+
+    <div class="section">
+        <h2>SEO Quality</h2>
+        <p class="data-point"><strong>Overall SEO Score:</strong> 
+            <span class="score-badge {% if seo_quality.score is not none and seo_quality.score >= 70 %}score-good{% elif seo_quality.score is not none and seo_quality.score >= 40 %}score-medium{% else %}score-bad{% endif %}">
+                {{ seo_quality.score | default('N/A') }}/100
+            </span>
+        </p>
+        <p class="data-point"><strong>Text:</strong> {{ seo_quality.seo_overall_text | default('N/A') }}</p>
+        <p class="data-point"><strong>Title Tag:</strong> {{ seo_quality.elements.title | default('N/A') }}</p>
+        <p class="data-point"><strong>Meta Description:</strong> {{ seo_quality.elements.meta_description | default('N/A') }}</p>
+        <p class="data-point"><strong>Broken Links:</strong> {{ seo_quality.elements.broken_links | length | default('N/A') }}</p>
+        <p class="data-point"><strong>Images Missing Alt:</strong> {{ seo_quality.elements.image_alt_status | selectattr('startswith', 'Missing') | list | length | default('N/A') }}</p>
+        <p class="data-point"><strong>Internal Links:</strong> {{ seo_quality.elements.internal_links_count | default('N/A') }}</p>
+        <p class="data-point"><strong>External Links:</strong> {{ seo_quality.elements.external_links_count | default('N/A') }}</p>
+        <h3>Heading Tags (H1-H6):</h3>
+        <ul>
+            {% if seo_quality.elements.h_tags %}
+                {% for tag in seo_quality.elements.h_tags %}
+                    <li>{{ tag }}</li>
+                {% endfor %}
+            {% else %}
+                <li>No heading tags found.</li>
+            {% endif %}
+        </ul>
+        <h3>Top Keywords Density:</h3>
+        <ul>
+            {% if seo_quality.elements.keyword_density %}
+                {% for keyword in seo_quality.elements.keyword_density %}
+                    <li>{{ keyword }}</li>
+                {% endfor %}
+            {% else %}
+                <li>No significant keywords found.</li>
+            {% endif %}
+        </ul>
+        <h3>Improvement Tips:</h3>
+        <ul>
+            {% if seo_quality.improvement_tips %}
+                {% for tip in seo_quality.improvement_tips %}
+                    <li>{{ tip }}</li>
+                {% endfor %}
+            {% else %}
+                <li>No specific SEO improvement tips at this time.</li>
+            {% endif %}
+        </ul>
+        {% if ai_insights.seo_improvement_suggestions and ai_insights.seo_improvement_suggestions != 'N/A' %}
+            <div class="ai-section">
+                <h3>AI SEO Suggestions:</h3>
+                <p>{{ ai_insights.seo_improvement_suggestions }}</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="section">
+        <h2>User Experience (UX)</h2>
+        <h3>Potential Issues:</h3>
+        <ul>
+            {% if user_experience.issues %}
+                {% for issue in user_experience.issues %}
+                    <li>{{ issue }}</li>
+                {% endfor %}
+            {% else %}
+                <li>No major UX issues detected.</li>
+            {% endif %}
+        </ul>
+        <h3>Suggestions:</h3>
+        <ul>
+            {% if user_experience.suggestions %}
+                {% for suggestion in user_experience.suggestions %}
+                    <li>{{ suggestion }}</li>
+                {% endfor %}
+            {% else %}
+                <li>No specific UX suggestions at this time.</li>
+            {% endif %}
+        </ul>
+        {% if ai_insights.content_originality_tone and ai_insights.content_originality_tone != 'N/A' %}
+            <div class="ai-section">
+                <h3>AI Content Insights:</h3>
+                <p>{{ ai_insights.content_originality_tone }}</p>
+            </div>
+        {% endif %}
+    </div>
+
+    {% if ai_insights.summary and ai_insights.summary != 'N/A' %}
+        <div class="section ai-section">
+            <h2>AI Overall Summary</h2>
+            <p>{{ ai_insights.summary }}</p>
+        </div>
+    {% endif %}
+</body>
+</html>
