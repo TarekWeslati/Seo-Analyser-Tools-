@@ -8,7 +8,7 @@ from backend.services.domain_analysis import get_domain_analysis
 from backend.services.pagespeed_analysis import get_pagespeed_insights
 from backend.services.seo_analysis import perform_seo_analysis
 from backend.services.ux_analysis import perform_ux_analysis
-from backend.services.ai_suggestions import get_ai_suggestions
+from backend.services.ai_suggestions import get_ai_suggestions, generate_seo_rewrites, refine_content # New imports
 from backend.utils.url_validator import is_valid_url
 from backend.utils.pdf_generator import generate_pdf_report
 
@@ -23,6 +23,7 @@ app = Flask(__name__,
 CORS(app)
 
 app.config['PAGESPEED_API_KEY'] = os.getenv('PAGESPEED_API_KEY')
+app.config['GEMINI_API_KEY'] = os.getenv('GEMINI_API_KEY') # Ensure Gemini API Key is loaded
 
 last_analysis_results = {} 
 
@@ -44,6 +45,8 @@ def analyze_website():
     print("Received /analyze POST request.") 
     data = request.get_json()
     url = data.get('url')
+    # Get preferred language from header, default to 'en'
+    lang = request.headers.get('Accept-Language', 'en').split(',')[0].split('-')[0]
 
     if not url or not is_valid_url(url): 
         print(f"Invalid URL provided: {url}") 
@@ -79,7 +82,8 @@ def analyze_website():
             results['extracted_text_sample'] = results['seo_quality']['elements']['page_text'][:1000]
 
         print("Getting AI suggestions...")
-        ai_data = get_ai_suggestions(url, results)
+        # Pass language to AI suggestions
+        ai_data = get_ai_suggestions(url, results, lang)
         results['ai_insights'] = ai_data
         print("AI suggestions complete.")
 
@@ -88,7 +92,6 @@ def analyze_website():
         return jsonify(results), 200
 
     except Exception as e:
-        # تم تغيير هذا السطر لإزالة exc_info من print
         print(f"Critical Error during analysis: {e}") 
         return jsonify({"error": "An unexpected error occurred during analysis.", "details": str(e)}), 500
 
@@ -110,9 +113,48 @@ def generate_report():
         print("PDF report generated. Sending file.") 
         return send_file(pdf_path, as_attachment=True, download_name=f"{url.replace('https://', '').replace('http://', '')}_analysis_report.pdf", mimetype='application/pdf')
     except Exception as e:
-        # تم تغيير هذا السطر لإزالة exc_info من print
         print(f"Error generating PDF report: {e}") 
         return jsonify({"error": "Failed to generate PDF report.", "details": str(e)}), 500
+
+# New AI endpoint for SEO rewrites
+@app.route('/ai_rewrite_seo', methods=['POST'])
+def ai_rewrite_seo():
+    data = request.get_json()
+    title = data.get('title')
+    meta_description = data.get('meta_description')
+    keywords = data.get('keywords')
+    lang = request.headers.get('Accept-Language', 'en').split(',')[0].split('-')[0]
+
+    if not title and not meta_description:
+        return jsonify({"error": "No title or meta description provided for rewrite."}), 400
+
+    try:
+        print(f"Generating AI SEO rewrites for title: {title}, meta: {meta_description}")
+        rewrites = generate_seo_rewrites(title, meta_description, keywords, lang, app.config['GEMINI_API_KEY'])
+        print("AI SEO rewrites complete.")
+        return jsonify(rewrites), 200
+    except Exception as e:
+        print(f"Error generating AI SEO rewrites: {e}")
+        return jsonify({"error": "Failed to generate AI SEO rewrites.", "details": str(e)}), 500
+
+# New AI endpoint for content refinement
+@app.route('/ai_refine_content', methods=['POST'])
+def ai_refine_content():
+    data = request.get_json()
+    text_sample = data.get('text_sample')
+    lang = request.headers.get('Accept-Language', 'en').split(',')[0].split('-')[0]
+
+    if not text_sample:
+        return jsonify({"error": "No text sample provided for refinement."}), 400
+
+    try:
+        print(f"Generating AI content refinement for text sample: {text_sample[:50]}...")
+        refinement = refine_content(text_sample, lang, app.config['GEMINI_API_KEY'])
+        print("AI content refinement complete.")
+        return jsonify(refinement), 200
+    except Exception as e:
+        print(f"Error generating AI content refinement: {e}")
+        return jsonify({"error": "Failed to generate AI content refinement.", "details": str(e)}), 500
 
 
 if __name__ == '__main__':
