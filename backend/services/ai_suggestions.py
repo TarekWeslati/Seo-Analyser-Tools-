@@ -1,133 +1,229 @@
+import requests
 import json
-import httpx
-import os # Import os module
 
-# This function will interact with the Gemini API (now synchronously)
-def get_ai_suggestions(url: str, analysis_results: dict): 
+# Placeholder for Gemini API Key - will be passed from app.py config
+# For local testing, you might set it here: GEMINI_API_KEY = "YOUR_GEMINI_API_KEY"
+
+def call_gemini_api(prompt, api_key, response_schema=None, lang="en"):
     """
-    Generates AI-powered summaries, SEO suggestions, and content insights
-    based on the website analysis results using the Gemini API.
+    Calls the Gemini 2.0 Flash API to generate content.
+    Args:
+        prompt (str): The prompt to send to the LLM.
+        api_key (str): Your Gemini API key.
+        response_schema (dict, optional): JSON schema for structured responses. Defaults to None.
+        lang (str): Preferred language for the response (e.g., "en", "ar", "fr").
+    Returns:
+        dict: Parsed JSON response from the API.
+    Raises:
+        Exception: If the API call fails or returns an unexpected response.
     """
-    ai_insights = {
-        "summary": "N/A",
-        "seo_improvement_suggestions": "N/A",
-        "content_originality_tone": "N/A"
+    chat_history = []
+    chat_history.push({ "role": "user", "parts": [{ "text": prompt }] })
+
+    payload = {
+        "contents": chat_history,
+        "generationConfig": {
+            "responseMimeType": "application/json" if response_schema else "text/plain",
+            "temperature": 0.7,
+            "topP": 0.95,
+            "topK": 40,
+        }
     }
+    if response_schema:
+        payload["generationConfig"]["responseSchema"] = response_schema
 
-    simplified_results = {
-        "url": url,
-        "domain_authority": {
-            "domain": analysis_results.get('domain_authority', {}).get('domain', 'N/A'),
-            "domain_age_years": analysis_results.get('domain_authority', {}).get('domain_age_years', 'N/A'),
-            "ssl_status": analysis_results.get('domain_authority', {}).get('ssl_status', 'N/A'),
-            "blacklist_status": analysis_results.get('domain_authority', {}).get('blacklist_status', 'N/A'),
-        },
-        "page_speed": {
-            "Performance Score": analysis_results.get('page_speed', {}).get('scores', {}).get('Performance Score', 'N/A'),
-            "issues": [issue.get('title', '') for issue in analysis_results.get('page_speed', {}).get('issues', [])]
-        },
-        "seo_quality": {
-            "score": analysis_results.get('seo_quality', {}).get('score', 'N/A'),
-            "title": analysis_results.get('seo_quality', {}).get('elements', {}).get('title', 'N/A'),
-            "meta_description": analysis_results.get('seo_quality', {}).get('elements', {}).get('meta_description', 'N/A'),
-            "broken_links_count": len(analysis_results.get('seo_quality', {}).get('elements', {}).get('broken_links', [])),
-            "missing_alt_images_count": len([s for s in analysis_results.get('seo_quality', {}).get('elements', {}).get('image_alt_status', []) if "Missing" in s or "Empty" in s]),
-            "keywords": analysis_results.get('seo_quality', {}).get('elements', {}).get('keyword_density', {}),
-            "h_tags": analysis_results.get('seo_quality', {}).get('elements', {}).get('h_tags', {}),
-            "improvement_tips": analysis_results.get('seo_quality', {}).get('improvement_tips', [])
-        },
-        "user_experience": {
-            "issues": analysis_results.get('user_experience', {}).get('issues', []),
-            "suggestions": analysis_results.get('user_experience', {}).get('suggestions', [])
-        },
-        "extracted_text_sample": analysis_results.get('extracted_text_sample', 'No text extracted.')
-    }
-
-    results_json_string = json.dumps(simplified_results, indent=2, ensure_ascii=False)
-
-    # Gemini API configuration
-    # Read API key from environment variable
-    api_key = os.getenv("GEMINI_API_KEY") # Read from environment variable
-    if not api_key:
-        print("GEMINI_API_KEY environment variable not set. AI suggestions will be N/A.")
-        return ai_insights # Return empty insights if API key is missing
-
+    # Construct the API URL
     api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
 
-    # --- Prompt for Overall Summary ---
-    summary_prompt = f"""
-    Based on the following website analysis data for the URL: {url}, provide a concise overall summary.
-    Highlight the main strengths, weaknesses, and critical areas for improvement.
-    The summary should be easy to understand for a non-technical audience.
-    
-    Analysis Data:
-    {results_json_string}
-    """
-    summary_payload = {"contents": [{"role": "user", "parts": [{"text": summary_prompt}]}]}
-    
-    # --- Prompt for SEO Improvement Suggestions ---
-    seo_prompt = f"""
-    Based on the following SEO analysis data for the URL: {url}, provide specific and actionable SEO improvement suggestions.
-    Focus on title tags, meta descriptions, alt text for images, broken links, keyword usage, and heading structure.
-    Provide at least 3-5 concrete suggestions.
-    
-    SEO Data:
-    {json.dumps(simplified_results['seo_quality'], indent=2, ensure_ascii=False)}
-    """
-    seo_payload = {"contents": [{"role": "user", "parts": [{"text": seo_prompt}]}]}
-
-    # --- Prompt for Content Originality & Tone (UX) ---
-    content_ux_prompt = f"""
-    Based on the following user experience issues and extracted text content for the URL: {url},
-    provide insights into the content's originality, tone (e.g., formal, informal, engaging, dry), and readability.
-    Suggest improvements for content quality and overall user experience.
-    
-    UX Issues: {json.dumps(simplified_results['user_experience']['issues'], indent=2, ensure_ascii=False)}
-    Extracted Text Sample: {simplified_results['extracted_text_sample']}
-    """
-    content_ux_payload = {"contents": [{"role": "user", "parts": [{"text": content_ux_prompt}]}]}
-
-    # Make API calls synchronously
     try:
-        summary_response = httpx.post(api_url, json=summary_payload, timeout=60)
-        summary_response.raise_for_status()
-        summary_result = summary_response.json()
-        if summary_result.get('candidates') and summary_result['candidates'][0].get('content') and summary_result['candidates'][0]['content'].get('parts'):
-            ai_insights["summary"] = summary_result['candidates'][0]['content']['parts'][0]['text']
-        else:
-            print(f"Gemini API (summary) returned unexpected structure: {summary_result}")
+        response = requests.post(
+            api_url,
+            headers={'Content-Type': 'application/json'},
+            data=json.dumps(payload)
+        )
+        response.raise_for_status() # Raise an exception for HTTP errors (4xx or 5xx)
+        result = response.json()
 
-        seo_response = httpx.post(api_url, json=seo_payload, timeout=60)
-        seo_response.raise_for_status()
-        seo_result = seo_response.json()
-        if seo_result.get('candidates') and seo_result['candidates'][0].get('content') and seo_result['candidates'][0]['content'].get('parts'):
-            ai_insights["seo_improvement_suggestions"] = seo_result['candidates'][0]['content']['parts'][0]['text']
+        if result.get("candidates") and result["candidates"][0].get("content") and \
+           result["candidates"][0]["content"].get("parts") and \
+           result["candidates"][0]["content"]["parts"][0].get("text"):
+            
+            text_response = result["candidates"][0]["content"]["parts"][0]["text"]
+            if response_schema:
+                try:
+                    return json.loads(text_response)
+                except json.JSONDecodeError:
+                    raise Exception(f"Failed to parse JSON response from Gemini: {text_response}")
+            else:
+                return {"text": text_response}
         else:
-            print(f"Gemini API (SEO) returned unexpected structure: {seo_result}")
+            raise Exception(f"Unexpected response structure from Gemini API: {result}")
 
-        content_ux_response = httpx.post(api_url, json=content_ux_payload, timeout=60)
-        content_ux_response.raise_for_status()
-        content_ux_result = content_ux_response.json()
-        if content_ux_result.get('candidates') and content_ux_result['candidates'][0].get('content') and content_ux_result['candidates'][0]['content'].get('parts'):
-            ai_insights["content_originality_tone"] = content_ux_result['candidates'][0]['content']['parts'][0]['text']
-        else:
-            print(f"Gemini API (content/UX) returned unexpected structure: {content_ux_result}")
-
-    except httpx.HTTPStatusError as e:
-        print(f"HTTP error during Gemini API call: {e.response.status_code} - {e.response.text}")
-        # Set N/A for AI insights if there's an API error
-        ai_insights["summary"] = f"Error: {e.response.status_code} - {e.response.text}"
-        ai_insights["seo_improvement_suggestions"] = f"Error: {e.response.status_code} - {e.response.text}"
-        ai_insights["content_originality_tone"] = f"Error: {e.response.status_code} - {e.response.text}"
-    except httpx.RequestError as e:
-        print(f"Request error during Gemini API call: {e}")
-        ai_insights["summary"] = f"Request Error: {e}"
-        ai_insights["seo_improvement_suggestions"] = f"Request Error: {e}"
-        ai_insights["content_originality_tone"] = f"Request Error: {e}"
+    except requests.exceptions.RequestException as e:
+        raise Exception(f"Gemini API request failed: {e}")
     except Exception as e:
-        print(f"An unexpected error occurred during Gemini API call: {e}")
-        ai_insights["summary"] = f"Unexpected Error: {e}"
-        ai_insights["seo_improvement_suggestions"] = f"Unexpected Error: {e}"
-        ai_insights["content_originality_tone"] = f"Unexpected Error: {e}"
+        raise Exception(f"An error occurred during Gemini API call: {e}")
 
-    return ai_insights
+
+def get_ai_suggestions(url, analysis_results, lang="en", api_key=None):
+    """
+    Generates AI-powered SEO and content insights based on analysis results.
+    """
+    if not api_key:
+        print("GEMINI_API_KEY not set. AI suggestions will be N/A.")
+        return {
+            "seo_improvement_suggestions": "N/A",
+            "content_originality_tone": "N/A",
+            "summary": "N/A"
+        }
+
+    seo_quality = analysis_results.get('seo_quality', {})
+    user_experience = analysis_results.get('user_experience', {})
+    extracted_text_sample = analysis_results.get('extracted_text_sample', "No content available.")
+
+    # Prompt for SEO suggestions
+    seo_prompt = f"""
+    As an expert SEO analyst, provide actionable SEO improvement suggestions for the website: {url}.
+    Based on the following data:
+    - Title: {seo_quality.get('elements', {}).get('title', 'N/A')}
+    - Meta Description: {seo_quality.get('elements', {}).get('meta_description', 'N/A')}
+    - Broken Links: {seo_quality.get('elements', {}).get('broken_links', [])}
+    - Missing Alt Text Images: {seo_quality.get('elements', {}).get('image_alt_status', [])}
+    - H-Tags: {seo_quality.get('elements', {}).get('h_tags', {})}
+    - Keyword Density (Top 10): {json.dumps(dict(sorted(seo_quality.get('elements', {}).get('keyword_density', {}).items(), key=lambda item: item[1], reverse=True)[:10]))}
+    - Overall SEO Score: {seo_quality.get('score', 'N/A')}
+    - Existing SEO Improvement Tips: {seo_quality.get('improvement_tips', [])}
+
+    Focus on 3-5 specific, actionable recommendations.
+    Respond in {lang} language.
+    """
+
+    # Prompt for Content Originality/Tone/Readability
+    content_prompt = f"""
+    Analyze the following text sample from the website {url} for its originality, tone, and readability.
+    Text Sample: "{extracted_text_sample}"
+    Consider these UX issues (if any): {user_experience.get('issues', [])}
+    Provide insights and suggestions for improvement.
+    Respond in {lang} language.
+    """
+
+    # Prompt for Overall Summary
+    summary_prompt = f"""
+    Provide an overall summary of the website analysis for {url}.
+    Include strengths, weaknesses, and critical areas for improvement based on all provided data:
+    Domain Authority: {analysis_results.get('domain_authority', 'N/A')}
+    Page Speed: {analysis_results.get('page_speed', 'N/A')}
+    SEO Quality: {analysis_results.get('seo_quality', 'N/A')}
+    User Experience: {analysis_results.get('user_experience', 'N/A')}
+    Respond in {lang} language.
+    """
+
+    ai_suggestions = {
+        "seo_improvement_suggestions": "N/A",
+        "content_originality_tone": "N/A",
+        "summary": "N/A"
+    }
+
+    try:
+        seo_response = call_gemini_api(seo_prompt, api_key, lang=lang)
+        ai_suggestions["seo_improvement_suggestions"] = seo_response.get("text", "N/A")
+    except Exception as e:
+        print(f"Error getting AI SEO suggestions: {e}")
+
+    try:
+        content_response = call_gemini_api(content_prompt, api_key, lang=lang)
+        ai_suggestions["content_originality_tone"] = content_response.get("text", "N/A")
+    except Exception as e:
+        print(f"Error getting AI content insights: {e}")
+
+    try:
+        summary_response = call_gemini_api(summary_prompt, api_key, lang=lang)
+        ai_suggestions["summary"] = summary_response.get("text", "N/A")
+    except Exception as e:
+        print(f"Error getting AI overall summary: {e}")
+
+    return ai_suggestions
+
+
+def generate_seo_rewrites(current_title, current_meta_description, keywords, lang="en", api_key=None):
+    """
+    Generates alternative SEO-optimized title tags and meta descriptions using Gemini API.
+    """
+    if not api_key:
+        raise Exception("GEMINI_API_KEY not set. Cannot generate AI SEO rewrites.")
+
+    prompt = f"""
+    As an expert in SEO, please provide 3-5 alternative, SEO-optimized title tags and meta descriptions.
+    The title tags should be between 10-70 characters.
+    The meta descriptions should be between 120-160 characters.
+    Focus on being concise, compelling, and including relevant keywords.
+
+    Current Title: "{current_title}"
+    Current Meta Description: "{current_meta_description}"
+    Keywords to consider (if available): "{keywords}"
+
+    Provide the output in JSON format, with keys 'titles' (list of strings) and 'meta_descriptions' (list of strings).
+    Ensure the response is in {lang} language.
+    """
+
+    response_schema = {
+        "type": "OBJECT",
+        "properties": {
+            "titles": {
+                "type": "ARRAY",
+                "items": {"type": "STRING"}
+            },
+            "meta_descriptions": {
+                "type": "ARRAY",
+                "items": {"type": "STRING"}
+            }
+        },
+        "required": ["titles", "meta_descriptions"]
+    }
+
+    try:
+        return call_gemini_api(prompt, api_key, response_schema, lang)
+    except Exception as e:
+        print(f"Error in generate_seo_rewrites: {e}")
+        return {"titles": [], "meta_descriptions": [], "error": str(e)}
+
+
+def refine_content(text_sample, lang="en", api_key=None):
+    """
+    Refines a given text sample for clarity, engagement, and readability using Gemini API.
+    """
+    if not api_key:
+        raise Exception("GEMINI_API_KEY not set. Cannot refine content.")
+    
+    if not text_sample:
+        return {"refined_text": "No text provided.", "suggestions": []}
+
+    prompt = f"""
+    As a content optimization specialist, please refine the following text sample.
+    Improve its clarity, engagement, and readability.
+    Provide a revised version of the text and 2-3 specific suggestions for further improvement.
+    The refined text should be in {lang} language.
+
+    Text Sample: "{text_sample}"
+
+    Provide the output in JSON format, with keys 'refined_text' (string) and 'suggestions' (list of strings).
+    """
+
+    response_schema = {
+        "type": "OBJECT",
+        "properties": {
+            "refined_text": {"type": "STRING"},
+            "suggestions": {
+                "type": "ARRAY",
+                "items": {"type": "STRING"}
+            }
+        },
+        "required": ["refined_text", "suggestions"]
+    }
+
+    try:
+        return call_gemini_api(prompt, api_key, response_schema, lang)
+    except Exception as e:
+        print(f"Error in refine_content: {e}")
+        return {"refined_text": "Error during refinement.", "suggestions": [], "error": str(e)}
+
