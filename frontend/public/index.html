@@ -1,330 +1,261 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Web Analyzer Pro</title>
-    <!-- ربط بملف Tailwind CSS الذي تم إنشاؤه -->
-    <link href="/css/style.css" rel="stylesheet"> <!-- تم التعديل هنا ليتوافق مع مخرجات بناء Tailwind -->
-    <!-- ربط بأيقونات Font Awesome -->
+    <link href="/css/style.css" rel="stylesheet">
+    <link rel="icon" href="https://placehold.co/32x32/000000/FFFFFF?text=WA" type="image/x-icon">
+    <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- ربط بخطوط Google - Inter لمظهر عصري -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #F8F9FA; /* خلفية رمادية فاتحة */
-            color: #212529; /* نص داكن */
-            transition: background-color 0.3s ease, color 0.3s ease;
-        }
-        .dark body {
-            background-color: #212529; /* خلفية داكنة */
-            color: #F8F9FA; /* نص فاتح */
-        }
-
-        /* أنماط خاصة بالرأس */
-        .header-bg {
-            background-color: white;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-        }
-        .dark .header-bg {
-            background-color: #2C3034;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-        }
-
-        /* أنماط البطاقات المطابقة لقطة الشاشة */
-        .result-card {
-            background-color: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        .dark .result-card {
-            background-color: #343A40;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        }
-        .result-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-        }
-        .dark .result-card:hover {
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
-        }
-
-        /* أنماط دائرة الأيقونة (تستخدم للأيقونات في لقطة الشاشة) */
-        .score-icon-circle {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.2rem;
-            color: white;
-            margin: 0 auto 10px auto;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-        }
-        .score-icon-blue { background-color: #007bff; } /* أزرق لسلطة النطاق */
-        .score-icon-green { background-color: #28a745; } /* أخضر للأداء */
-        .score-icon-orange { background-color: #fd7e14; } /* برتقالي لنتيجة SEO */
-
-        /* شريط التقدم */
-        .progress-bar-container {
-            width: 100%;
-            background-color: #e9ecef;
-            border-radius: 5px;
-            height: 8px;
-            overflow: hidden;
-        }
-        .dark .progress-bar-container {
-            background-color: #495057;
-        }
+        /* Custom styles for progress bar colors */
         .progress-bar {
             height: 100%;
-            border-radius: 5px;
-            transition: width 0.5s ease-in-out, background-color 0.3s ease;
+            border-radius: 0.5rem; /* rounded-lg */
+            transition: width 0.5s ease-in-out, background-color 0.5s ease-in-out;
         }
-        .progress-good { background-color: #28a745; }
-        .progress-medium { background-color: #ffc107; }
-        .progress-bad { background-color: #dc3545; }
-
-        /* زر تصدير PDF */
-        #export-pdf-button {
-            background-color: #28a745; /* أخضر */
-            box-shadow: 0 4px 10px rgba(40, 167, 69, 0.4);
-            transition: all 0.2s ease;
+        .progress-good {
+            background-color: #10B981; /* Tailwind green-500 */
         }
-        #export-pdf-button:hover {
-            background-color: #218838;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(40, 167, 69, 0.6);
+        .progress-medium {
+            background-color: #FBBF24; /* Tailwind yellow-400 */
         }
-
-        /* زر التحليل */
-        #analyze-button {
-            background-color: #007bff; /* أزرق */
-            box-shadow: 0 4px 10px rgba(0, 123, 255, 0.4);
-            transition: all 0.2s ease;
+        .progress-bad {
+            background-color: #EF4444; /* Tailwind red-500 */
         }
-        #analyze-button:hover {
-            background-color: #0056b3;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(0, 123, 255, 0.6);
+        /* Dark mode transition */
+        body {
+            transition: background-color 0.3s ease;
         }
-
-        /* زر الترقية إلى Pro (عنصر نائب) */
-        #upgrade-pro-button {
-            background-color: #6f42c1; /* بنفسجي */
-            box-shadow: 0 4px 10px rgba(111, 66, 193, 0.4);
-            transition: all 0.2s ease;
+        .dark .bg-white {
+            background-color: #1a202c; /* dark gray */
         }
-        #upgrade-pro-button:hover {
-            background-color: #5a359e;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(111, 66, 193, 0.6);
+        .dark .text-gray-900 {
+            color: #e2e8f0; /* light gray */
         }
-
-        /* مؤشر التحميل الدائري */
-        .loading-spinner-circle {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            border-left-color: #007bff;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
+        .dark .text-gray-700 {
+            color: #cbd5e0; /* slightly darker light gray */
         }
-        .dark .loading-spinner-circle {
-            border-color: rgba(255, 255, 255, 0.2);
-            border-left-color: #007bff;
+        .dark .border-gray-300 {
+            border-color: #4a5568; /* darker border */
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .dark .focus\\:ring-blue-500:focus {
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
         }
-
-        /* هام: تأكد من إخفاء هذه العناصر افتراضياً عبر CSS */
-        #loading-spinner, #results-dashboard {
-            display: none !important;
+        .dark .placeholder-gray-400::placeholder {
+            color: #a0aec0;
+        }
+        .dark .bg-gray-100 {
+            background-color: #2d3748;
+        }
+        .dark .text-green-600 {
+            color: #68d391;
+        }
+        .dark .text-red-600 {
+            color: #fc8181;
+        }
+        .dark .text-yellow-600 {
+            color: #f6e05e;
+        }
+        .dark .bg-blue-600 {
+            background-color: #2b6cb0;
+        }
+        .dark .hover\\:bg-blue-700:hover {
+            background-color: #2c5282;
+        }
+        .dark .focus\\:ring-blue-500:focus {
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
+        }
+        .dark .text-blue-600 {
+            color: #63b3ed;
+        }
+        .dark .bg-gray-800 {
+            background-color: #1a202c;
+        }
+        .dark .text-gray-300 {
+            color: #a0aec0;
+        }
+        .dark .border-gray-700 {
+            border-color: #4a5568;
+        }
+        .dark .bg-gray-700 {
+            background-color: #2d3748;
+        }
+        .dark .text-gray-400 {
+            color: #718096;
+        }
+        .dark .hover\\:bg-gray-600:hover {
+            background-color: #4a5568;
+        }
+        .dark .focus\\:ring-gray-500:focus {
+            box-shadow: 0 0 0 3px rgba(113, 128, 147, 0.5);
         }
     </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col items-center">
-    <div class="w-full header-bg py-4 px-6 flex justify-between items-center shadow-md">
-        <h1 class="text-3xl font-extrabold text-blue-700 dark:text-blue-400 flex items-center">
-            <i class="fas fa-chart-line mr-3"></i>Web Analyzer Pro
-        </h1>
-        <div class="flex items-center space-x-4">
-            <button id="theme-toggle" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200">
-                <i class="fas fa-sun text-lg dark:hidden"></i>
-                <i class="fas fa-moon text-lg hidden dark:inline"></i>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4 text-gray-900 dark:bg-gray-900 dark:text-gray-100 font-sans">
+    <div class="container mx-auto p-6 bg-white rounded-xl shadow-lg w-full max-w-2xl dark:bg-gray-800">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-extrabold text-blue-600 flex items-center">
+                <i class="fas fa-chart-line mr-3"></i> Web Analyzer Pro
+            </h1>
+            <button id="theme-toggle" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                <i class="fas fa-moon"></i>
             </button>
-            <button id="upgrade-pro-button" class="px-5 py-2 rounded-lg text-white font-semibold text-sm">
-                Upgrade Pro
-            </button>
+        </div>
+
+        <!-- Input Section -->
+        <div id="input-section" class="mb-8">
+            <h2 class="text-2xl font-semibold mb-4 text-center">Analyze Any Website</h2>
+            <div class="flex flex-col sm:flex-row gap-4">
+                <input type="url" id="website-url" placeholder="https://www.google.com" class="flex-grow p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400">
+                <button id="analyze-button" class="bg-blue-600 text-white p-3 rounded-lg font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 ease-in-out shadow-md flex items-center justify-center">
+                    <i class="fas fa-play-circle mr-2"></i> Analyze
+                </button>
+            </div>
+            <p id="error-message" class="text-red-600 mt-4 text-center font-medium hidden"></p>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="loading-spinner" class="text-center py-10 hidden">
+            <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500 mx-auto"></div>
+            <p class="text-gray-700 dark:text-gray-300 mt-4 text-lg">Analyzing website, please wait...</p>
+        </div>
+
+        <!-- Results Dashboard -->
+        <div id="results-dashboard" class="hidden">
+            <h2 class="text-2xl font-semibold mb-6 text-center">Analysis Results for <span id="analyzed-url" class="text-blue-600 break-all"></span></h2>
+            
+            <!-- Domain Authority Section -->
+            <div class="bg-gray-50 dark:bg-gray-700 p-5 rounded-lg shadow-sm mb-6">
+                <h3 class="text-xl font-bold mb-3 text-blue-700 dark:text-blue-300 flex items-center"><i class="fas fa-shield-alt mr-2"></i> Domain Authority</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-lg font-medium">Domain: <span id="domain-name" class="font-normal text-gray-700 dark:text-gray-300">N/A</span></p>
+                        <p class="text-lg font-medium">Score: <span id="domain-authority-score" class="font-normal text-gray-700 dark:text-gray-300">N/A</span></p>
+                        <div class="w-full bg-gray-200 rounded-lg h-3 mt-2">
+                            <div id="domain-authority-progress" class="progress-bar"></div>
+                        </div>
+                        <p id="domain-authority-text" class="text-sm text-gray-600 dark:text-gray-400 mt-1">Calculating...</p>
+                    </div>
+                    <div>
+                        <p class="text-lg font-medium">Domain Age: <span id="domain-age" class="font-normal text-gray-700 dark:text-gray-300">N/A</span></p>
+                        <p class="text-lg font-medium">SSL Status: <span id="ssl-status" class="font-normal text-gray-700 dark:text-gray-300">N/A</span></p>
+                        <p class="text-lg font-medium">Blacklist Status: <span id="blacklist-status" class="font-normal text-gray-700 dark:text-gray-300">N/A</span></p>
+                        <p class="text-lg font-medium">DNS Health: <span id="dns-health" class="font-normal text-gray-700 dark:text-gray-300">N/A</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page Speed Section -->
+            <div class="bg-gray-50 dark:bg-gray-700 p-5 rounded-lg shadow-sm mb-6">
+                <h3 class="text-xl font-bold mb-3 text-blue-700 dark:text-blue-300 flex items-center"><i class="fas fa-tachometer-alt mr-2"></i> Page Speed</h3>
+                <div>
+                    <p class="text-lg font-medium">Performance Score: <span id="performance-score" class="font-normal text-gray-700 dark:text-gray-300">N/A</span></p>
+                    <div class="w-full bg-gray-200 rounded-lg h-3 mt-2">
+                        <div id="performance-progress" class="progress-bar"></div>
+                    </div>
+                    <p id="performance-text" class="text-sm text-gray-600 dark:text-gray-400 mt-1">Calculating...</p>
+                </div>
+                <div class="mt-4">
+                    <h4 class="text-md font-semibold mb-2">Core Web Vitals:</h4>
+                    <ul id="core-web-vitals" class="list-disc list-inside text-gray-700 dark:text-gray-300">
+                        <li>Loading...</li>
+                    </ul>
+                </div>
+                <div class="mt-4">
+                    <h4 class="text-md font-semibold mb-2">Potential Issues:</h4>
+                    <ul id="performance-issues" class="list-disc list-inside text-gray-700 dark:text-gray-300">
+                        <li>Loading...</li>
+                    </ul>
+                </div>
+                <a id="pagespeed-link" href="#" target="_blank" class="text-blue-600 hover:underline mt-4 inline-block">View Full PageSpeed Report <i class="fas fa-external-link-alt ml-1"></i></a>
+            </div>
+
+            <!-- SEO Quality Section -->
+            <div class="bg-gray-50 dark:bg-gray-700 p-5 rounded-lg shadow-sm mb-6">
+                <h3 class="text-xl font-bold mb-3 text-blue-700 dark:text-blue-300 flex items-center"><i class="fas fa-search mr-2"></i> SEO Quality</h3>
+                <div>
+                    <p class="text-lg font-medium">Overall SEO Score: <span id="seo-overall-score" class="font-normal text-gray-700 dark:text-gray-300">N/A</span></p>
+                    <div class="w-full bg-gray-200 rounded-lg h-3 mt-2">
+                        <div id="seo-overall-progress" class="progress-bar"></div>
+                    </div>
+                    <p id="seo-overall-text" class="text-sm text-gray-600 dark:text-gray-400 mt-1">Calculating...</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div>
+                        <p class="text-lg font-medium">Title Tag: <span id="seo-title" class="font-normal text-gray-700 dark:text-gray-300 break-all">N/A</span></p>
+                        <p class="text-lg font-medium">Meta Description: <span id="seo-meta-description" class="font-normal text-gray-700 dark:text-gray-300 break-all">N/A</span></p>
+                        <p class="text-lg font-medium">Broken Links: <span id="seo-broken-links" class="font-normal text-gray-700 dark:text-gray-300">N/A</span></p>
+                        <p class="text-lg font-medium">Images Missing Alt: <span id="seo-missing-alt" class="font-normal text-gray-700 dark:text-gray-300">N/A</span></p>
+                    </div>
+                    <div>
+                        <p class="text-lg font-medium">Internal Links: <span id="seo-internal-links" class="font-normal text-gray-700 dark:text-gray-300">N/A</span></p>
+                        <p class="text-lg font-medium">External Links: <span id="seo-external-links" class="font-normal text-gray-700 dark:text-gray-300">N/A</span></p>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <h4 class="text-md font-semibold mb-2">Heading Tags (H1-H6):</h4>
+                    <ul id="h-tags-list" class="list-disc list-inside text-gray-700 dark:text-gray-300">
+                        <li>Loading...</li>
+                    </ul>
+                </div>
+                <div class="mt-4">
+                    <h4 class="text-md font-semibold mb-2">Top Keywords Density:</h4>
+                    <ul id="keyword-density-list" class="list-disc list-inside text-gray-700 dark:text-gray-300">
+                        <li>Loading...</li>
+                    </ul>
+                </div>
+                <div class="mt-4">
+                    <h4 class="text-md font-semibold mb-2">Improvement Tips:</h4>
+                    <ul id="seo-improvement-tips" class="list-disc list-inside text-gray-700 dark:text-gray-300">
+                        <li>Loading...</li>
+                    </ul>
+                </div>
+                <div id="ai-seo-suggestions-section" class="mt-4 bg-blue-100 dark:bg-blue-900 p-4 rounded-lg hidden">
+                    <h4 class="text-md font-semibold mb-2 text-blue-800 dark:text-blue-200 flex items-center"><i class="fas fa-lightbulb mr-2"></i> AI SEO Suggestions:</h4>
+                    <p id="ai-seo-suggestions-text" class="text-blue-700 dark:text-blue-300">Loading AI suggestions...</p>
+                </div>
+            </div>
+
+            <!-- User Experience Section -->
+            <div class="bg-gray-50 dark:bg-gray-700 p-5 rounded-lg shadow-sm mb-6">
+                <h3 class="text-xl font-bold mb-3 text-blue-700 dark:text-blue-300 flex items-center"><i class="fas fa-user-friends mr-2"></i> User Experience (UX)</h3>
+                <div class="mt-4">
+                    <h4 class="text-md font-semibold mb-2">Potential Issues:</h4>
+                    <ul id="ux-issues-list" class="list-disc list-inside text-gray-700 dark:text-gray-300">
+                        <li>Loading...</li>
+                    </ul>
+                </div>
+                <div class="mt-4">
+                    <h4 class="text-md font-semibold mb-2">Suggestions:</h4>
+                    <ul id="ux-suggestions-list" class="list-disc list-inside text-gray-700 dark:text-gray-300">
+                        <li>Loading...</li>
+                    </ul>
+                </div>
+                <div id="ai-content-insights-section" class="mt-4 bg-blue-100 dark:bg-blue-900 p-4 rounded-lg hidden">
+                    <h4 class="text-md font-semibold mb-2 text-blue-800 dark:text-blue-200 flex items-center"><i class="fas fa-edit mr-2"></i> AI Content Insights:</h4>
+                    <p id="ai-content-insights-text" class="text-blue-700 dark:text-blue-300">Loading AI insights...</p>
+                </div>
+            </div>
+
+            <!-- AI Summary Section -->
+            <div id="ai-summary-section" class="bg-blue-50 dark:bg-blue-800 p-5 rounded-lg shadow-sm mb-6 hidden">
+                <h3 class="text-xl font-bold mb-3 text-blue-700 dark:text-blue-300 flex items-center"><i class="fas fa-brain mr-2"></i> AI Overall Summary</h3>
+                <p id="ai-summary-text" class="text-blue-600 dark:text-blue-200 leading-relaxed">Loading AI summary...</p>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4 mt-6">
+                <button id="analyze-another-button" class="flex-grow bg-gray-300 text-gray-800 p-3 rounded-lg font-semibold hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 transition duration-200 ease-in-out shadow-md flex items-center justify-center">
+                    <i class="fas fa-redo mr-2"></i> Analyze Another
+                </button>
+                <button id="export-pdf-button" class="flex-grow bg-green-600 text-white p-3 rounded-lg font-semibold hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition duration-200 ease-in-out shadow-md flex items-center justify-center">
+                    <i class="fas fa-file-pdf mr-2"></i> Export PDF Report
+                </button>
+            </div>
         </div>
     </div>
 
-    <div class="container mx-auto py-10 px-4 sm:px-6 lg:px-8 flex-grow">
-        <main class="bg-white dark:bg-gray-800 rounded-xl p-8 sm:p-10 lg:p-12 result-card">
-            <div id="input-section" class="mb-10 text-center">
-                <h2 class="text-3xl font-bold mb-6 text-gray-800 dark:text-gray-200">Analyze Any Website</h2>
-                <div class="flex flex-col md:flex-row gap-4 max-w-2xl mx-auto">
-                    <input type="url" id="website-url" placeholder="Enter website URL (e.g., https://example.com)"
-                           class="flex-grow p-4 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-600 transition-all duration-300 text-left" style="direction: ltr;">
-                    <button id="analyze-button"
-                            class="px-8 py-4 font-semibold rounded-lg text-white text-lg">
-                        <i class="fas fa-play-circle mr-2"></i>Analyze
-                    </button>
-                </div>
-                <p id="error-message" class="text-red-500 mt-4 font-medium hidden"></p>
-            </div>
-
-            <!-- مؤشر التحميل - الآن مخفي أيضاً بواسطة CSS الحاسم -->
-            <div id="loading-spinner" class="text-center py-20 hidden">
-                <div class="loading-spinner-circle mx-auto mb-4"></div>
-                <p class="mt-4 text-xl font-semibold text-blue-600 dark:text-blue-400">Analyzing website, please wait...</p>
-            </div>
-
-            <!-- لوحة النتائج - الآن مخفية أيضاً بواسطة CSS الحاسم -->
-            <div id="results-dashboard" class="hidden">
-                <h2 class="text-3xl font-bold mb-8 text-center text-gray-800 dark:text-gray-200">Analysis Results for <span id="analyzed-url" class="text-blue-600 dark:text-blue-400" dir="ltr"></span></h2>
-
-                <!-- النتائج الإجمالية - مطابقة لتصميم لقطة الشاشة -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-                    <div class="p-6 result-card text-center">
-                        <div class="score-icon-circle score-icon-blue"><i class="fas fa-shield-alt"></i></div>
-                        <h3 class="text-xl font-semibold mb-2 text-gray-700 dark:text-gray-200">Domain Authority</h3>
-                        <div id="domain-authority-score" class="text-5xl font-extrabold text-blue-600 dark:text-blue-400 mb-2">N/A</div>
-                        <div class="progress-bar-container">
-                            <div id="domain-authority-progress" class="progress-bar" style="width: 0%;"></div>
-                        </div>
-                        <p id="domain-authority-text" class="text-sm text-gray-600 dark:text-gray-400 mt-2">Calculating...</p>
-                    </div>
-
-                    <div class="p-6 result-card text-center">
-                        <div class="score-icon-circle score-icon-green"><i class="fas fa-tachometer-alt"></i></div>
-                        <h3 class="text-xl font-semibold mb-2 text-gray-700 dark:text-gray-200">Performance</h3>
-                        <div id="performance-score" class="text-5xl font-extrabold text-green-600 dark:text-green-400 mb-2">N/A</div>
-                        <div class="progress-bar-container">
-                            <div id="performance-progress" class="progress-bar" style="width: 0%;"></div>
-                        </div>
-                        <p id="performance-text" class="text-sm text-gray-600 dark:text-gray-400 mt-2">Calculating...</p>
-                    </div>
-
-                    <div class="p-6 result-card text-center">
-                        <div class="score-icon-circle score-icon-orange"><i class="fas fa-search"></i></div>
-                        <h3 class="text-xl font-semibold mb-2 text-gray-700 dark:text-gray-200">SEO Score</h3>
-                        <div id="seo-overall-score" class="text-5xl font-extrabold text-orange-600 dark:text-orange-400 mb-2">N/A</div>
-                        <div class="progress-bar-container">
-                            <div id="seo-overall-progress" class="progress-bar" style="width: 0%;"></div>
-                        </div>
-                        <p id="seo-overall-text" class="text-sm text-gray-600 dark:text-gray-400 mt-2">Calculating...</p>
-                    </div>
-                </div>
-
-                <!-- زر تصدير PDF - بارز كما في لقطة الشاشة -->
-                <div class="text-center mb-12">
-                    <button id="export-pdf-button" class="px-8 py-4 rounded-lg text-white font-bold text-xl">
-                        <i class="fas fa-file-pdf mr-2"></i>Export PDF Report
-                    </button>
-                </div>
-
-                <!-- قسم ملخص الذكاء الاصطناعي -->
-                <div id="ai-summary-section" class="bg-blue-50 dark:bg-blue-900 p-8 rounded-xl shadow-md mb-12 hidden">
-                    <h3 class="text-2xl font-bold mb-5 flex items-center text-blue-800 dark:text-blue-200"><i class="fas fa-robot mr-3 text-3xl"></i>AI Summary ✨</h3>
-                    <p id="ai-summary-text" class="text-gray-700 dark:text-gray-300 leading-relaxed text-lg"></p>
-                </div>
-
-                <!-- فئات التحليل -->
-                <div class="space-y-10">
-                    <!-- 1. تفاصيل سلطة النطاق والثقة -->
-                    <div class="p-8 rounded-xl shadow-lg result-card">
-                        <h3 class="text-2xl font-bold mb-6 flex items-center text-blue-700 dark:text-blue-400"><i class="fas fa-shield-alt mr-3 text-2xl"></i>Domain Authority & Trust</h3>
-                        <ul class="list-disc pl-6 space-y-3 text-lg text-gray-700 dark:text-gray-300">
-                            <li><strong>Domain:</strong> <span id="domain-name" dir="ltr" class="font-medium"></span></li>
-                            <li><strong>Estimated Domain Authority:</strong> <span id="domain-authority-estimate" class="font-medium"></span></li>
-                            <li><strong>Domain Age:</strong> <span id="domain-age" class="font-medium"></span></li>
-                            <li><strong>SSL/HTTPS Status:</strong> <span id="ssl-status" class="font-medium"></span></li>
-                            <li><strong>Blacklist Status:</strong> <span id="blacklist-status" class="font-medium"></span></li>
-                            <li><strong>DNS Health:</strong> <span id="dns-health" class="font-medium"></span></li>
-                        </ul>
-                    </div>
-
-                    <!-- 2. تفاصيل سرعة الصفحة والأداء -->
-                    <div class="p-8 rounded-xl shadow-lg result-card">
-                        <h3 class="text-2xl font-bold mb-6 flex items-center text-purple-700 dark:text-purple-400"><i class="fas fa-tachometer-alt mr-3 text-2xl"></i>Page Speed & Performance</h3>
-                        <h4 class="font-semibold mb-3 text-gray-700 dark:text-gray-200">Core Web Vitals & Key Metrics:</h4>
-                        <ul id="core-web-vitals" class="list-disc pl-6 space-y-2 text-lg text-gray-700 dark:text-gray-300">
-                            <!-- يتم ملؤها بواسطة JS -->
-                        </ul>
-                        <h4 class="font-semibold mt-6 mb-3 text-gray-700 dark:text-gray-200">Performance Issues:</h4>
-                        <ul id="performance-issues" class="list-disc pl-6 text-red-600 dark:text-red-400 space-y-2 text-lg">
-                            <!-- يتم ملؤها بواسطة JS -->
-                        </ul>
-                        <p class="mt-6 text-base text-gray-600 dark:text-gray-400">
-                            <a id="pagespeed-link" href="#" target="_blank" class="text-blue-500 hover:underline font-medium" style="direction: ltr;">View Full Google PageSpeed Insights Report <i class="fas fa-external-link-alt ml-1"></i></a>
-                        </p>
-                    </div>
-
-                    <!-- 3. تفاصيل جودة وهيكل SEO -->
-                    <div class="p-8 rounded-xl shadow-lg result-card">
-                        <h3 class="text-2xl font-bold mb-6 flex items-center text-orange-700 dark:text-orange-400"><i class="fas fa-search mr-3 text-2xl"></i>SEO Quality & Structure</h3>
-                        <ul class="list-disc pl-6 space-y-3 text-lg text-gray-700 dark:text-gray-300 mb-6">
-                            <li><strong>Title Tag:</strong> <span id="seo-title" dir="ltr" class="font-medium"></span></li>
-                            <li><strong>Meta Description:</strong> <span id="seo-meta-description" dir="ltr" class="font-medium"></span></li>
-                            <li><strong>Broken Links Found:</strong> <span id="seo-broken-links" class="font-medium"></span></li>
-                            <li><strong>Images Missing Alt:</strong> <span id="seo-missing-alt" class="font-medium"></span></li>
-                            <li><strong>Internal Links Count:</strong> <span id="seo-internal-links" class="font-medium"></span></li>
-                            <li><strong>External Links Count:</strong> <span id="seo-external-links" class="font-medium"></span></li>
-                        </ul>
-                        <h4 class="font-semibold mt-6 mb-3 text-gray-700 dark:text-gray-200">H-Tag Structure (Headings):</h4>
-                        <ul id="h-tags-list" class="list-disc pl-6 space-y-2 text-base text-gray-700 dark:text-gray-300">
-                            <!-- يتم ملؤها بواسطة JS -->
-                        </ul>
-                        <h4 class="font-semibold mt-6 mb-3 text-gray-700 dark:text-gray-200">Keyword Usage (Top 10):</h4>
-                        <ul id="keyword-density-list" class="list-disc pl-6 text-base text-gray-700 dark:text-gray-300">
-                            <!-- يتم ملؤها بواسطة JS -->
-                        </ul>
-                        <h4 class="font-semibold mt-6 mb-3 text-gray-700 dark:text-gray-200">SEO Improvement Tips:</h4>
-                        <ul id="seo-improvement-tips" class="list-disc pl-6 text-green-700 dark:text-green-300 space-y-2 text-lg">
-                            <!-- يتم ملؤها بواسطة JS -->
-                        </ul>
-                        <div id="ai-seo-suggestions-section" class="mt-6 bg-gray-100 dark:bg-gray-700 p-5 rounded-lg shadow-inner hidden">
-                            <h5 class="font-bold mb-3 text-gray-800 dark:text-gray-200">AI SEO Suggestions: ✨</h5>
-                            <p id="ai-seo-suggestions-text" class="text-gray-700 dark:text-gray-300 leading-relaxed"></p>
-                        </div>
-                    </div>
-
-                    <!-- 4. تفاصيل تجربة المستخدم (UX) -->
-                    <div class="p-8 rounded-xl shadow-lg result-card">
-                        <h3 class="text-2xl font-bold mb-6 flex items-center text-teal-700 dark:text-teal-400"><i class="fas fa-user-friends mr-3 text-2xl"></i>User Experience (UX)</h3>
-                        <h4 class="font-semibold mt-6 mb-3 text-gray-700 dark:text-gray-200">Detected UX Issues:</h4>
-                        <ul id="ux-issues-list" class="list-disc pl-6 text-red-600 dark:text-red-400 space-y-2 text-lg">
-                            <!-- يتم ملؤها بواسطة JS -->
-                        </ul>
-                        <h4 class="font-semibold mt-6 mb-3 text-gray-700 dark:text-gray-200">General UX Suggestions:</h4>
-                        <ul id="ux-suggestions-list" class="list-disc pl-6 text-green-700 dark:text-green-300 space-y-2 text-lg">
-                            <!-- يتم ملؤها بواسطة JS -->
-                        </ul>
-                        <div id="ai-content-insights-section" class="mt-6 bg-gray-100 dark:bg-gray-700 p-5 rounded-lg shadow-inner hidden">
-                            <h5 class="font-bold mb-3 text-gray-800 dark:text-gray-200">AI Content Insights (Originality & Tone): ✨</h5>
-                            <p id="ai-content-insights-text" class="text-gray-700 dark:text-gray-300 leading-relaxed"></p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- أزرار الإجراءات -->
-                <div class="mt-12 flex flex-col sm:flex-row justify-center gap-6">
-                    <button id="analyze-another-button"
-                            class="px-8 py-4 font-semibold rounded-lg text-lg bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow-md hover:shadow-lg transition-all duration-200">
-                        <i class="fas fa-redo mr-2"></i>Analyze Another
-                    </button>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <!-- ربط بملف JavaScript الرئيسي -->
     <script src="/js/main.js"></script>
 </body>
 </html>
