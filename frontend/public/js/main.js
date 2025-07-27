@@ -8,7 +8,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const analyzeAnotherButton = document.getElementById('analyze-another-button');
     const exportPdfButton = document.getElementById('export-pdf-button');
     const themeToggle = document.getElementById('theme-toggle');
-    const languageSelect = document.getElementById('language-select'); // New: Language select element
+    const languageSelect = document.getElementById('language-select');
+
+    // New AI feature elements
+    const rewriteSeoButton = document.getElementById('rewrite-seo-button');
+    const rewriteSeoOutput = document.getElementById('rewrite-seo-output');
+    const refineContentButton = document.getElementById('refine-content-button');
+    const refineContentOutput = document.getElementById('refine-content-output');
+
 
     // Dashboard elements (as they are)
     const domainNameSpan = document.getElementById('domain-name');
@@ -31,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const seoOverallProgress = document.getElementById('seo-overall-progress');
     const seoOverallText = document.getElementById('seo-overall-text');
     const seoTitleSpan = document.getElementById('seo-title');
-    const seoMetaDescriptionSpan = document = document.getElementById('seo-meta-description');
+    const seoMetaDescriptionSpan = document.getElementById('seo-meta-description');
     const seoBrokenLinksSpan = document.getElementById('seo-broken-links');
     const seoMissingAltSpan = document.getElementById('seo-missing-alt');
     const seoInternalLinksSpan = document.getElementById('seo-internal-links');
@@ -81,7 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         // Special handling for placeholder
-        websiteUrlInput.placeholder = translations['analyzeWebsiteTitle'] || "Enter website URL (e.g., https://)";
+        websiteUrlInput.placeholder = translations['analyzeWebsitePlaceholder'] || "https://www.google.com";
         // Update text for N/A or loading messages if they are not dynamically set by results
         document.getElementById('domain-authority-text').textContent = translations['calculatingMessage'];
         document.getElementById('performance-text').textContent = translations['calculatingMessage'];
@@ -112,22 +119,23 @@ document.addEventListener('DOMContentLoaded', () => {
         aiSeoSuggestionsText.textContent = translations['loadingAiSuggestions'];
         aiContentInsightsText.textContent = translations['loadingAiInsights'];
         aiSummaryText.textContent = translations['loadingAiSummary'];
+        rewriteSeoOutput.querySelector('p').textContent = translations['loadingAiRewrites'];
+        refineContentOutput.querySelector('p').textContent = translations['loadingAiRefinement'];
+
 
         // Update N/A messages if they are currently set to N/A
-        if (domainNameSpan.textContent === 'N/A') domainNameSpan.textContent = 'N/A'; // Keep N/A for now, will be updated by results
-        if (domainAuthorityScoreSpan.textContent === 'N/A') domainAuthorityScoreSpan.textContent = 'N/A';
-        if (domainAgeSpan.textContent === 'N/A') domainAgeSpan.textContent = 'N/A';
-        if (sslStatusSpan.textContent === 'N/A') sslStatusSpan.textContent = 'N/A';
-        if (blacklistStatusSpan.textContent === 'N/A') blacklistStatusSpan.textContent = 'N/A';
-        if (dnsHealthSpan.textContent === 'N/A') dnsHealthSpan.textContent = 'N/A';
-        if (performanceScoreSpan.textContent === 'N/A') performanceScoreSpan.textContent = 'N/A';
-        if (seoOverallScoreSpan.textContent === 'N/A') seoOverallScoreSpan.textContent = 'N/A';
-        if (seoTitleSpan.textContent === 'N/A') seoTitleSpan.textContent = 'N/A';
-        if (seoMetaDescriptionSpan.textContent === 'N/A') seoMetaDescriptionSpan.textContent = 'N/A';
-        if (seoBrokenLinksSpan.textContent === 'N/A') seoBrokenLinksSpan.textContent = 'N/A';
-        if (seoMissingAltSpan.textContent === 'N/A') seoMissingAltSpan.textContent = 'N/A';
-        if (seoInternalLinksSpan.textContent === 'N/A') seoInternalLinksSpan.textContent = 'N/A';
-        if (seoExternalLinksSpan.textContent === 'N/A') seoExternalLinksSpan.textContent = 'N/A';
+        // These will be overwritten by actual results if available
+        const naElements = [
+            domainNameSpan, domainAuthorityScoreSpan, domainAgeSpan, sslStatusSpan,
+            blacklistStatusSpan, dnsHealthSpan, performanceScoreSpan, seoOverallScoreSpan,
+            seoTitleSpan, seoMetaDescriptionSpan, seoBrokenLinksSpan, seoMissingAltSpan,
+            seoInternalLinksSpan, seoExternalLinksSpan
+        ];
+        naElements.forEach(el => {
+            if (el.textContent === 'N/A') {
+                el.textContent = 'N/A';
+            }
+        });
     }
 
 
@@ -177,7 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const daScore = domainAuthority.domain_authority_score !== undefined && domainAuthority.domain_authority_score !== null ? domainAuthority.domain_authority_score : 'N/A';
         domainAuthorityScoreSpan.textContent = daScore;
         updateProgressBar(domainAuthorityProgress, daScore);
-        domainAuthorityText.textContent = domainAuthority.domain_authority_text || translations['calculatingMessage']; // Use translation
+        domainAuthorityText.textContent = domainAuthority.domain_authority_text || translations['calculatingMessage']; 
         domainAgeSpan.textContent = domainAuthority.domain_age_years ? `${domainAuthority.domain_age_years} ${translations['yearsText'] || 'years'}` : 'N/A';
         sslStatusSpan.textContent = domainAuthority.ssl_status || 'N/A';
         blacklistStatusSpan.textContent = domainAuthority.blacklist_status || 'N/A';
@@ -188,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const perfScore = pageSpeed.scores && pageSpeed.scores['Performance Score'] !== undefined && pageSpeed.scores['Performance Score'] !== null ? pageSpeed.scores['Performance Score'] : 'N/A';
         performanceScoreSpan.textContent = perfScore;
         updateProgressBar(performanceProgress, perfScore);
-        performanceText.textContent = pageSpeed.performance_text || translations['calculatingMessage']; // Use translation
+        performanceText.textContent = pageSpeed.performance_text || translations['calculatingMessage']; 
         pagespeedLink.href = pageSpeed.pagespeed_report_link || '#';
 
         // Core Web Vitals
@@ -202,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } else {
             const li = document.createElement('li');
-            li.textContent = translations['noCoreWebVitals']; // Use translation
+            li.textContent = translations['noCoreWebVitals']; 
             coreWebVitalsList.appendChild(li);
         }
 
@@ -217,7 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         } else {
             const li = document.createElement('li');
-            li.textContent = translations['noPerformanceIssues']; // Use translation
+            li.textContent = translations['noPerformanceIssues']; 
             li.classList.add('text-green-600', 'dark:text-green-300'); 
             performanceIssuesList.appendChild(li);
         }
@@ -228,7 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const seoScore = seoQuality.score !== undefined && seoQuality.score !== null ? seoQuality.score : 'N/A';
         seoOverallScoreSpan.textContent = seoScore;
         updateProgressBar(seoOverallProgress, seoScore);
-        seoOverallText.textContent = seoQuality.seo_overall_text || translations['calculatingMessage']; // Use translation
+        seoOverallText.textContent = seoQuality.seo_overall_text || translations['calculatingMessage']; 
 
         const seoElements = seoQuality.elements || {};
         seoTitleSpan.textContent = seoElements.title || 'N/A';
@@ -249,7 +257,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } else {
             const li = document.createElement('li');
-            li.textContent = translations['noHeadingTags']; // Use translation
+            li.textContent = translations['noHeadingTags']; 
             hTagsList.appendChild(li);
         }
 
@@ -267,7 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         } else {
             const li = document.createElement('li');
-            li.textContent = translations['noKeywordsFound']; // Use translation
+            li.textContent = translations['noKeywordsFound']; 
             keywordDensityList.appendChild(li);
         }
 
@@ -282,7 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         } else {
             const li = document.createElement('li');
-            li.textContent = translations['noSeoTips']; // Use translation
+            li.textContent = translations['noSeoTips']; 
             li.classList.add('text-green-600', 'dark:text-green-300');
             seoImprovementTipsList.appendChild(li);
         }
@@ -311,7 +319,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         } else {
             const li = document.createElement('li');
-            li.textContent = translations['noUxIssues']; // Use translation
+            li.textContent = translations['noUxIssues']; 
             li.classList.add('text-green-600', 'dark:text-green-300');
             uxIssuesList.appendChild(li);
         }
@@ -327,7 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         } else {
             const li = document.createElement('li');
-            li.textContent = translations['noUxSuggestions']; // Use translation
+            li.textContent = translations['noUxSuggestions']; 
             li.classList.add('text-green-600', 'dark:text-green-300');
             uxSuggestionsList.appendChild(li);
         }
@@ -358,7 +366,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log("Analyze button clicked. URL:", url); 
 
         if (!url) {
-            displayError(translations['pleaseEnterUrl'] || 'Please enter a website URL.'); // Use translation
+            displayError(translations['pleaseEnterUrl'] || 'Please enter a website URL.'); 
             return;
         }
 
@@ -373,7 +381,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Accept-Language': currentLanguage // Send current language to backend
+                    'Accept-Language': currentLanguage 
                 },
                 body: JSON.stringify({ url }),
                 signal: controller.signal 
@@ -388,9 +396,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error("Backend response not OK. Raw text:", errorText); 
                 try {
                     const errorData = JSON.parse(errorText); 
-                    throw new Error(errorData.error || `${translations['serverError'] || 'Server error'}: ${response.status}`); // Use translation
+                    throw new Error(errorData.error || `${translations['serverError'] || 'Server error'}: ${response.status}`); 
                 } catch (jsonError) {
-                    throw new Error(`${translations['serverReturnedNonJson'] || 'Server returned non-JSON error'} (Status: ${response.status}): ${errorText.substring(0, 100)}...`); // Use translation
+                    throw new Error(`${translations['serverReturnedNonJson'] || 'Server returned non-JSON error'} (Status: ${response.status}): ${errorText.substring(0, 100)}...`); 
                 }
             }
 
@@ -405,11 +413,11 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('Analysis failed:', error);
             if (error.name === 'AbortError') {
-                displayError(translations['analysisTimedOut'] || 'Analysis timed out. The server took too long to respond. Please try again later.'); // Use translation
+                displayError(translations['analysisTimedOut'] || 'Analysis timed out. The server took too long to respond. Please try again later.'); 
             } else if (error instanceof TypeError && error.message.includes('Network request failed')) {
-                displayError(translations['networkError'] || 'Network error. Could not connect to the server. Please check your internet connection and try again.'); // Use translation
+                displayError(translations['networkError'] || 'Network error. Could not connect to the server. Please check your internet connection and try again.'); 
             } else {
-                displayError(`${translations['analysisFailed'] || 'Analysis failed'}: ${error.message}. ${translations['pleaseTryAgain'] || 'Please try again later.'}`); // Use translation
+                displayError(`${translations['analysisFailed'] || 'Analysis failed'}: ${error.message}. ${translations['pleaseTryAgain'] || 'Please try again later.'}`); 
             }
             hideElement(loadingSpinner); 
         }
@@ -421,17 +429,22 @@ document.addEventListener('DOMContentLoaded', () => {
         hideElement(errorMessage);
         websiteUrlInput.value = ''; 
         showElement(document.getElementById('input-section')); 
+        // Clear AI outputs
+        rewriteSeoOutput.innerHTML = `<p>${translations['loadingAiRewrites']}</p>`;
+        hideElement(rewriteSeoOutput);
+        refineContentOutput.innerHTML = `<p>${translations['loadingAiRefinement']}</p>`;
+        hideElement(refineContentOutput);
     });
 
     // Event handler for Export PDF button
     exportPdfButton.addEventListener('click', async () => {
         const currentUrl = analyzedUrlSpan.textContent;
         if (!currentUrl || !window.lastAnalysisResults) {
-            displayError(translations['noAnalysisResults'] || 'No analysis results to export. Please run an analysis first.'); // Use translation
+            displayError(translations['noAnalysisResults'] || 'No analysis results to export. Please run an analysis first.'); 
             return;
         }
 
-        exportPdfButton.textContent = translations['generatingPdf'] || 'Generating PDF...'; // Use translation
+        exportPdfButton.textContent = translations['generatingPdf'] || 'Generating PDF...'; 
         exportPdfButton.disabled = true;
 
         try {
@@ -440,14 +453,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Accept-Language': currentLanguage // Send current language to backend
+                    'Accept-Language': currentLanguage 
                 },
                 body: JSON.stringify({ url: currentUrl, results: window.lastAnalysisResults }),
             });
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.error || translations['failedToGeneratePdf'] || 'Failed to generate PDF report.'); // Use translation
+                throw new Error(errorData.error || translations['failedToGeneratePdf'] || 'Failed to generate PDF report.'); 
             }
 
             const blob = await response.blob();
@@ -462,12 +475,131 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error('PDF export failed:', error);
-            displayError(`${translations['pdfExportFailed'] || 'PDF export failed'}: ${error.message}`); // Use translation
+            displayError(`${translations['pdfExportFailed'] || 'PDF export failed'}: ${error.message}`); 
         } finally {
-            exportPdfButton.textContent = translations['exportPdfButton'] || 'Export PDF Report'; // Use translation
+            exportPdfButton.textContent = translations['exportPdfButton'] || 'Export PDF Report'; 
             exportPdfButton.disabled = false;
         }
     });
+
+    // New: Event handler for Rewrite SEO button
+    rewriteSeoButton.addEventListener('click', async () => {
+        const currentUrl = analyzedUrlSpan.textContent;
+        const currentTitle = seoTitleSpan.textContent;
+        const currentMetaDescription = seoMetaDescriptionSpan.textContent;
+        const currentKeywords = Object.keys(window.lastAnalysisResults.seo_quality.elements.keyword_density || {}).join(', ');
+
+        if (!currentUrl || !window.lastAnalysisResults) {
+            displayError(translations['runAnalysisFirst'] || 'Please run an analysis first to use AI tools.');
+            return;
+        }
+
+        showElement(rewriteSeoOutput);
+        rewriteSeoOutput.innerHTML = `<p>${translations['loadingAiRewrites']}</p>`;
+        rewriteSeoButton.disabled = true;
+
+        try {
+            const response = await fetch('/ai_rewrite_seo', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept-Language': currentLanguage
+                },
+                body: JSON.stringify({
+                    url: currentUrl,
+                    title: currentTitle,
+                    meta_description: currentMetaDescription,
+                    keywords: currentKeywords
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || translations['failedToGetAiRewrites'] || 'Failed to get AI rewrites.');
+            }
+
+            const aiRewrites = await response.json();
+            let outputHtml = `<h3>${translations['aiRewritesTitle'] || 'AI Rewrites:'}</h3>`;
+            if (aiRewrites.titles && aiRewrites.titles.length > 0) {
+                outputHtml += `<p><strong>${translations['newTitles'] || 'New Titles:'}</strong></p><ul>`;
+                aiRewrites.titles.forEach(title => {
+                    outputHtml += `<li>${title}</li>`;
+                });
+                outputHtml += `</ul>`;
+            }
+            if (aiRewrites.meta_descriptions && aiRewrites.meta_descriptions.length > 0) {
+                outputHtml += `<p><strong>${translations['newMetaDescriptions'] || 'New Meta Descriptions:'}</strong></p><ul>`;
+                aiRewrites.meta_descriptions.forEach(desc => {
+                    outputHtml += `<li>${desc}</li>`;
+                });
+                outputHtml += `</ul>`;
+            }
+            if (!aiRewrites.titles && !aiRewrites.meta_descriptions) {
+                outputHtml += `<p>${translations['noAiRewritesAvailable'] || 'No AI rewrites available.'}</p>`;
+            }
+            rewriteSeoOutput.innerHTML = outputHtml;
+
+        } catch (error) {
+            console.error('AI Rewrite failed:', error);
+            rewriteSeoOutput.innerHTML = `<p class="text-red-600">${translations['aiRewriteFailed'] || 'AI Rewrite failed'}: ${error.message}</p>`;
+        } finally {
+            rewriteSeoButton.disabled = false;
+        }
+    });
+
+    // New: Event handler for Refine Content button
+    refineContentButton.addEventListener('click', async () => {
+        const extractedText = window.lastAnalysisResults.extracted_text_sample;
+
+        if (!extractedText || !window.lastAnalysisResults) {
+            displayError(translations['noContentForRefinement'] || 'No content extracted for refinement. Please run an analysis first.');
+            return;
+        }
+
+        showElement(refineContentOutput);
+        refineContentOutput.innerHTML = `<p>${translations['loadingAiRefinement']}</p>`;
+        refineContentButton.disabled = true;
+
+        try {
+            const response = await fetch('/ai_refine_content', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept-Language': currentLanguage
+                },
+                body: JSON.stringify({ text_sample: extractedText })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || translations['failedToRefineContent'] || 'Failed to refine content.');
+            }
+
+            const aiRefinement = await response.json();
+            let outputHtml = `<h3>${translations['aiRefinementTitle'] || 'AI Content Refinement:'}</h3>`;
+            if (aiRefinement.refined_text) {
+                outputHtml += `<p><strong>${translations['refinedText'] || 'Refined Text:'}</strong></p><p>${aiRefinement.refined_text}</p>`;
+            }
+            if (aiRefinement.suggestions && aiRefinement.suggestions.length > 0) {
+                outputHtml += `<p><strong>${translations['refinementSuggestions'] || 'Suggestions:'}</strong></p><ul>`;
+                aiRefinement.suggestions.forEach(sugg => {
+                    outputHtml += `<li>${sugg}</li>`;
+                });
+                outputHtml += `</ul>`;
+            }
+            if (!aiRefinement.refined_text && !aiRefinement.suggestions) {
+                outputHtml += `<p>${translations['noAiRefinementAvailable'] || 'No AI refinement available.'}</p>`;
+            }
+            refineContentOutput.innerHTML = outputHtml;
+
+        } catch (error) {
+            console.error('AI Content Refinement failed:', error);
+            refineContentOutput.innerHTML = `<p class="text-red-600">${translations['aiRefinementFailed'] || 'AI Refinement failed'}: ${error.message}</p>`;
+        } finally {
+            refineContentButton.disabled = false;
+        }
+    });
+
 
     // Dark/Light theme toggle
     themeToggle.addEventListener('click', () => {
