@@ -3,289 +3,186 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web Analyzer Pro</title>
-    <link href="/css/style.css" rel="stylesheet">
-    <link rel="icon" href="https://placehold.co/32x32/000000/FFFFFF?text=WA" type="image/x-icon">
-    <!-- Font Awesome for icons -->
+    <title data-translate="appTitle">Web Analyzer Pro</title>
+    <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        /* Custom styles for progress bar colors */
-        .progress-bar {
-            height: 100%;
-            border-radius: 0.5rem; /* rounded-lg */
-            transition: width 0.5s ease-in-out, background-color 0.5s ease-in-out;
-        }
-        .progress-good {
-            background-color: #10B981; /* Tailwind green-500 */
-        }
-        .progress-medium {
-            background-color: #FBBF24; /* Tailwind yellow-400 */
-        }
-        .progress-bad {
-            background-color: #EF4444; /* Tailwind red-500 */
-        }
-        /* Dark mode transition */
-        body {
-            transition: background-color 0.3s ease;
-        }
-        .dark .bg-white {
-            background-color: #1a202c; /* dark gray */
-        }
-        .dark .text-gray-900 {
-            color: #e2e8f0; /* light gray */
-        }
-        .dark .text-gray-700 {
-            color: #cbd5e0; /* slightly darker light gray */
-        }
-        .dark .border-gray-300 {
-            border-color: #4a5568; /* darker border */
-        }
-        .dark .focus\:ring-blue-500:focus {
-            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
-        }
-        .dark .placeholder-gray-400::placeholder {
-            color: #a0aec0;
-        }
-        .dark .bg-gray-100 {
-            background-color: #2d3748;
-        }
-        .dark .text-green-600 {
-            color: #68d391;
-        }
-        .dark .text-red-600 {
-            color: #fc8181;
-        }
-        .dark .text-yellow-600 {
-            color: #f6e05e;
-        }
-        .dark .bg-blue-600 {
-            background-color: #2b6cb0;
-        }
-        .dark .hover\:bg-blue-700:hover {
-            background-color: #2c5282;
-        }
-        .dark .focus\:ring-blue-500:focus {
-            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
-        }
-        .dark .text-blue-600 {
-            color: #63b3ed;
-        }
-        .dark .bg-gray-800 {
-            background-color: #1a202c;
-        }
-        .dark .text-gray-300 {
-            color: #a0aec0;
-        }
-        .dark .border-gray-700 {
-            border-color: #4a5568;
-        }
-        .dark .bg-gray-700 {
-            background-color: #2d3748;
-        }
-        .dark .text-gray-400 {
-            color: #718096;
-        }
-        .dark .hover\:bg-gray-600:hover {
-            background-color: #4a5568;
-        }
-        .dark .focus\:ring-gray-500:focus {
-            box-shadow: 0 0 0 3px rgba(113, 128, 147, 0.5);
-        }
-    </style>
+    <!-- Ensure main.js loads after DOM is ready -->
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4 text-gray-900 dark:bg-gray-900 dark:text-gray-100 font-sans">
-    <div class="container mx-auto p-6 bg-white rounded-xl shadow-lg w-full max-w-2xl dark:bg-gray-800">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-3xl font-extrabold text-blue-600 flex items-center">
-                <i class="fas fa-chart-line mr-3"></i> <span data-translate="appTitle">Web Analyzer Pro</span>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col items-center justify-center p-4 transition-colors duration-300">
+    <div class="container bg-white dark:bg-gray-800 shadow-lg rounded-xl p-8 max-w-4xl w-full transition-colors duration-300">
+        <header class="flex flex-col sm:flex-row items-center justify-between mb-8">
+            <h1 class="text-4xl font-bold text-blue-700 dark:text-blue-400 mb-4 sm:mb-0 flex items-center">
+                <i class="fas fa-chart-line mr-3"></i>
+                <span data-translate="appTitle">Web Analyzer Pro</span>
             </h1>
-            <div class="flex items-center space-x-3">
-                <select id="language-select" class="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500">
+            <div class="flex items-center space-x-4">
+                <select id="language-select" class="p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200">
                     <option value="en">English</option>
                     <option value="ar">العربية</option>
                     <option value="fr">Français</option>
                 </select>
-                <button id="theme-toggle" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500">
-                    <i class="fas fa-moon"></i>
+                <button id="theme-toggle" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <i class="fas fa-moon dark:hidden"></i>
+                    <i class="fas fa-sun hidden dark:inline-block"></i>
                 </button>
             </div>
-        </div>
+        </header>
 
-        <!-- Input Section -->
-        <div id="input-section" class="mb-8">
-            <h2 class="text-2xl font-semibold mb-4 text-center" data-translate="analyzeWebsiteTitle">Analyze Any Website</h2>
-            <div class="flex flex-col sm:flex-row gap-4">
-                <input type="url" id="website-url" placeholder="https://www.google.com" class="flex-grow p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400">
-                <button id="analyze-button" class="bg-blue-600 text-white p-3 rounded-lg font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 ease-in-out shadow-md flex items-center justify-center">
-                    <i class="fas fa-play-circle mr-2"></i> <span data-translate="analyzeButton">Analyze</span>
+        <section id="input-section" class="mb-8 text-center">
+            <h2 class="text-2xl font-semibold mb-4" data-translate="analyzeWebsiteTitle">Analyze Any Website</h2>
+            <div class="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+                <input type="url" id="website-url" placeholder="https://www.google.com" class="flex-grow p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                <button id="analyze-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 flex items-center justify-center">
+                    <i class="fas fa-play-circle mr-2"></i>
+                    <span data-translate="analyzeButton">Analyze</span>
                 </button>
             </div>
-            <p id="error-message" class="text-red-600 mt-4 text-center font-medium hidden"></p>
-        </div>
+            <p id="error-message" class="text-red-600 mt-4 hidden" role="alert"></p>
+            <div id="loading-spinner" class="hidden mt-4">
+                <i class="fas fa-spinner fa-spin text-blue-500 text-3xl"></i>
+                <p class="text-blue-500 mt-2" data-translate="analyzingMessage">Analyzing website, please wait...</p>
+            </div>
+        </section>
 
-        <!-- Loading Spinner -->
-        <div id="loading-spinner" class="text-center py-10 hidden">
-            <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500 mx-auto"></div>
-            <p class="text-gray-700 dark:text-gray-300 mt-4 text-lg" data-translate="analyzingMessage">Analyzing website, please wait...</p>
-        </div>
-
-        <!-- Results Dashboard -->
-        <div id="results-dashboard" class="hidden">
-            <h2 class="text-2xl font-semibold mb-6 text-center" data-translate="analysisResultsFor">Analysis Results for <span id="analyzed-url" class="text-blue-600 break-all"></span></h2>
+        <section id="results-dashboard" class="hidden mt-8">
+            <h2 class="text-2xl font-semibold mb-4" data-translate="analysisResultsFor">Analysis Results for <span id="analyzed-url" class="text-blue-600 dark:text-blue-300 break-all"></span></h2>
             
             <!-- Domain Authority Section -->
-            <div class="bg-gray-50 dark:bg-gray-700 p-5 rounded-lg shadow-sm mb-6">
-                <h3 class="text-xl font-bold mb-3 text-blue-700 dark:text-blue-300 flex items-center"><i class="fas fa-shield-alt mr-2"></i> <span data-translate="domainAuthorityTitle">Domain Authority</span></h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <p class="text-lg font-medium" data-translate="domainLabel">Domain: <span id="domain-name" class="font-normal text-gray-700 dark:text-gray-300">N/A</span></p>
-                        <p class="text-lg font-medium" data-translate="scoreLabel">Score: <span id="domain-authority-score" class="font-normal text-gray-700 dark:text-gray-300">N/A</span></p>
-                        <div class="w-full bg-gray-200 rounded-lg h-3 mt-2">
-                            <div id="domain-authority-progress" class="progress-bar"></div>
-                        </div>
-                        <p id="domain-authority-text" class="text-sm text-gray-600 dark:text-gray-400 mt-1" data-translate="calculatingMessage">Calculating...</p>
-                    </div>
-                    <div>
-                        <p class="text-lg font-medium" data-translate="domainAgeLabel">Domain Age: <span id="domain-age" class="font-normal text-gray-700 dark:text-gray-300">N/A</span></p>
-                        <p class="text-lg font-medium" data-translate="sslStatusLabel">SSL Status: <span id="ssl-status" class="font-normal text-gray-700 dark:text-gray-300">N/A</span></p>
-                        <p class="text-lg font-medium" data-translate="blacklistStatusLabel">Blacklist Status: <span id="blacklist-status" class="font-normal text-gray-700 dark:text-gray-300">N/A</span></p>
-                        <p class="text-lg font-medium" data-translate="dnsHealthLabel">DNS Health: <span id="dns-health" class="font-normal text-gray-700 dark:text-gray-300">N/A</span></p>
-                    </div>
+            <div class="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow-md mb-6">
+                <h3 class="text-xl font-semibold mb-3" data-translate="domainAuthorityTitle">Domain Authority</h3>
+                <p class="mb-2"><strong data-translate="domainLabel">Domain:</strong> <span id="domain-name">N/A</span></p>
+                <p class="mb-2"><strong data-translate="scoreLabel">Score:</strong> <span id="domain-authority-score">N/A</span>/100</p>
+                <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-600 mb-2">
+                    <div id="domain-authority-progress" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
                 </div>
+                <p id="domain-authority-text" class="text-sm text-gray-600 dark:text-gray-400" data-translate="calculatingMessage">Calculating...</p>
+                <p class="mt-2"><strong data-translate="domainAgeLabel">Domain Age:</strong> <span id="domain-age">N/A</span></p>
+                <p class="mt-2"><strong data-translate="sslStatusLabel">SSL Status:</strong> <span id="ssl-status">N/A</span></p>
+                <p class="mt-2"><strong data-translate="blacklistStatusLabel">Blacklist Status:</strong> <span id="blacklist-status">N/A</span></p>
+                <p class="mt-2"><strong data-translate="dnsHealthLabel">DNS Health:</strong> <span id="dns-health">N/A</span></p>
             </div>
 
             <!-- Page Speed Section -->
-            <div class="bg-gray-50 dark:bg-gray-700 p-5 rounded-lg shadow-sm mb-6">
-                <h3 class="text-xl font-bold mb-3 text-blue-700 dark:text-blue-300 flex items-center"><i class="fas fa-tachometer-alt mr-2"></i> <span data-translate="pageSpeedTitle">Page Speed</span></h3>
-                <div>
-                    <p class="text-lg font-medium" data-translate="performanceScoreLabel">Performance Score: <span id="performance-score" class="font-normal text-gray-700 dark:text-gray-300">N/A</span></p>
-                    <div class="w-full bg-gray-200 rounded-lg h-3 mt-2">
-                        <div id="performance-progress" class="progress-bar"></div>
-                    </div>
-                    <p id="performance-text" class="text-sm text-gray-600 dark:text-gray-400 mt-1" data-translate="calculatingMessage">Calculating...</p>
+            <div class="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow-md mb-6">
+                <h3 class="text-xl font-semibold mb-3" data-translate="pageSpeedTitle">Page Speed</h3>
+                <p class="mb-2"><strong data-translate="performanceScoreLabel">Performance Score:</strong> <span id="performance-score">N/A</span>/100</p>
+                <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-600 mb-2">
+                    <div id="performance-progress" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
                 </div>
-                <div class="mt-4">
-                    <h4 class="text-md font-semibold mb-2" data-translate="coreWebVitalsTitle">Core Web Vitals:</h4>
-                    <ul id="core-web-vitals" class="list-disc list-inside text-gray-700 dark:text-gray-300">
-                        <li data-translate="loadingMessage">Loading...</li>
-                    </ul>
-                </div>
-                <div class="mt-4">
-                    <h4 class="text-md font-semibold mb-2" data-translate="potentialIssuesTitle">Potential Issues:</h4>
-                    <ul id="performance-issues" class="list-disc list-inside text-gray-700 dark:text-gray-300">
-                        <li data-translate="loadingMessage">Loading...</li>
-                    </ul>
-                </div>
-                <a id="pagespeed-link" href="#" target="_blank" class="text-blue-600 hover:underline mt-4 inline-block" data-translate="viewPagespeedReport">View Full PageSpeed Report <i class="fas fa-external-link-alt ml-1"></i></a>
+                <p id="performance-text" class="text-sm text-gray-600 dark:text-gray-400" data-translate="calculatingMessage">Calculating...</p>
+                <h4 class="text-lg font-medium mt-4 mb-2" data-translate="coreWebVitalsTitle">Core Web Vitals:</h4>
+                <ul id="core-web-vitals" class="list-disc list-inside ml-4">
+                    <li data-translate="loadingMessage">Loading...</li>
+                </ul>
+                <h4 class="text-lg font-medium mt-4 mb-2" data-translate="potentialIssuesTitle">Potential Issues:</h4>
+                <ul id="performance-issues" class="list-disc list-inside ml-4">
+                    <li data-translate="loadingMessage">Loading...</li>
+                </ul>
+                <p class="mt-4"><a id="pagespeed-link" href="#" target="_blank" class="text-blue-600 hover:underline" data-translate="viewPagespeedReport">View Full PageSpeed Report</a></p>
             </div>
 
             <!-- SEO Quality Section -->
-            <div class="bg-gray-50 dark:bg-gray-700 p-5 rounded-lg shadow-sm mb-6">
-                <h3 class="text-xl font-bold mb-3 text-blue-700 dark:text-blue-300 flex items-center"><i class="fas fa-search mr-2"></i> <span data-translate="seoQualityTitle">SEO Quality</span></h3>
-                <div>
-                    <p class="text-lg font-medium" data-translate="overallSeoScoreLabel">Overall SEO Score: <span id="seo-overall-score" class="font-normal text-gray-700 dark:text-gray-300">N/A</span></p>
-                    <div class="w-full bg-gray-200 rounded-lg h-3 mt-2">
-                        <div id="seo-overall-progress" class="progress-bar"></div>
-                    </div>
-                    <p id="seo-overall-text" class="text-sm text-gray-600 dark:text-gray-400 mt-1" data-translate="calculatingMessage">Calculating...</p>
+            <div class="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow-md mb-6">
+                <h3 class="text-xl font-semibold mb-3" data-translate="seoQualityTitle">SEO Quality</h3>
+                <p class="mb-2"><strong data-translate="overallSeoScoreLabel">Overall SEO Score:</strong> <span id="seo-overall-score">N/A</span>/100</p>
+                <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-600 mb-2">
+                    <div id="seo-overall-progress" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <div>
-                        <p class="text-lg font-medium" data-translate="titleTagLabel">Title Tag: <span id="seo-title" class="font-normal text-gray-700 dark:text-gray-300 break-all">N/A</span></p>
-                        <p class="text-lg font-medium" data-translate="metaDescriptionLabel">Meta Description: <span id="seo-meta-description" class="font-normal text-gray-700 dark:text-gray-300 break-all">N/A</span></p>
-                        <p class="text-lg font-medium" data-translate="brokenLinksLabel">Broken Links: <span id="seo-broken-links" class="font-normal text-gray-700 dark:text-gray-300">N/A</span></p>
-                        <p class="text-lg font-medium" data-translate="imagesMissingAltLabel">Images Missing Alt: <span id="seo-missing-alt" class="font-normal text-gray-700 dark:text-gray-300">N/A</span></p>
-                    </div>
-                    <div>
-                        <p class="text-lg font-medium" data-translate="internalLinksLabel">Internal Links: <span id="seo-internal-links" class="font-normal text-gray-700 dark:text-gray-300">N/A</span></p>
-                        <p class="text-lg font-medium" data-translate="externalLinksLabel">External Links: <span id="seo-external-links" class="font-normal text-gray-700 dark:text-gray-300">N/A</span></p>
-                    </div>
-                </div>
-                <div class="mt-4">
-                    <h4 class="text-md font-semibold mb-2" data-translate="headingTagsTitle">Heading Tags (H1-H6):</h4>
-                    <ul id="h-tags-list" class="list-disc list-inside text-gray-700 dark:text-gray-300">
-                        <li data-translate="loadingMessage">Loading...</li>
-                    </ul>
-                </div>
-                <div class="mt-4">
-                    <h4 class="text-md font-semibold mb-2" data-translate="topKeywordsTitle">Top Keywords Density:</h4>
-                    <ul id="keyword-density-list" class="list-disc list-inside text-gray-700 dark:text-gray-300">
-                        <li data-translate="loadingMessage">Loading...</li>
-                    </ul>
-                </div>
-                <div class="mt-4">
-                    <h4 class="text-md font-semibold mb-2" data-translate="improvementTipsTitle">Improvement Tips:</h4>
-                    <ul id="seo-improvement-tips" class="list-disc list-inside text-gray-700 dark:text-gray-300">
-                        <li data-translate="loadingMessage">Loading...</li>
-                    </ul>
-                </div>
-                <div id="ai-seo-suggestions-section" class="mt-4 bg-blue-100 dark:bg-blue-900 p-4 rounded-lg hidden">
-                    <h4 class="text-md font-semibold mb-2 text-blue-800 dark:text-blue-200 flex items-center"><i class="fas fa-lightbulb mr-2"></i> <span data-translate="aiSeoSuggestionsTitle">AI SEO Suggestions:</span></h4>
-                    <p id="ai-seo-suggestions-text" class="text-blue-700 dark:text-blue-300" data-translate="loadingAiSuggestions">Loading AI suggestions...</p>
+                <p id="seo-overall-text" class="text-sm text-gray-600 dark:text-gray-400" data-translate="calculatingMessage">Calculating...</p>
+                
+                <p class="mt-4"><strong data-translate="titleTagLabel">Title Tag:</strong> <span id="seo-title">N/A</span></p>
+                <p class="mt-2"><strong data-translate="metaDescriptionLabel">Meta Description:</strong> <span id="seo-meta-description">N/A</span></p>
+                <p class="mt-2"><strong data-translate="brokenLinksLabel">Broken Links:</strong> <span id="seo-broken-links">N/A</span></p>
+                <p class="mt-2"><strong data-translate="imagesMissingAltLabel">Images Missing Alt:</strong> <span id="seo-missing-alt">N/A</span></p>
+                <p class="mt-2"><strong data-translate="internalLinksLabel">Internal Links:</strong> <span id="seo-internal-links">N/A</span></p>
+                <p class="mt-2"><strong data-translate="externalLinksLabel">External Links:</strong> <span id="seo-external-links">N/A</span></p>
+
+                <h4 class="text-lg font-medium mt-4 mb-2" data-translate="headingTagsTitle">Heading Tags (H1-H6):</h4>
+                <ul id="h-tags-list" class="list-disc list-inside ml-4">
+                    <li data-translate="loadingMessage">Loading...</li>
+                </ul>
+                <h4 class="text-lg font-medium mt-4 mb-2" data-translate="topKeywordsTitle">Top Keywords Density:</h4>
+                <ul id="keyword-density-list" class="list-disc list-inside ml-4">
+                    <li data-translate="loadingMessage">Loading...</li>
+                </ul>
+                <h4 class="text-lg font-medium mt-4 mb-2" data-translate="improvementTipsTitle">Improvement Tips:</h4>
+                <ul id="seo-improvement-tips" class="list-disc list-inside ml-4">
+                    <li data-translate="loadingMessage">Loading...</li>
+                </ul>
+
+                <div id="ai-seo-suggestions-section" class="ai-section p-4 rounded-lg mt-4 hidden">
+                    <h4 class="text-lg font-medium mb-2" data-translate="aiSeoSuggestionsTitle">AI SEO Suggestions:</h4>
+                    <p id="ai-seo-suggestions-text" data-translate="loadingAiSuggestions">Loading AI suggestions...</p>
                 </div>
             </div>
 
             <!-- User Experience Section -->
-            <div class="bg-gray-50 dark:bg-gray-700 p-5 rounded-lg shadow-sm mb-6">
-                <h3 class="text-xl font-bold mb-3 text-blue-700 dark:text-blue-300 flex items-center"><i class="fas fa-user-friends mr-2"></i> <span data-translate="uxTitle">User Experience (UX)</span></h3>
-                <div class="mt-4">
-                    <h4 class="text-md font-semibold mb-2" data-translate="potentialIssuesTitle">Potential Issues:</h4>
-                    <ul id="ux-issues-list" class="list-disc list-inside text-gray-700 dark:text-gray-300">
-                        <li data-translate="loadingMessage">Loading...</li>
-                    </ul>
-                </div>
-                <div class="mt-4">
-                    <h4 class="text-md font-semibold mb-2" data-translate="suggestionsTitle">Suggestions:</h4>
-                    <ul id="ux-suggestions-list" class="list-disc list-inside text-gray-700 dark:text-gray-300">
-                        <li data-translate="loadingMessage">Loading...</li>
-                    </ul>
-                </div>
-                <div id="ai-content-insights-section" class="mt-4 bg-blue-100 dark:bg-blue-900 p-4 rounded-lg hidden">
-                    <h4 class="text-md font-semibold mb-2 text-blue-800 dark:text-blue-200 flex items-center"><i class="fas fa-edit mr-2"></i> <span data-translate="aiContentInsightsTitle">AI Content Insights:</span></h4>
-                    <p id="ai-content-insights-text" class="text-blue-700 dark:text-blue-300" data-translate="loadingAiInsights">Loading AI insights...</p>
+            <div class="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow-md mb-6">
+                <h3 class="text-xl font-semibold mb-3" data-translate="uxTitle">User Experience (UX)</h3>
+                <h4 class="text-lg font-medium mt-4 mb-2" data-translate="potentialIssuesTitle">Potential Issues:</h4>
+                <ul id="ux-issues-list" class="list-disc list-inside ml-4">
+                    <li data-translate="loadingMessage">Loading...</li>
+                </ul>
+                <h4 class="text-lg font-medium mt-4 mb-2" data-translate="suggestionsTitle">Suggestions:</h4>
+                <ul id="ux-suggestions-list" class="list-disc list-inside ml-4">
+                    <li data-translate="loadingMessage">Loading...</li>
+                </ul>
+                <div id="ai-content-insights-section" class="ai-section p-4 rounded-lg mt-4 hidden">
+                    <h4 class="text-lg font-medium mb-2" data-translate="aiContentInsightsTitle">AI Content Insights:</h4>
+                    <p id="ai-content-insights-text" data-translate="loadingAiInsights">Loading AI insights...</p>
                 </div>
             </div>
 
-            <!-- New AI Tools Section -->
-            <div class="bg-gray-50 dark:bg-gray-700 p-5 rounded-lg shadow-sm mb-6">
-                <h3 class="text-xl font-bold mb-3 text-purple-700 dark:text-purple-300 flex items-center"><i class="fas fa-magic mr-2"></i> <span data-translate="aiToolsTitle">AI Tools</span></h3>
-                
-                <div class="mb-4">
-                    <button id="rewrite-seo-button" class="bg-purple-600 text-white p-3 rounded-lg font-semibold hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 transition duration-200 ease-in-out shadow-md flex items-center justify-center w-full">
-                        <i class="fas fa-wand-magic-sparkles mr-2"></i> <span data-translate="rewriteSeoButton">✨ Rewrite Title/Meta Description</span>
+            <!-- New AdSense Readiness Section -->
+            <div id="adsense-readiness-section" class="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow-md mb-6 hidden">
+                <h3 class="text-xl font-semibold mb-3" data-translate="adsenseReadinessTitle">AdSense Readiness Assessment</h3>
+                <div class="ai-section p-4 rounded-lg mt-4">
+                    <h4 class="text-lg font-medium mb-2" data-translate="overallAssessment">Overall Assessment:</h4>
+                    <p id="adsense-assessment-text" data-translate="loadingAdsenseAssessment">Loading AdSense readiness assessment...</p>
+                </div>
+                <h4 class="text-lg font-medium mt-4 mb-2" data-translate="keyAreasForImprovement">Key Areas for Improvement:</h4>
+                <ul id="adsense-improvement-areas-list" class="list-disc list-inside ml-4">
+                    <li data-translate="loadingMessage">Loading...</li>
+                </ul>
+            </div>
+
+            <!-- AI Overall Summary Section -->
+            <div id="ai-summary-section" class="ai-section p-4 rounded-lg shadow-md mb-6 hidden">
+                <h3 class="text-xl font-semibold mb-3" data-translate="aiOverallSummaryTitle">AI Overall Summary</h3>
+                <p id="ai-summary-text" data-translate="loadingAiSummary">Loading AI summary...</p>
+            </div>
+
+            <!-- AI Tools Section -->
+            <div class="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow-md mb-6">
+                <h3 class="text-xl font-semibold mb-3" data-translate="aiToolsTitle">AI Tools</h3>
+                <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 mb-4">
+                    <button id="rewrite-seo-button" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 flex items-center justify-center">
+                        <i class="fas fa-magic mr-2"></i>
+                        <span data-translate="rewriteSeoButton">✨ Rewrite Title/Meta Description</span>
                     </button>
-                    <div id="rewrite-seo-output" class="mt-3 p-3 bg-purple-100 dark:bg-purple-900 rounded-lg text-purple-800 dark:text-purple-200 hidden">
-                        <p data-translate="loadingAiRewrites">Loading AI rewrites...</p>
-                    </div>
-                </div>
-
-                <div>
-                    <button id="refine-content-button" class="bg-purple-600 text-white p-3 rounded-lg font-semibold hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 transition duration-200 ease-in-out shadow-md flex items-center justify-center w-full">
-                        <i class="fas fa-feather-pointed mr-2"></i> <span data-translate="refineContentButton">✨ Refine Content</span>
+                    <button id="refine-content-button" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 flex items-center justify-center">
+                        <i class="fas fa-pencil-alt mr-2"></i>
+                        <span data-translate="refineContentButton">✨ Refine Content</span>
                     </button>
-                    <div id="refine-content-output" class="mt-3 p-3 bg-purple-100 dark:bg-purple-900 rounded-lg text-purple-800 dark:text-purple-200 hidden">
-                        <p data-translate="loadingAiRefinement">Loading AI content refinement...</p>
-                    </div>
+                </div>
+                <div id="rewrite-seo-output" class="ai-section p-4 rounded-lg mt-4 hidden">
+                    <p data-translate="loadingAiRewrites">Loading AI rewrites...</p>
+                </div>
+                <div id="refine-content-output" class="ai-section p-4 rounded-lg mt-4 hidden">
+                    <p data-translate="loadingAiRefinement">Loading AI content refinement...</p>
                 </div>
             </div>
 
-            <!-- AI Summary Section -->
-            <div id="ai-summary-section" class="bg-blue-50 dark:bg-blue-800 p-5 rounded-lg shadow-sm mb-6 hidden">
-                <h3 class="text-xl font-bold mb-3 text-blue-700 dark:text-blue-300 flex items-center"><i class="fas fa-brain mr-2"></i> <span data-translate="aiOverallSummaryTitle">AI Overall Summary</span></h3>
-                <p id="ai-summary-text" class="text-blue-600 dark:text-blue-200 leading-relaxed" data-translate="loadingAiSummary">Loading AI summary...</p>
-            </div>
-
-            <div class="flex flex-col sm:flex-row gap-4 mt-6">
-                <button id="analyze-another-button" class="flex-grow bg-gray-300 text-gray-800 p-3 rounded-lg font-semibold hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 transition duration-200 ease-in-out shadow-md flex items-center justify-center">
-                    <i class="fas fa-redo mr-2"></i> <span data-translate="analyzeAnotherButton">Analyze Another</span>
+            <div class="flex justify-center space-x-4 mt-8">
+                <button id="analyze-another-button" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-6 rounded-lg shadow-md transition duration-300">
+                    <span data-translate="analyzeAnotherButton">Analyze Another</span>
                 </button>
-                <button id="export-pdf-button" class="flex-grow bg-green-600 text-white p-3 rounded-lg font-semibold hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition duration-200 ease-in-out shadow-md flex items-center justify-center">
-                    <i class="fas fa-file-pdf mr-2"></i> <span data-translate="exportPdfButton">Export PDF Report</span>
+                <button id="export-pdf-button" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300">
+                    <span data-translate="exportPdfButton">Export PDF Report</span>
                 </button>
             </div>
-        </div>
+        </section>
     </div>
-
-    <script src="/js/main.js"></script>
+    <script src="/js/main.js" defer></script>
 </body>
 </html>
