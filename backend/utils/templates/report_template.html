@@ -39,7 +39,7 @@
         <h2>Domain Authority</h2>
         <p class="data-point"><strong>Domain:</strong> {{ domain_authority.domain | default('N/A') }}</p>
         <p class="data-point"><strong>Score:</strong> 
-            <span class="score-badge {% if domain_authority.domain_authority_score is not none and domain_authority.domain_authority_score >= 70 %}score-good{% elif domain_authority.domain_authority_score is not none and domain_authority.domain_authority_score >= 40 %}score-medium{% else %}score-bad{% endif %}">
+            <span class="score-badge {% if domain_authority.domain_authority_score is number and domain_authority.domain_authority_score >= 70 %}score-good{% elif domain_authority.domain_authority_score is number and domain_authority.domain_authority_score >= 40 %}score-medium{% else %}score-bad{% endif %}">
                 {{ domain_authority.domain_authority_score | default('N/A') }}/100
             </span>
         </p>
@@ -53,7 +53,7 @@
     <div class="section">
         <h2>Page Speed</h2>
         <p class="data-point"><strong>Performance Score:</strong> 
-            <span class="score-badge {% if page_speed.scores and page_speed.scores['Performance Score'] is not none and page_speed.scores['Performance Score'] >= 70 %}score-good{% elif page_speed.scores and page_speed.scores['Performance Score'] is not none and page_speed.scores['Performance Score'] >= 40 %}score-medium{% else %}score-bad{% endif %}">
+            <span class="score-badge {% if page_speed.perf_score_int is number and page_speed.perf_score_int >= 70 %}score-good{% elif page_speed.perf_score_int is number and page_speed.perf_score_int >= 40 %}score-medium{% else %}score-bad{% endif %}">
                 {{ page_speed.scores.get('Performance Score', 'N/A') }}/100
             </span>
         </p>
@@ -86,7 +86,7 @@
     <div class="section">
         <h2>SEO Quality</h2>
         <p class="data-point"><strong>Overall SEO Score:</strong> 
-            <span class="score-badge {% if seo_quality.score is not none and seo_quality.score >= 70 %}score-good{% elif seo_quality.score is not none and seo_quality.score >= 40 %}score-medium{% else %}score-bad{% endif %}">
+            <span class="score-badge {% if seo_quality.seo_score_int is number and seo_quality.seo_score_int >= 70 %}score-good{% elif seo_quality.seo_score_int is number and seo_quality.seo_score_int >= 40 %}score-medium{% else %}score-bad{% endif %}">
                 {{ seo_quality.score | default('N/A') }}/100
             </span>
         </p>
@@ -162,6 +162,27 @@
                 <h3>AI Content Insights:</h3>
                 <p>{{ ai_insights.content_originality_tone }}</p>
             </div>
+        {% endif %}
+    </div>
+
+    <!-- New AdSense Readiness Section -->
+    <div class="section">
+        <h2>AdSense Readiness Assessment</h2>
+        {% if adsense_readiness.assessment and adsense_readiness.assessment != 'N/A' %}
+            <div class="ai-section">
+                <h3>Overall Assessment:</h3>
+                <p>{{ adsense_readiness.assessment }}</p>
+            </div>
+        {% endif %}
+        {% if adsense_readiness.improvement_areas and adsense_readiness.improvement_areas|length > 0 %}
+            <h3>Key Areas for Improvement:</h3>
+            <ul>
+                {% for area in adsense_readiness.improvement_areas %}
+                    <li>{{ area }}</li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No specific AdSense readiness assessment available.</p>
         {% endif %}
     </div>
 
