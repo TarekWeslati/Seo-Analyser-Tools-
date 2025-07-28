@@ -241,3 +241,64 @@ def refine_content(text_sample, lang="en"):
         # Return default values on error to avoid crashing the frontend
         return {"refined_text": "Error during refinement.", "suggestions": [], "error": str(e)}
 
+def get_adsense_readiness_assessment(analysis_results, lang="en"):
+    """
+    Provides an AI-driven assessment of a website's readiness for Google AdSense.
+    """
+    api_key = os.getenv('GEMINI_API_KEY')
+    if not api_key:
+        print("GEMINI_API_KEY environment variable not set. AdSense assessment will be N/A.")
+        return {
+            "assessment": "N/A (AI features are limited or unavailable in the free version. Upgrade for full access.)",
+            "improvement_areas": []
+        }
+
+    seo_quality = analysis_results.get('seo_quality', {})
+    ux_data = analysis_results.get('user_experience', {})
+    domain_authority = analysis_results.get('domain_authority', {})
+    page_speed = analysis_results.get('page_speed', {})
+    extracted_text_sample = analysis_results.get('extracted_text_sample', "No content available.")
+
+    prompt = f"""
+    Based on the following website analysis data, provide an assessment of its readiness for Google AdSense.
+    Do NOT give a numerical percentage. Instead, provide an overall assessment (e.g., "Good potential, but needs improvements in X and Y" or "Significant improvements needed") and list 3-5 key areas for improvement to meet AdSense requirements.
+
+    Website Analysis Data:
+    - Domain Age: {domain_authority.get('domain_age_years', 'N/A')} years
+    - SSL Status: {domain_authority.get('ssl_status', 'N/A')}
+    - Broken Links: {len(seo_quality.get('elements', {}).get('broken_links', []))}
+    - Missing Alt Text Images: {len([s for s in seo_quality.get('elements', {}).get('image_alt_status', []) if "Missing" in s or "Empty" in s])}
+    - Overall SEO Score: {seo_quality.get('score', 'N/A')}
+    - Page Speed Performance Score: {page_speed.get('scores', {}).get('Performance Score', 'N/A')}
+    - UX Issues: {json.dumps(ux_data.get('issues', []))}
+    - Sample Content: "{extracted_text_sample}"
+    - Heading Tags: {json.dumps(seo_quality.get('elements', {}).get('h_tags', {}))}
+    - Meta Description: {seo_quality.get('elements', {}).get('meta_description', 'N/A')}
+
+    Consider factors like content quality (originality, depth, readability), site navigation, user experience, technical SEO, and compliance with AdSense policies (e.g., no broken links, good page speed).
+
+    Provide the output in JSON format, with keys 'assessment' (string) and 'improvement_areas' (list of strings).
+    Ensure the response is in {lang} language.
+    """
+
+    response_schema = {
+        "type": "OBJECT",
+        "properties": {
+            "assessment": {"type": "STRING"},
+            "improvement_areas": {
+                "type": "ARRAY",
+                "items": {"type": "STRING"}
+            }
+        },
+        "required": ["assessment", "improvement_areas"]
+    }
+
+    try:
+        return call_gemini_api(prompt, api_key, response_schema, lang)
+    except Exception as e:
+        print(f"Error in get_adsense_readiness_assessment: {e}")
+        return {
+            "assessment": "Error generating AdSense assessment. (AI features are limited or unavailable in the free version.)",
+            "improvement_areas": []
+        }
+
