@@ -17,6 +17,7 @@ def generate_pdf_report(url, results):
     seo_improvement_tips = results.get('seo_quality', {}).get('improvement_tips', [])
     h_tags = seo_elements.get('h_tags', {})
     keyword_density = seo_elements.get('keyword_density', {})
+    broken_links = seo_elements.get('broken_links', []) # Get actual broken links
 
     ux_issues = results.get('user_experience', {}).get('issues', [])
     ux_suggestions = results.get('user_experience', {}).get('suggestions', [])
@@ -69,7 +70,7 @@ def generate_pdf_report(url, results):
             'elements': {
                 'title': seo_elements.get('title', 'N/A'),
                 'meta_description': seo_elements.get('meta_description', 'N/A'),
-                'broken_links': seo_elements.get('broken_links', []),
+                'broken_links': broken_links, # Pass actual broken links
                 'image_alt_status': seo_elements.get('image_alt_status', []),
                 'internal_links_count': seo_elements.get('internal_links_count', 'N/A'),
                 'external_links_count': seo_elements.get('external_links_count', 'N/A'),
@@ -84,7 +85,8 @@ def generate_pdf_report(url, results):
             'suggestions': ux_suggestions,
         },
         'ai_insights': results.get('ai_insights', {}),
-        'adsense_readiness': results.get('adsense_readiness', {}) # New: AdSense readiness data
+        'adsense_readiness': results.get('adsense_readiness', {}), # AdSense readiness data
+        'broken_link_suggestions': results.get('broken_link_suggestions', {}) # New: Broken link suggestions
     }
 
     # رندر القالب ببيانات السياق
