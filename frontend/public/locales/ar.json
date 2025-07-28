@@ -75,5 +75,9 @@
     "noAiRefinementAvailable": "لا يوجد تحسين محتوى متاح بالذكاء الاصطناعي.",
     "aiRefinementFailed": "فشل تحسين المحتوى بالذكاء الاصطناعي",
     "runAnalysisFirst": "يرجى إجراء تحليل أولاً لاستخدام أدوات الذكاء الاصطناعي.",
-    "noContentForRefinement": "لم يتم استخراج محتوى للتحسين. يرجى إجراء تحليل أولاً."
+    "noContentForRefinement": "لم يتم استخراج محتوى للتحسين. يرجى إجراء تحليل أولاً.",
+    "domainAuthorityApiLimit": "تتطلب نقاط سلطة النطاق مفتاح API مميزاً.",
+    "domainAgeApiLimit": "غير متاح (قد تكون البيانات محدودة بواسطة خدمة WHOIS أو حصة API).",
+    "pageSpeedApiLimit": "تتطلب بيانات سرعة الصفحة مفتاح Google PageSpeed Insights API (تنطبق قيود المستوى المجاني).",
+    "aiFeatureLimited": "ميزات الذكاء الاصطناعي محدودة أو غير متوفرة في الإصدار المجاني. قم بالترقية للوصول الكامل."
 }
