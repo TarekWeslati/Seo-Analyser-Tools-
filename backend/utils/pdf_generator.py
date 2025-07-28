@@ -4,18 +4,11 @@ from jinja2 import Environment, FileSystemLoader
 
 def generate_pdf_report(url, results):
     # تحديد مسار القوالب (مجلد 'templates' داخل 'backend/utils')
-    # بما أن pdf_generator.py موجود في backend/utils، فإن القوالب يجب أن تكون بجانبه
     template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'templates'))
     env = Environment(loader=FileSystemLoader(template_dir))
     template = env.get_template('report_template.html')
 
     # تحضير البيانات للقالب
-    # هنا يجب التأكد من أن جميع البيانات التي يتم الوصول إليها في القالب
-    # هي من أنواع قابلة للطباعة أو قابلة للتجزئة إذا كانت تستخدم كمفاتيح
-    # خاصة عند الوصول إلى العناصر المتداخلة.
-    # سنقوم بتبسيط الوصول إلى البيانات لضمان التوافق.
-
-    # التأكد من أن scores و issues هي قواميس أو قوائم فارغة إذا كانت غير موجودة
     pagespeed_scores = results.get('page_speed', {}).get('scores', {})
     pagespeed_issues = results.get('page_speed', {}).get('issues', [])
     core_web_vitals = results.get('page_speed', {}).get('core_web_vitals', {})
@@ -29,7 +22,6 @@ def generate_pdf_report(url, results):
     ux_suggestions = results.get('user_experience', {}).get('suggestions', [])
 
     # تحويل القواميس إلى قوائم من أزواج (key, value) لتجنب TypeError في بعض الحالات
-    # هذا يضمن أن Jinja2 يتعامل معها كقوائم يمكن تكرارها
     formatted_h_tags = []
     for tag, content_list in h_tags.items():
         formatted_h_tags.append(f"{tag}: {', '.join(content_list)}")
@@ -45,6 +37,20 @@ def generate_pdf_report(url, results):
     for metric, value in core_web_vitals.items():
         formatted_core_web_vitals.append(f"{metric}: {value}")
 
+    # Helper function to safely get integer score
+    def get_int_score(data, key, default_value='N/A'):
+        score = data.get(key, default_value)
+        try:
+            return int(score)
+        except (ValueError, TypeError):
+            return default_value
+
+    # Prepare scores for safe comparison
+    seo_score_int = get_int_score(results.get('seo_quality', {}), 'score')
+    da_score_int = get_int_score(results.get('domain_authority', {}), 'domain_authority_score')
+    perf_score_int = get_int_score(results.get('page_speed', {}).get('scores', {}), 'Performance Score')
+
+
     # بناء سياق البيانات للقالب
     context = {
         'url': url,
@@ -53,8 +59,9 @@ def generate_pdf_report(url, results):
         'page_speed': {
             'scores': pagespeed_scores,
             'issues': pagespeed_issues,
-            'core_web_vitals': formatted_core_web_vitals, # استخدام النسخة المحضرة
-            'pagespeed_report_link': results.get('page_speed', {}).get('pagespeed_report_link', '#')
+            'core_web_vitals': formatted_core_web_vitals,
+            'pagespeed_report_link': results.get('page_speed', {}).get('pagespeed_report_link', '#'),
+            'perf_score_int': perf_score_int # Pass integer score for comparison
         },
         'seo_quality': {
             'score': results.get('seo_quality', {}).get('score', 'N/A'),
@@ -66,16 +73,18 @@ def generate_pdf_report(url, results):
                 'image_alt_status': seo_elements.get('image_alt_status', []),
                 'internal_links_count': seo_elements.get('internal_links_count', 'N/A'),
                 'external_links_count': seo_elements.get('external_links_count', 'N/A'),
-                'h_tags': formatted_h_tags, # استخدام النسخة المحضرة
-                'keyword_density': formatted_keyword_density, # استخدام النسخة المحضرة
+                'h_tags': formatted_h_tags,
+                'keyword_density': formatted_keyword_density,
             },
             'improvement_tips': seo_improvement_tips,
+            'seo_score_int': seo_score_int # Pass integer score for comparison
         },
         'user_experience': {
             'issues': ux_issues,
             'suggestions': ux_suggestions,
         },
         'ai_insights': results.get('ai_insights', {}),
+        'adsense_readiness': results.get('adsense_readiness', {}) # New: AdSense readiness data
     }
 
     # رندر القالب ببيانات السياق
