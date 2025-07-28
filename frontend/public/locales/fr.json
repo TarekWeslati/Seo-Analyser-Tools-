@@ -75,5 +75,9 @@
     "noAiRefinementAvailable": "Aucun affinement de contenu IA disponible.",
     "aiRefinementFailed": "Échec de l'affinage du contenu IA",
     "runAnalysisFirst": "Veuillez d'abord effectuer une analyse pour utiliser les outils IA.",
-    "noContentForRefinement": "Aucun contenu extrait pour l'affinage. Veuillez d'abord effectuer une analyse."
+    "noContentForRefinement": "Aucun contenu extrait pour l'affinage. Veuillez d'abord effectuer une analyse.",
+    "domainAuthorityApiLimit": "Le score d'autorité de domaine nécessite une clé API premium.",
+    "domainAgeApiLimit": "N/A (Les données peuvent être limitées par le service WHOIS ou le quota API).",
+    "pageSpeedApiLimit": "Les données de vitesse de page nécessitent une clé API Google PageSpeed Insights (les limites du niveau gratuit s'appliquent).",
+    "aiFeatureLimited": "Les fonctionnalités d'IA sont limitées ou indisponibles dans la version gratuite. Mettez à niveau pour un accès complet."
 }
