@@ -9,7 +9,7 @@ from backend.services.pagespeed_analysis import get_pagespeed_insights
 from backend.services.seo_analysis import perform_seo_analysis
 from backend.services.ux_analysis import perform_ux_analysis
 # Updated imports for AI services
-from backend.services.ai_suggestions import get_ai_suggestions, generate_seo_rewrites, refine_content, get_adsense_readiness_assessment 
+from backend.services.ai_suggestions import get_ai_suggestions, generate_seo_rewrites, refine_content, get_adsense_readiness_assessment, get_broken_link_fix_suggestions 
 from backend.utils.url_validator import is_valid_url
 from backend.utils.pdf_generator import generate_pdf_report
 
@@ -95,6 +95,16 @@ def analyze_website():
         adsense_assessment = get_adsense_readiness_assessment(results, lang)
         results['adsense_readiness'] = adsense_assessment
         print("AdSense readiness assessment complete.")
+
+        print("Getting broken link fix suggestions...")
+        broken_links = results.get('seo_quality', {}).get('elements', {}).get('broken_links', [])
+        if broken_links:
+            broken_link_suggestions = get_broken_link_fix_suggestions(broken_links, lang)
+            results['broken_link_suggestions'] = broken_link_suggestions
+        else:
+            results['broken_link_suggestions'] = {"suggestions": "No broken links found to suggest fixes for."}
+        print("Broken link fix suggestions complete.")
+
 
         last_analysis_results = results 
         print("Analysis complete. Returning results.") 
