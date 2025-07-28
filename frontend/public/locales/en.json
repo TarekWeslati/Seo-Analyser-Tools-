@@ -75,5 +75,9 @@
     "noAiRefinementAvailable": "No AI refinement available.",
     "aiRefinementFailed": "AI Refinement failed",
     "runAnalysisFirst": "Please run an analysis first to use AI tools.",
-    "noContentForRefinement": "No content extracted for refinement. Please run an analysis first."
+    "noContentForRefinement": "No content extracted for refinement. Please run an analysis first.",
+    "domainAuthorityApiLimit": "Domain Authority score requires a premium API key.",
+    "domainAgeApiLimit": "N/A (Data might be limited by WHOIS service or API quota).",
+    "pageSpeedApiLimit": "Page Speed data requires a Google PageSpeed Insights API key (free tier limits apply).",
+    "aiFeatureLimited": "AI features are limited or unavailable in the free version. Upgrade for full access."
 }
