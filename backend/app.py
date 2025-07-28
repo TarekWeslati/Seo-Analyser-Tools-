@@ -8,7 +8,8 @@ from backend.services.domain_analysis import get_domain_analysis
 from backend.services.pagespeed_analysis import get_pagespeed_insights
 from backend.services.seo_analysis import perform_seo_analysis
 from backend.services.ux_analysis import perform_ux_analysis
-from backend.services.ai_suggestions import get_ai_suggestions, generate_seo_rewrites, refine_content # New imports
+# Updated imports for AI services
+from backend.services.ai_suggestions import get_ai_suggestions, generate_seo_rewrites, refine_content, get_adsense_readiness_assessment 
 from backend.utils.url_validator import is_valid_url
 from backend.utils.pdf_generator import generate_pdf_report
 
@@ -22,8 +23,9 @@ app = Flask(__name__,
             static_url_path='/') 
 CORS(app)
 
+# Ensure API keys are loaded from environment variables
 app.config['PAGESPEED_API_KEY'] = os.getenv('PAGESPEED_API_KEY')
-app.config['GEMINI_API_KEY'] = os.getenv('GEMINI_API_KEY') # Ensure Gemini API Key is loaded
+app.config['GEMINI_API_KEY'] = os.getenv('GEMINI_API_KEY') 
 
 last_analysis_results = {} 
 
@@ -58,34 +60,41 @@ def analyze_website():
         
         print("Getting domain analysis...")
         domain_data = get_domain_analysis(url)
+        results['domain_authority'] = domain_data
         print("Domain analysis complete.")
 
         print("Getting PageSpeed Insights...")
+        # Pass API key to pagespeed_analysis
         pagespeed_data = get_pagespeed_insights(url, app.config['PAGESPEED_API_KEY'])
+        results['page_speed'] = pagespeed_data
         print("PageSpeed Insights complete.")
 
         print("Performing SEO analysis...")
         seo_data = perform_seo_analysis(url)
+        results['seo_quality'] = seo_data
         print("SEO analysis complete.")
 
         print("Performing UX analysis...")
         ux_data = perform_ux_analysis(url)
-        print("UX analysis complete.")
-
-        results['domain_authority'] = domain_data
-        results['page_speed'] = pagespeed_data
-        results['seo_quality'] = seo_data
         results['user_experience'] = ux_data
+        print("UX analysis complete.")
         
-        results['extracted_text_sample'] = "No text extracted for AI analysis."
+        # Extract text sample for AI analysis
+        results['extracted_text_sample'] = "No content extracted for AI analysis."
         if results['seo_quality'] and results['seo_quality'].get('elements') and results['seo_quality']['elements'].get('page_text'):
-            results['extracted_text_sample'] = results['seo_quality']['elements']['page_text'][:1000]
+            results['extracted_text_sample'] = results['seo_quality']['elements']['page_text'][:2000] # Increased sample size
 
         print("Getting AI suggestions...")
-        # Pass language to AI suggestions
+        # Pass language to AI suggestions, API key is handled internally by ai_suggestions
         ai_data = get_ai_suggestions(url, results, lang)
         results['ai_insights'] = ai_data
         print("AI suggestions complete.")
+
+        print("Getting AdSense readiness assessment...")
+        # Pass language to AdSense assessment, API key is handled internally
+        adsense_assessment = get_adsense_readiness_assessment(results, lang)
+        results['adsense_readiness'] = adsense_assessment
+        print("AdSense readiness assessment complete.")
 
         last_analysis_results = results 
         print("Analysis complete. Returning results.") 
@@ -116,7 +125,7 @@ def generate_report():
         print(f"Error generating PDF report: {e}") 
         return jsonify({"error": "Failed to generate PDF report.", "details": str(e)}), 500
 
-# New AI endpoint for SEO rewrites
+# AI endpoint for SEO rewrites
 @app.route('/ai_rewrite_seo', methods=['POST'])
 def ai_rewrite_seo():
     data = request.get_json()
@@ -130,14 +139,15 @@ def ai_rewrite_seo():
 
     try:
         print(f"Generating AI SEO rewrites for title: {title}, meta: {meta_description}")
-        rewrites = generate_seo_rewrites(title, meta_description, keywords, lang, app.config['GEMINI_API_KEY'])
+        # Removed api_key argument here as it's fetched internally by generate_seo_rewrites
+        rewrites = generate_seo_rewrites(title, meta_description, keywords, lang) 
         print("AI SEO rewrites complete.")
         return jsonify(rewrites), 200
     except Exception as e:
         print(f"Error generating AI SEO rewrites: {e}")
         return jsonify({"error": "Failed to generate AI SEO rewrites.", "details": str(e)}), 500
 
-# New AI endpoint for content refinement
+# AI endpoint for content refinement
 @app.route('/ai_refine_content', methods=['POST'])
 def ai_refine_content():
     data = request.get_json()
@@ -149,7 +159,8 @@ def ai_refine_content():
 
     try:
         print(f"Generating AI content refinement for text sample: {text_sample[:50]}...")
-        refinement = refine_content(text_sample, lang, app.config['GEMINI_API_KEY'])
+        # Removed api_key argument here as it's fetched internally by refine_content
+        refinement = refine_content(text_sample, lang) 
         print("AI content refinement complete.")
         return jsonify(refinement), 200
     except Exception as e:
