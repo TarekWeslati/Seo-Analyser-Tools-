@@ -16,6 +16,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const refineContentButton = document.getElementById('refine-content-button');
     const refineContentOutput = document.getElementById('refine-content-output');
 
+    // New AdSense elements
+    const adsenseReadinessSection = document.getElementById('adsense-readiness-section');
+    const adsenseAssessmentText = document.getElementById('adsense-assessment-text');
+    const adsenseImprovementAreasList = document.getElementById('adsense-improvement-areas-list');
+
 
     // Dashboard elements (as they are)
     const domainNameSpan = document.getElementById('domain-name');
@@ -121,6 +126,8 @@ document.addEventListener('DOMContentLoaded', () => {
         aiSummaryText.textContent = translations['loadingAiSummary'];
         rewriteSeoOutput.querySelector('p').textContent = translations['loadingAiRewrites'];
         refineContentOutput.querySelector('p').textContent = translations['loadingAiRefinement'];
+        adsenseAssessmentText.textContent = translations['loadingAdsenseAssessment'];
+        adsenseImprovementAreasList.innerHTML = `<li>${translations['loadingMessage']}</li>`;
 
 
         // Update N/A messages if they are currently set to N/A
@@ -148,11 +155,14 @@ document.addEventListener('DOMContentLoaded', () => {
         let width = 0;
         let colorClass = 'progress-bad'; 
 
-        if (score !== null && !isNaN(score)) {
-            width = Math.max(0, Math.min(100, score)); 
-            if (score >= 80) {
+        // Ensure score is a number for comparison
+        const numericScore = parseFloat(score);
+
+        if (!isNaN(numericScore)) {
+            width = Math.max(0, Math.min(100, numericScore)); 
+            if (numericScore >= 80) {
                 colorClass = 'progress-good';
-            } else if (score >= 50) {
+            } else if (numericScore >= 50) {
                 colorClass = 'progress-medium';
             } else {
                 colorClass = 'progress-bad';
@@ -186,13 +196,13 @@ document.addEventListener('DOMContentLoaded', () => {
         domainAuthorityScoreSpan.textContent = daScore;
         updateProgressBar(domainAuthorityProgress, daScore);
         // Updated message for Domain Authority Score
-        if (daScore === 'N/A') {
+        if (daScore === 'N/A' || domainAuthority.domain_authority_text === "Requires external Domain Authority API") {
             domainAuthorityText.textContent = translations['domainAuthorityApiLimit'] || 'Domain Authority score requires a premium API key.';
         } else {
             domainAuthorityText.textContent = domainAuthority.domain_authority_text || translations['calculatingMessage']; 
         }
         
-        domainAgeSpan.textContent = domainAuthority.domain_age_years ? `${domainAuthority.domain_age_years} ${translations['yearsText'] || 'years'}` : (translations['domainAgeApiLimit'] || 'N/A (Data might be limited by WHOIS service)');
+        domainAgeSpan.textContent = domainAuthority.domain_age_years ? `${domainAuthority.domain_age_years} ${translations['yearsText'] || 'years'}` : (translations['domainAgeApiLimit'] || 'N/A (Data might be limited by WHOIS service or API quota).');
         sslStatusSpan.textContent = domainAuthority.ssl_status || 'N/A';
         blacklistStatusSpan.textContent = domainAuthority.blacklist_status || 'N/A';
         dnsHealthSpan.textContent = domainAuthority.dns_health || 'N/A';
@@ -203,7 +213,7 @@ document.addEventListener('DOMContentLoaded', () => {
         performanceScoreSpan.textContent = perfScore;
         updateProgressBar(performanceProgress, perfScore);
         // Updated message for Page Speed Score
-        if (perfScore === 'N/A') {
+        if (perfScore === 'N/A' || pageSpeed.performance_text === "PAGESPEED_API_KEY environment variable not set.") {
             performanceText.textContent = translations['pageSpeedApiLimit'] || 'Page Speed data requires a Google PageSpeed Insights API key (free tier limits apply).';
         } else {
             performanceText.textContent = pageSpeed.performance_text || translations['calculatingMessage']; 
@@ -369,6 +379,29 @@ document.addEventListener('DOMContentLoaded', () => {
             aiSummaryText.textContent = translations['aiFeatureLimited'] || 'AI summary is limited or unavailable in the free version.';
             showElement(aiSummarySection); // Still show the section but with a message
         }
+
+        // AdSense Readiness
+        const adsenseReadiness = results.adsense_readiness || {};
+        if (adsenseReadiness.assessment && adsenseReadiness.assessment !== 'N/A') {
+            adsenseAssessmentText.textContent = adsenseReadiness.assessment;
+            adsenseImprovementAreasList.innerHTML = '';
+            if (adsenseReadiness.improvement_areas && adsenseReadiness.improvement_areas.length > 0) {
+                adsenseReadiness.improvement_areas.forEach(area => {
+                    const li = document.createElement('li');
+                    li.textContent = area;
+                    adsenseImprovementAreasList.appendChild(li);
+                });
+            } else {
+                const li = document.createElement('li');
+                li.textContent = translations['noAdsenseImprovements'] || 'No specific improvement areas suggested.';
+                adsenseImprovementAreasList.appendChild(li);
+            }
+            showElement(adsenseReadinessSection);
+        } else {
+            adsenseAssessmentText.textContent = translations['aiFeatureLimited'] || 'AI AdSense assessment is limited or unavailable in the free version.';
+            adsenseImprovementAreasList.innerHTML = `<li>${translations['loadingMessage']}</li>`; // Reset to loading message
+            showElement(adsenseReadinessSection); // Still show the section but with a message
+        }
     }
 
     // Event handler for the Analyze button
@@ -448,6 +481,8 @@ document.addEventListener('DOMContentLoaded', () => {
         hideElement(rewriteSeoOutput);
         refineContentOutput.innerHTML = `<p>${translations['loadingAiRefinement']}</p>`;
         hideElement(refineContentOutput);
+        adsenseAssessmentText.textContent = translations['loadingAdsenseAssessment'];
+        adsenseImprovementAreasList.innerHTML = `<li>${translations['loadingMessage']}</li>`;
     });
 
     // Event handler for Export PDF button
@@ -528,13 +563,12 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (!response.ok) {
-                const errorText = await response.text(); // Get raw error text
+                const errorText = await response.text(); 
                 console.error("AI Rewrite Backend response not OK. Raw text:", errorText);
                 try {
                     const errorData = JSON.parse(errorText);
                     throw new Error(errorData.error || `${translations['failedToGetAiRewrites'] || 'Failed to get AI rewrites.'} (Status: ${response.status})`);
                 } catch (jsonParseError) {
-                    // If backend returns non-JSON error (e.g., due to API key missing/quota)
                     throw new Error(`${translations['aiFeatureLimited'] || 'AI features are limited or unavailable in the free version.'} (Error: ${errorText.substring(0, 100)}...)`);
                 }
             }
@@ -555,14 +589,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 outputHtml += `</ul>`;
             }
-            if (!aiRewrites.titles.length && !aiRewrites.meta_descriptions.length) { // Check length
+            if (!aiRewrites.titles.length && !aiRewrites.meta_descriptions.length) { 
                 outputHtml += `<p>${translations['noAiRewritesAvailable'] || 'No AI rewrites available.'}</p>`;
             }
             rewriteSeoOutput.innerHTML = outputHtml;
 
         } catch (error) {
             console.error('AI Rewrite failed:', error);
-            rewriteSeoOutput.innerHTML = `<p class="text-red-600">${error.message}</p>`; // Display the detailed error message
+            rewriteSeoOutput.innerHTML = `<p class="text-red-600">${error.message}</p>`; 
         } finally {
             rewriteSeoButton.disabled = false;
         }
@@ -592,13 +626,12 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (!response.ok) {
-                const errorText = await response.text(); // Get raw error text
+                const errorText = await response.text(); 
                 console.error("AI Refine Backend response not OK. Raw text:", errorText);
                 try {
                     const errorData = JSON.parse(errorText);
                     throw new Error(errorData.error || `${translations['failedToRefineContent'] || 'Failed to refine content.'} (Status: ${response.status})`);
                 } catch (jsonParseError) {
-                    // If backend returns non-JSON error (e.g., due to API key missing/quota)
                     throw new Error(`${translations['aiFeatureLimited'] || 'AI features are limited or unavailable in the free version.'} (Error: ${errorText.substring(0, 100)}...)`);
                 }
             }
@@ -615,14 +648,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 outputHtml += `</ul>`;
             }
-            if (!aiRefinement.refined_text && (!aiRefinement.suggestions || aiRefinement.suggestions.length === 0)) { // Check length
+            if (!aiRefinement.refined_text && (!aiRefinement.suggestions || aiRefinement.suggestions.length === 0)) { 
                 outputHtml += `<p>${translations['noAiRefinementAvailable'] || 'No AI refinement available.'}</p>`;
             }
             refineContentOutput.innerHTML = outputHtml;
 
         } catch (error) {
             console.error('AI Content Refinement failed:', error);
-            refineContentOutput.innerHTML = `<p class="text-red-600">${error.message}</p>`; // Display the detailed error message
+            refineContentOutput.innerHTML = `<p class="text-red-600">${error.message}</p>`; 
         } finally {
             refineContentButton.disabled = false;
         }
