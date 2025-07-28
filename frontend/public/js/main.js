@@ -185,8 +185,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const daScore = domainAuthority.domain_authority_score !== undefined && domainAuthority.domain_authority_score !== null ? domainAuthority.domain_authority_score : 'N/A';
         domainAuthorityScoreSpan.textContent = daScore;
         updateProgressBar(domainAuthorityProgress, daScore);
-        domainAuthorityText.textContent = domainAuthority.domain_authority_text || translations['calculatingMessage']; 
-        domainAgeSpan.textContent = domainAuthority.domain_age_years ? `${domainAuthority.domain_age_years} ${translations['yearsText'] || 'years'}` : 'N/A';
+        // Updated message for Domain Authority Score
+        if (daScore === 'N/A') {
+            domainAuthorityText.textContent = translations['domainAuthorityApiLimit'] || 'Domain Authority score requires a premium API key.';
+        } else {
+            domainAuthorityText.textContent = domainAuthority.domain_authority_text || translations['calculatingMessage']; 
+        }
+        
+        domainAgeSpan.textContent = domainAuthority.domain_age_years ? `${domainAuthority.domain_age_years} ${translations['yearsText'] || 'years'}` : (translations['domainAgeApiLimit'] || 'N/A (Data might be limited by WHOIS service)');
         sslStatusSpan.textContent = domainAuthority.ssl_status || 'N/A';
         blacklistStatusSpan.textContent = domainAuthority.blacklist_status || 'N/A';
         dnsHealthSpan.textContent = domainAuthority.dns_health || 'N/A';
@@ -196,7 +202,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const perfScore = pageSpeed.scores && pageSpeed.scores['Performance Score'] !== undefined && pageSpeed.scores['Performance Score'] !== null ? pageSpeed.scores['Performance Score'] : 'N/A';
         performanceScoreSpan.textContent = perfScore;
         updateProgressBar(performanceProgress, perfScore);
-        performanceText.textContent = pageSpeed.performance_text || translations['calculatingMessage']; 
+        // Updated message for Page Speed Score
+        if (perfScore === 'N/A') {
+            performanceText.textContent = translations['pageSpeedApiLimit'] || 'Page Speed data requires a Google PageSpeed Insights API key (free tier limits apply).';
+        } else {
+            performanceText.textContent = pageSpeed.performance_text || translations['calculatingMessage']; 
+        }
         pagespeedLink.href = pageSpeed.pagespeed_report_link || '#';
 
         // Core Web Vitals
@@ -301,7 +312,8 @@ document.addEventListener('DOMContentLoaded', () => {
             aiSeoSuggestionsText.textContent = aiInsights.seo_improvement_suggestions;
             showElement(aiSeoSuggestionsSection);
         } else {
-            hideElement(aiSeoSuggestionsSection);
+            aiSeoSuggestionsText.textContent = translations['aiFeatureLimited'] || 'AI suggestions are limited or unavailable in the free version.';
+            showElement(aiSeoSuggestionsSection); // Still show the section but with a message
         }
 
 
@@ -345,7 +357,8 @@ document.addEventListener('DOMContentLoaded', () => {
             aiContentInsightsText.textContent = aiInsights.content_originality_tone;
             showElement(aiContentInsightsSection);
         } else {
-            hideElement(aiContentInsightsSection);
+            aiContentInsightsText.textContent = translations['aiFeatureLimited'] || 'AI content insights are limited or unavailable in the free version.';
+            showElement(aiContentInsightsSection); // Still show the section but with a message
         }
 
         // AI Summary
@@ -353,7 +366,8 @@ document.addEventListener('DOMContentLoaded', () => {
             aiSummaryText.textContent = aiInsights.summary;
             showElement(aiSummarySection);
         } else {
-            hideElement(aiSummarySection);
+            aiSummaryText.textContent = translations['aiFeatureLimited'] || 'AI summary is limited or unavailable in the free version.';
+            showElement(aiSummarySection); // Still show the section but with a message
         }
     }
 
@@ -514,8 +528,15 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || translations['failedToGetAiRewrites'] || 'Failed to get AI rewrites.');
+                const errorText = await response.text(); // Get raw error text
+                console.error("AI Rewrite Backend response not OK. Raw text:", errorText);
+                try {
+                    const errorData = JSON.parse(errorText);
+                    throw new Error(errorData.error || `${translations['failedToGetAiRewrites'] || 'Failed to get AI rewrites.'} (Status: ${response.status})`);
+                } catch (jsonParseError) {
+                    // If backend returns non-JSON error (e.g., due to API key missing/quota)
+                    throw new Error(`${translations['aiFeatureLimited'] || 'AI features are limited or unavailable in the free version.'} (Error: ${errorText.substring(0, 100)}...)`);
+                }
             }
 
             const aiRewrites = await response.json();
@@ -534,14 +555,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 outputHtml += `</ul>`;
             }
-            if (!aiRewrites.titles && !aiRewrites.meta_descriptions) {
+            if (!aiRewrites.titles.length && !aiRewrites.meta_descriptions.length) { // Check length
                 outputHtml += `<p>${translations['noAiRewritesAvailable'] || 'No AI rewrites available.'}</p>`;
             }
             rewriteSeoOutput.innerHTML = outputHtml;
 
         } catch (error) {
             console.error('AI Rewrite failed:', error);
-            rewriteSeoOutput.innerHTML = `<p class="text-red-600">${translations['aiRewriteFailed'] || 'AI Rewrite failed'}: ${error.message}</p>`;
+            rewriteSeoOutput.innerHTML = `<p class="text-red-600">${error.message}</p>`; // Display the detailed error message
         } finally {
             rewriteSeoButton.disabled = false;
         }
@@ -551,7 +572,7 @@ document.addEventListener('DOMContentLoaded', () => {
     refineContentButton.addEventListener('click', async () => {
         const extractedText = window.lastAnalysisResults.extracted_text_sample;
 
-        if (!extractedText || !window.lastAnalysisResults) {
+        if (!extractedText || extractedText === "No content extracted for AI analysis." || !window.lastAnalysisResults) {
             displayError(translations['noContentForRefinement'] || 'No content extracted for refinement. Please run an analysis first.');
             return;
         }
@@ -571,8 +592,15 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || translations['failedToRefineContent'] || 'Failed to refine content.');
+                const errorText = await response.text(); // Get raw error text
+                console.error("AI Refine Backend response not OK. Raw text:", errorText);
+                try {
+                    const errorData = JSON.parse(errorText);
+                    throw new Error(errorData.error || `${translations['failedToRefineContent'] || 'Failed to refine content.'} (Status: ${response.status})`);
+                } catch (jsonParseError) {
+                    // If backend returns non-JSON error (e.g., due to API key missing/quota)
+                    throw new Error(`${translations['aiFeatureLimited'] || 'AI features are limited or unavailable in the free version.'} (Error: ${errorText.substring(0, 100)}...)`);
+                }
             }
 
             const aiRefinement = await response.json();
@@ -587,14 +615,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 outputHtml += `</ul>`;
             }
-            if (!aiRefinement.refined_text && !aiRefinement.suggestions) {
+            if (!aiRefinement.refined_text && (!aiRefinement.suggestions || aiRefinement.suggestions.length === 0)) { // Check length
                 outputHtml += `<p>${translations['noAiRefinementAvailable'] || 'No AI refinement available.'}</p>`;
             }
             refineContentOutput.innerHTML = outputHtml;
 
         } catch (error) {
             console.error('AI Content Refinement failed:', error);
-            refineContentOutput.innerHTML = `<p class="text-red-600">${translations['aiRefinementFailed'] || 'AI Refinement failed'}: ${error.message}</p>`;
+            refineContentOutput.innerHTML = `<p class="text-red-600">${error.message}</p>`; // Display the detailed error message
         } finally {
             refineContentButton.disabled = false;
         }
