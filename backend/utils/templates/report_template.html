@@ -133,6 +133,24 @@
                 <p>{{ ai_insights.seo_improvement_suggestions }}</p>
             </div>
         {% endif %}
+
+        <!-- Broken Links Details Section in PDF -->
+        {% if seo_quality.elements.broken_links and seo_quality.elements.broken_links|length > 0 %}
+            <div class="section" style="background-color: #f0f8ff;"> <!-- Light blue background for this section -->
+                <h3>Broken Links Details:</h3>
+                <ul>
+                    {% for link in seo_quality.elements.broken_links %}
+                        <li>{{ link }}</li>
+                    {% endfor %}
+                </ul>
+                {% if broken_link_suggestions.suggestions and broken_link_suggestions.suggestions != 'N/A' %}
+                    <div class="ai-section">
+                        <h3>AI Fix Suggestions for Broken Links:</h3>
+                        <p>{{ broken_link_suggestions.suggestions }}</p>
+                    </div>
+                {% endif %}
+            </div>
+        {% endif %}
     </div>
 
     <div class="section">
