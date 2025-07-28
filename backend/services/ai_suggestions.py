@@ -22,7 +22,7 @@ def call_gemini_api(prompt, api_key, response_schema=None, lang="en"):
     full_prompt = f"{prompt}\n\nRespond in {lang} language."
 
     chat_history = []
-    chat_history.append({ "role": "user", "parts": [{ "text": full_prompt }] })
+    chat_history.push({ "role": "user", "parts": [{ "text": full_prompt }] })
 
     payload = {
         "contents": chat_history,
@@ -300,5 +300,53 @@ def get_adsense_readiness_assessment(analysis_results, lang="en"):
         return {
             "assessment": "Error generating AdSense assessment. (AI features are limited or unavailable in the free version.)",
             "improvement_areas": []
+        }
+
+
+def get_broken_link_fix_suggestions(broken_links_list, lang="en"):
+    """
+    Provides AI-driven suggestions for fixing broken links.
+    """
+    api_key = os.getenv('GEMINI_API_KEY')
+    if not api_key:
+        print("GEMINI_API_KEY environment variable not set. Broken link suggestions will be N/A.")
+        return {
+            "suggestions": "N/A (AI features are limited or unavailable in the free version. Upgrade for full access.)"
+        }
+
+    if not broken_links_list:
+        return {"suggestions": "No broken links provided for suggestions."}
+
+    # Limit the number of broken links sent to AI to avoid exceeding context window
+    links_sample = broken_links_list[:5] # Take first 5 broken links for the prompt
+
+    prompt = f"""
+    You are an expert in website maintenance and SEO.
+    Given the following list of broken links found on a website:
+    {json.dumps(links_sample, indent=2)}
+
+    Provide concise and actionable suggestions on how to fix these broken links.
+    Focus on general strategies and best practices rather than specific code,
+    as the exact fix depends on the nature of each link.
+    Include 3-5 distinct methods or tips.
+    Provide the output in JSON format, with a key 'suggestions' (string).
+    Ensure the response is in {lang} language.
+    """
+
+    response_schema = {
+        "type": "OBJECT",
+        "properties": {
+            "suggestions": {"type": "STRING"}
+        },
+        "required": ["suggestions"]
+    }
+
+    try:
+        response = call_gemini_api(prompt, api_key, response_schema, lang)
+        return {"suggestions": response.get("suggestions", "N/A")}
+    except Exception as e:
+        print(f"Error in get_broken_link_fix_suggestions: {e}")
+        return {
+            "suggestions": "Error generating broken link fix suggestions. (AI features are limited or unavailable in the free version.)"
         }
 
