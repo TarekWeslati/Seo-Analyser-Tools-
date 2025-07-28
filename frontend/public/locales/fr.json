@@ -84,5 +84,7 @@
     "loadingAdsenseAssessment": "Chargement de l'évaluation de la préparation AdSense...",
     "overallAssessment": "Évaluation globale :",
     "keyAreasForImprovement": "Domaines clés à améliorer :",
-    "noAdsenseImprovements": "Aucun domaine d'amélioration spécifique suggéré."
+    "noAdsenseImprovements": "Aucun domaine d'amélioration spécifique suggéré.",
+    "brokenLinksDetailsTitle": "Détails des liens cassés",
+    "brokenLinksFixSuggestionsTitle": "Suggestions de correction IA"
 }
