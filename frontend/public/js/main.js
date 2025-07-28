@@ -21,6 +21,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const adsenseAssessmentText = document.getElementById('adsense-assessment-text');
     const adsenseImprovementAreasList = document.getElementById('adsense-improvement-areas-list');
 
+    // New Broken Links Details elements
+    const brokenLinksDetailsSection = document.getElementById('broken-links-details-section');
+    const brokenLinksList = document.getElementById('broken-links-list');
+    const brokenLinksFixSuggestionsSection = document.getElementById('broken-links-fix-suggestions-section');
+    const brokenLinksFixSuggestionsText = document.getElementById('broken-links-fix-suggestions-text');
+
 
     // Dashboard elements (as they are)
     const domainNameSpan = document.getElementById('domain-name');
@@ -47,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const seoBrokenLinksSpan = document.getElementById('seo-broken-links');
     const seoMissingAltSpan = document.getElementById('seo-missing-alt');
     const seoInternalLinksSpan = document.getElementById('seo-internal-links');
-    const seoExternalLinksSpan = document.getElementById('seo-external-links');
+    const seoExternalLinksSpan = document = document.getElementById('seo-external-links');
     const hTagsList = document.getElementById('h-tags-list');
     const keywordDensityList = document.getElementById('keyword-density-list');
     const seoImprovementTipsList = document.getElementById('seo-improvement-tips');
@@ -100,34 +106,38 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('seo-overall-text').textContent = translations['calculatingMessage'];
         
         // Update specific list items if they are showing default loading messages
-        if (coreWebVitalsList.children.length === 1 && coreWebVitalsList.children[0].getAttribute('data-translate') === 'loadingMessage') {
+        // Check if elements exist before trying to access children/set textContent
+        if (coreWebVitalsList && coreWebVitalsList.children.length === 1 && coreWebVitalsList.children[0].getAttribute('data-translate') === 'loadingMessage') {
             coreWebVitalsList.children[0].textContent = translations['loadingMessage'];
         }
-        if (performanceIssuesList.children.length === 1 && performanceIssuesList.children[0].getAttribute('data-translate') === 'loadingMessage') {
+        if (performanceIssuesList && performanceIssuesList.children.length === 1 && performanceIssuesList.children[0].getAttribute('data-translate') === 'loadingMessage') {
             performanceIssuesList.children[0].textContent = translations['loadingMessage'];
         }
-        if (hTagsList.children.length === 1 && hTagsList.children[0].getAttribute('data-translate') === 'loadingMessage') {
+        if (hTagsList && hTagsList.children.length === 1 && hTagsList.children[0].getAttribute('data-translate') === 'loadingMessage') {
             hTagsList.children[0].textContent = translations['loadingMessage'];
         }
-        if (keywordDensityList.children.length === 1 && keywordDensityList.children[0].getAttribute('data-translate') === 'loadingMessage') {
+        if (keywordDensityList && keywordDensityList.children.length === 1 && keywordDensityList.children[0].getAttribute('data-translate') === 'loadingMessage') {
             keywordDensityList.children[0].textContent = translations['loadingMessage'];
         }
-        if (seoImprovementTipsList.children.length === 1 && seoImprovementTipsList.children[0].getAttribute('data-translate') === 'loadingMessage') {
+        if (seoImprovementTipsList && seoImprovementTipsList.children.length === 1 && seoImprovementTipsList.children[0].getAttribute('data-translate') === 'loadingMessage') {
             seoImprovementTipsList.children[0].textContent = translations['loadingMessage'];
         }
-        if (uxIssuesList.children.length === 1 && uxIssuesList.children[0].getAttribute('data-translate') === 'loadingMessage') {
+        if (uxIssuesList && uxIssuesList.children.length === 1 && uxIssuesList.children[0].getAttribute('data-translate') === 'loadingMessage') {
             uxIssuesList.children[0].textContent = translations['loadingMessage'];
         }
-        if (uxSuggestionsList.children.length === 1 && uxSuggestionsList.children[0].getAttribute('data-translate') === 'loadingMessage') {
+        if (uxSuggestionsList && uxSuggestionsList.children.length === 1 && uxSuggestionsList.children[0].getAttribute('data-translate') === 'loadingMessage') {
             uxSuggestionsList.children[0].textContent = translations['loadingMessage'];
         }
-        aiSeoSuggestionsText.textContent = translations['loadingAiSuggestions'];
-        aiContentInsightsText.textContent = translations['loadingAiInsights'];
-        aiSummaryText.textContent = translations['loadingAiSummary'];
-        rewriteSeoOutput.querySelector('p').textContent = translations['loadingAiRewrites'];
-        refineContentOutput.querySelector('p').textContent = translations['loadingAiRefinement'];
-        adsenseAssessmentText.textContent = translations['loadingAdsenseAssessment'];
-        adsenseImprovementAreasList.innerHTML = `<li>${translations['loadingMessage']}</li>`;
+        // Ensure elements exist before setting textContent
+        if (aiSeoSuggestionsText) aiSeoSuggestionsText.textContent = translations['loadingAiSuggestions'];
+        if (aiContentInsightsText) aiContentInsightsText.textContent = translations['loadingAiInsights'];
+        if (aiSummaryText) aiSummaryText.textContent = translations['loadingAiSummary'];
+        if (rewriteSeoOutput && rewriteSeoOutput.querySelector('p')) rewriteSeoOutput.querySelector('p').textContent = translations['loadingAiRewrites'];
+        if (refineContentOutput && refineContentOutput.querySelector('p')) refineContentOutput.querySelector('p').textContent = translations['loadingAiRefinement'];
+        if (adsenseAssessmentText) adsenseAssessmentText.textContent = translations['loadingAdsenseAssessment'];
+        if (adsenseImprovementAreasList) adsenseImprovementAreasList.innerHTML = `<li>${translations['loadingMessage']}</li>`;
+        if (brokenLinksList) brokenLinksList.innerHTML = `<li>${translations['loadingMessage']}</li>`;
+        if (brokenLinksFixSuggestionsText) brokenLinksFixSuggestionsText.textContent = translations['loadingAiSuggestions'];
 
 
         // Update N/A messages if they are currently set to N/A
@@ -139,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
             seoInternalLinksSpan, seoExternalLinksSpan
         ];
         naElements.forEach(el => {
-            if (el.textContent === 'N/A') {
+            if (el && el.textContent === 'N/A') { // Add null check for el
                 el.textContent = 'N/A';
             }
         });
@@ -147,11 +157,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // Helper functions to show/hide elements
-    const showElement = (element) => element.classList.remove('hidden');
-    const hideElement = (element) => element.classList.add('hidden');
+    const showElement = (element) => { if (element) element.classList.remove('hidden'); };
+    const hideElement = (element) => { if (element) element.classList.add('hidden'); };
 
     // Function to update progress bar width and color
     const updateProgressBar = (progressBarElement, score) => {
+        if (!progressBarElement) return; // Add null check for progressBarElement
+
         let width = 0;
         let colorClass = 'progress-bad'; 
 
@@ -175,8 +187,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Function to display an error message
     const displayError = (message) => {
-        errorMessage.textContent = message;
-        showElement(errorMessage);
+        if (errorMessage) { // Add null check for errorMessage
+            errorMessage.textContent = message;
+            showElement(errorMessage);
+        }
         hideElement(loadingSpinner);
         hideElement(resultsDashboard); 
         console.error("Displaying error message:", message); 
@@ -191,139 +205,181 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Domain Authority
         const domainAuthority = results.domain_authority || {};
-        domainNameSpan.textContent = domainAuthority.domain || 'N/A';
+        if (domainNameSpan) domainNameSpan.textContent = domainAuthority.domain || 'N/A';
         const daScore = domainAuthority.domain_authority_score !== undefined && domainAuthority.domain_authority_score !== null ? domainAuthority.domain_authority_score : 'N/A';
-        domainAuthorityScoreSpan.textContent = daScore;
+        if (domainAuthorityScoreSpan) domainAuthorityScoreSpan.textContent = daScore;
         updateProgressBar(domainAuthorityProgress, daScore);
         // Updated message for Domain Authority Score
-        if (daScore === 'N/A' || domainAuthority.domain_authority_text === "Requires external Domain Authority API") {
-            domainAuthorityText.textContent = translations['domainAuthorityApiLimit'] || 'Domain Authority score requires a premium API key.';
-        } else {
-            domainAuthorityText.textContent = domainAuthority.domain_authority_text || translations['calculatingMessage']; 
+        if (domainAuthorityText) {
+            if (daScore === 'N/A' || domainAuthority.domain_authority_text === "Requires external Domain Authority API") {
+                domainAuthorityText.textContent = translations['domainAuthorityApiLimit'] || 'Domain Authority score requires a premium API key.';
+            } else {
+                domainAuthorityText.textContent = domainAuthority.domain_authority_text || translations['calculatingMessage']; 
+            }
         }
         
-        domainAgeSpan.textContent = domainAuthority.domain_age_years ? `${domainAuthority.domain_age_years} ${translations['yearsText'] || 'years'}` : (translations['domainAgeApiLimit'] || 'N/A (Data might be limited by WHOIS service or API quota).');
-        sslStatusSpan.textContent = domainAuthority.ssl_status || 'N/A';
-        blacklistStatusSpan.textContent = domainAuthority.blacklist_status || 'N/A';
-        dnsHealthSpan.textContent = domainAuthority.dns_health || 'N/A';
+        if (domainAgeSpan) domainAgeSpan.textContent = domainAuthority.domain_age_years ? `${domainAuthority.domain_age_years} ${translations['yearsText'] || 'years'}` : (translations['domainAgeApiLimit'] || 'N/A (Data might be limited by WHOIS service or API quota).');
+        if (sslStatusSpan) sslStatusSpan.textContent = domainAuthority.ssl_status || 'N/A';
+        if (blacklistStatusSpan) blacklistStatusSpan.textContent = domainAuthority.blacklist_status || 'N/A';
+        if (dnsHealthSpan) dnsHealthSpan.textContent = domainAuthority.dns_health || 'N/A';
 
         // Page Speed
         const pageSpeed = results.page_speed || {};
         const perfScore = pageSpeed.scores && pageSpeed.scores['Performance Score'] !== undefined && pageSpeed.scores['Performance Score'] !== null ? pageSpeed.scores['Performance Score'] : 'N/A';
-        performanceScoreSpan.textContent = perfScore;
+        if (performanceScoreSpan) performanceScoreSpan.textContent = perfScore;
         updateProgressBar(performanceProgress, perfScore);
         // Updated message for Page Speed Score
-        if (perfScore === 'N/A' || pageSpeed.performance_text === "PAGESPEED_API_KEY environment variable not set.") {
-            performanceText.textContent = translations['pageSpeedApiLimit'] || 'Page Speed data requires a Google PageSpeed Insights API key (free tier limits apply).';
-        } else {
-            performanceText.textContent = pageSpeed.performance_text || translations['calculatingMessage']; 
+        if (performanceText) {
+            if (perfScore === 'N/A' || pageSpeed.performance_text === "PAGESPEED_API_KEY environment variable not set.") {
+                performanceText.textContent = translations['pageSpeedApiLimit'] || 'Page Speed data requires a Google PageSpeed Insights API key (free tier limits apply).';
+            } else {
+                performanceText.textContent = pageSpeed.performance_text || translations['calculatingMessage']; 
+            }
         }
-        pagespeedLink.href = pageSpeed.pagespeed_report_link || '#';
+        if (pagespeedLink) pagespeedLink.href = pageSpeed.pagespeed_report_link || '#';
 
         // Core Web Vitals
-        coreWebVitalsList.innerHTML = '';
-        const coreVitals = pageSpeed.core_web_vitals || {};
-        if (Object.keys(coreVitals).length > 0) {
-            for (const metric in coreVitals) {
+        if (coreWebVitalsList) {
+            coreWebVitalsList.innerHTML = '';
+            const coreVitals = pageSpeed.core_web_vitals || {};
+            if (Object.keys(coreVitals).length > 0) {
+                for (const metric in coreVitals) {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<strong>${metric}:</strong> ${coreVitals[metric] || 'N/A'}`;
+                    coreWebVitalsList.appendChild(li);
+                }
+            } else {
                 const li = document.createElement('li');
-                li.innerHTML = `<strong>${metric}:</strong> ${coreVitals[metric] || 'N/A'}`;
+                li.textContent = translations['noCoreWebVitals']; 
                 coreWebVitalsList.appendChild(li);
             }
-        } else {
-            const li = document.createElement('li');
-            li.textContent = translations['noCoreWebVitals']; 
-            coreWebVitalsList.appendChild(li);
         }
 
         // Performance Issues
-        performanceIssuesList.innerHTML = '';
-        const perfIssues = pageSpeed.issues || [];
-        if (perfIssues.length > 0) {
-            perfIssues.forEach(issue => {
+        if (performanceIssuesList) {
+            performanceIssuesList.innerHTML = '';
+            const perfIssues = pageSpeed.issues || [];
+            if (perfIssues.length > 0) {
+                perfIssues.forEach(issue => {
+                    const li = document.createElement('li');
+                    li.textContent = issue.title || 'Unknown issue';
+                    performanceIssuesList.appendChild(li);
+                });
+            } else {
                 const li = document.createElement('li');
-                li.textContent = issue.title || 'Unknown issue';
+                li.textContent = translations['noPerformanceIssues']; 
+                li.classList.add('text-green-600', 'dark:text-green-300'); 
                 performanceIssuesList.appendChild(li);
-            });
-        } else {
-            const li = document.createElement('li');
-            li.textContent = translations['noPerformanceIssues']; 
-            li.classList.add('text-green-600', 'dark:text-green-300'); 
-            performanceIssuesList.appendChild(li);
+            }
         }
 
 
         // SEO Quality
         const seoQuality = results.seo_quality || {};
         const seoScore = seoQuality.score !== undefined && seoQuality.score !== null ? seoQuality.score : 'N/A';
-        seoOverallScoreSpan.textContent = seoScore;
+        if (seoOverallScoreSpan) seoOverallScoreSpan.textContent = seoScore;
         updateProgressBar(seoOverallProgress, seoScore);
-        seoOverallText.textContent = seoQuality.seo_overall_text || translations['calculatingMessage']; 
+        if (seoOverallText) seoOverallText.textContent = seoQuality.seo_overall_text || translations['calculatingMessage']; 
 
         const seoElements = seoQuality.elements || {};
-        seoTitleSpan.textContent = seoElements.title || 'N/A';
-        seoMetaDescriptionSpan.textContent = seoElements.meta_description || 'N/A';
-        seoBrokenLinksSpan.textContent = seoElements.broken_links ? seoElements.broken_links.length : '0';
-        seoMissingAltSpan.textContent = seoElements.image_alt_status ? seoElements.image_alt_status.filter(s => s.includes("Missing") || s.includes("Empty")).length : '0';
-        seoInternalLinksSpan.textContent = seoElements.internal_links_count !== undefined && seoElements.internal_links_count !== null ? seoElements.internal_links_count : 'N/A';
-        seoExternalLinksSpan.textContent = seoElements.external_links_count !== undefined && seoElements.external_links_count !== null ? seoElements.external_links_count : 'N/A';
+        if (seoTitleSpan) seoTitleSpan.textContent = seoElements.title || 'N/A';
+        if (seoMetaDescriptionSpan) seoMetaDescriptionSpan.textContent = seoElements.meta_description || 'N/A';
+        if (seoBrokenLinksSpan) seoBrokenLinksSpan.textContent = seoElements.broken_links ? seoElements.broken_links.length : '0';
+        if (seoMissingAltSpan) seoMissingAltSpan.textContent = seoElements.image_alt_status ? seoElements.image_alt_status.filter(s => s.includes("Missing") || s.includes("Empty")).length : '0';
+        if (seoInternalLinksSpan) seoInternalLinksSpan.textContent = seoElements.internal_links_count !== undefined && seoElements.internal_links_count !== null ? seoElements.internal_links_count : 'N/A';
+        if (seoExternalLinksSpan) seoExternalLinksSpan.textContent = seoElements.external_links_count !== undefined && seoElements.external_links_count !== null ? seoElements.external_links_count : 'N/A';
 
         // H-Tags
-        hTagsList.innerHTML = '';
-        const hTags = seoElements.h_tags || {};
-        if (Object.keys(hTags).length > 0) {
-            for (const tag in hTags) {
+        if (hTagsList) {
+            hTagsList.innerHTML = '';
+            const hTags = seoElements.h_tags || {};
+            if (Object.keys(hTags).length > 0) {
+                for (const tag in hTags) {
+                    const li = document.createElement('li');
+                    li.textContent = `${tag}: ${hTags[tag].join(', ')}`;
+                    hTagsList.appendChild(li);
+                }
+            } else {
                 const li = document.createElement('li');
-                li.textContent = `${tag}: ${hTags[tag].join(', ')}`;
+                li.textContent = translations['noHeadingTags']; 
                 hTagsList.appendChild(li);
             }
-        } else {
-            const li = document.createElement('li');
-            li.textContent = translations['noHeadingTags']; 
-            hTagsList.appendChild(li);
         }
 
         // Keyword Density
-        keywordDensityList.innerHTML = '';
-        const keywordDensity = seoElements.keyword_density || {};
-        const topKeywords = Object.entries(keywordDensity)
-                                .sort(([, a], [, b]) => b - a)
-                                .slice(0, 10);
-        if (topKeywords.length > 0) {
-            topKeywords.forEach(([keyword, density]) => {
+        if (keywordDensityList) {
+            keywordDensityList.innerHTML = '';
+            const keywordDensity = seoElements.keyword_density || {};
+            const topKeywords = Object.entries(keywordDensity)
+                                    .sort(([, a], [, b]) => b - a)
+                                    .slice(0, 10);
+            if (topKeywords.length > 0) {
+                topKeywords.forEach(([keyword, density]) => {
+                    const li = document.createElement('li');
+                    li.textContent = `${keyword}: ${density}%`;
+                    keywordDensityList.appendChild(li);
+                });
+            } else {
                 const li = document.createElement('li');
-                li.textContent = `${keyword}: ${density}%`;
+                li.textContent = translations['noKeywordsFound']; 
                 keywordDensityList.appendChild(li);
-            });
-        } else {
-            const li = document.createElement('li');
-            li.textContent = translations['noKeywordsFound']; 
-            keywordDensityList.appendChild(li);
+            }
         }
 
         // SEO Improvement Tips
-        seoImprovementTipsList.innerHTML = '';
-        const seoTips = seoQuality.improvement_tips || [];
-        if (seoTips.length > 0) {
-            seoTips.forEach(tip => {
+        if (seoImprovementTipsList) {
+            seoImprovementTipsList.innerHTML = '';
+            const seoTips = seoQuality.improvement_tips || [];
+            if (seoTips.length > 0) {
+                seoTips.forEach(tip => {
+                    const li = document.createElement('li');
+                    li.textContent = tip;
+                    seoImprovementTipsList.appendChild(li);
+                });
+            } else {
                 const li = document.createElement('li');
-                li.textContent = tip;
+                li.textContent = translations['noSeoTips']; 
+                li.classList.add('text-green-600', 'dark:text-green-300');
                 seoImprovementTipsList.appendChild(li);
-            });
-        } else {
-            const li = document.createElement('li');
-            li.textContent = translations['noSeoTips']; 
-            li.classList.add('text-green-600', 'dark:text-green-300');
-            seoImprovementTipsList.appendChild(li);
+            }
         }
 
         // AI SEO Suggestions
-        const aiInsights = results.ai_insights || {};
-        if (aiInsights.seo_improvement_suggestions && aiInsights.seo_improvement_suggestions !== 'N/A') {
-            aiSeoSuggestionsText.textContent = aiInsights.seo_improvement_suggestions;
-            showElement(aiSeoSuggestionsSection);
-        } else {
-            aiSeoSuggestionsText.textContent = translations['aiFeatureLimited'] || 'AI suggestions are limited or unavailable in the free version.';
-            showElement(aiSeoSuggestionsSection); // Still show the section but with a message
+        if (aiSeoSuggestionsText && aiSeoSuggestionsSection) {
+            const aiInsights = results.ai_insights || {};
+            if (aiInsights.seo_improvement_suggestions && aiInsights.seo_improvement_suggestions !== 'N/A') {
+                aiSeoSuggestionsText.textContent = aiInsights.seo_improvement_suggestions;
+                showElement(aiSeoSuggestionsSection);
+            } else {
+                aiSeoSuggestionsText.textContent = translations['aiFeatureLimited'] || 'AI suggestions are limited or unavailable in the free version.';
+                showElement(aiSeoSuggestionsSection); // Still show the section but with a message
+            }
+        }
+
+        // Broken Links Details
+        if (brokenLinksDetailsSection && brokenLinksList && brokenLinksFixSuggestionsSection && brokenLinksFixSuggestionsText) {
+            const brokenLinks = seoElements.broken_links || [];
+            const brokenLinkSuggestions = results.broken_link_suggestions || {};
+
+            if (brokenLinks.length > 0) {
+                brokenLinksList.innerHTML = '';
+                brokenLinks.forEach(link => {
+                    const li = document.createElement('li');
+                    li.textContent = link;
+                    brokenLinksList.appendChild(li);
+                });
+                showElement(brokenLinksDetailsSection);
+
+                if (brokenLinkSuggestions.suggestions && brokenLinkSuggestions.suggestions !== 'N/A') {
+                    brokenLinksFixSuggestionsText.textContent = brokenLinkSuggestions.suggestions;
+                    showElement(brokenLinksFixSuggestionsSection);
+                } else {
+                    brokenLinksFixSuggestionsText.textContent = translations['aiFeatureLimited'] || 'AI fix suggestions are limited or unavailable in the free version.';
+                    showElement(brokenLinksFixSuggestionsSection);
+                }
+            } else {
+                hideElement(brokenLinksDetailsSection);
+            }
         }
 
 
@@ -331,76 +387,88 @@ document.addEventListener('DOMContentLoaded', () => {
         const userExperience = results.user_experience || {};
 
         // UX Issues
-        uxIssuesList.innerHTML = '';
-        const uxIssues = userExperience.issues || [];
-        if (uxIssues.length > 0) {
-            uxIssues.forEach(issue => {
-                const li = document.createElement('li');
-                li.textContent = issue;
-                uxIssuesList.appendChild(li);
-            });
-        } else {
-            const li = document.createElement('li');
-            li.textContent = translations['noUxIssues']; 
-            li.classList.add('text-green-600', 'dark:text-green-300');
-            uxIssuesList.appendChild(li);
-        }
-
-        // UX Suggestions
-        uxSuggestionsList.innerHTML = '';
-        const uxSuggestions = userExperience.suggestions || [];
-        if (uxSuggestions.length > 0) {
-            uxSuggestions.forEach(suggestion => {
-                const li = document.createElement('li');
-                li.textContent = suggestion;
-                uxSuggestionsList.appendChild(li);
-            });
-        } else {
-            const li = document.createElement('li');
-            li.textContent = translations['noUxSuggestions']; 
-            li.classList.add('text-green-600', 'dark:text-green-300');
-            uxSuggestionsList.appendChild(li);
-        }
-
-        // AI Content Insights
-        if (aiInsights.content_originality_tone && aiInsights.content_originality_tone !== 'N/A') {
-            aiContentInsightsText.textContent = aiInsights.content_originality_tone;
-            showElement(aiContentInsightsSection);
-        } else {
-            aiContentInsightsText.textContent = translations['aiFeatureLimited'] || 'AI content insights are limited or unavailable in the free version.';
-            showElement(aiContentInsightsSection); // Still show the section but with a message
-        }
-
-        // AI Summary
-        if (aiInsights.summary && aiInsights.summary !== 'N/A') {
-            aiSummaryText.textContent = aiInsights.summary;
-            showElement(aiSummarySection);
-        } else {
-            aiSummaryText.textContent = translations['aiFeatureLimited'] || 'AI summary is limited or unavailable in the free version.';
-            showElement(aiSummarySection); // Still show the section but with a message
-        }
-
-        // AdSense Readiness
-        const adsenseReadiness = results.adsense_readiness || {};
-        if (adsenseReadiness.assessment && adsenseReadiness.assessment !== 'N/A') {
-            adsenseAssessmentText.textContent = adsenseReadiness.assessment;
-            adsenseImprovementAreasList.innerHTML = '';
-            if (adsenseReadiness.improvement_areas && adsenseReadiness.improvement_areas.length > 0) {
-                adsenseReadiness.improvement_areas.forEach(area => {
+        if (uxIssuesList) {
+            uxIssuesList.innerHTML = '';
+            const uxIssues = userExperience.issues || [];
+            if (uxIssues.length > 0) {
+                uxIssues.forEach(issue => {
                     const li = document.createElement('li');
-                    li.textContent = area;
-                    adsenseImprovementAreasList.appendChild(li);
+                    li.textContent = issue;
+                    uxIssuesList.appendChild(li);
                 });
             } else {
                 const li = document.createElement('li');
-                li.textContent = translations['noAdsenseImprovements'] || 'No specific improvement areas suggested.';
-                adsenseImprovementAreasList.appendChild(li);
+                li.textContent = translations['noUxIssues']; 
+                li.classList.add('text-green-600', 'dark:text-green-300');
+                uxIssuesList.appendChild(li);
             }
-            showElement(adsenseReadinessSection);
-        } else {
-            adsenseAssessmentText.textContent = translations['aiFeatureLimited'] || 'AI AdSense assessment is limited or unavailable in the free version.';
-            adsenseImprovementAreasList.innerHTML = `<li>${translations['loadingMessage']}</li>`; // Reset to loading message
-            showElement(adsenseReadinessSection); // Still show the section but with a message
+        }
+
+        // UX Suggestions
+        if (uxSuggestionsList) {
+            uxSuggestionsList.innerHTML = '';
+            const uxSuggestions = userExperience.suggestions || [];
+            if (uxSuggestions.length > 0) {
+                uxSuggestions.forEach(suggestion => {
+                    const li = document.createElement('li');
+                    li.textContent = suggestion;
+                    uxSuggestionsList.appendChild(li);
+                });
+            } else {
+                const li = document.createElement('li');
+                li.textContent = translations['noUxSuggestions']; 
+                li.classList.add('text-green-600', 'dark:text-green-300');
+                uxSuggestionsList.appendChild(li);
+            }
+        }
+
+        // AI Content Insights
+        if (aiContentInsightsText && aiContentInsightsSection) {
+            const aiInsights = results.ai_insights || {};
+            if (aiInsights.content_originality_tone && aiInsights.content_originality_tone !== 'N/A') {
+                aiContentInsightsText.textContent = aiInsights.content_originality_tone;
+                showElement(aiContentInsightsSection);
+            } else {
+                aiContentInsightsText.textContent = translations['aiFeatureLimited'] || 'AI content insights are limited or unavailable in the free version.';
+                showElement(aiContentInsightsSection); // Still show the section but with a message
+            }
+        }
+
+        // AI Summary
+        if (aiSummaryText && aiSummarySection) {
+            const aiInsights = results.ai_insights || {};
+            if (aiInsights.summary && aiInsights.summary !== 'N/A') {
+                aiSummaryText.textContent = aiInsights.summary;
+                showElement(aiSummarySection);
+            } else {
+                aiSummaryText.textContent = translations['aiFeatureLimited'] || 'AI summary is limited or unavailable in the free version.';
+                showElement(aiSummarySection); // Still show the section but with a message
+            }
+        }
+
+        // AdSense Readiness
+        if (adsenseReadinessSection && adsenseAssessmentText && adsenseImprovementAreasList) {
+            const adsenseReadiness = results.adsense_readiness || {};
+            if (adsenseReadiness.assessment && adsenseReadiness.assessment !== 'N/A') {
+                adsenseAssessmentText.textContent = adsenseReadiness.assessment;
+                adsenseImprovementAreasList.innerHTML = '';
+                if (adsenseReadiness.improvement_areas && adsenseReadiness.improvement_areas.length > 0) {
+                    adsenseReadiness.improvement_areas.forEach(area => {
+                        const li = document.createElement('li');
+                        li.textContent = area;
+                        adsenseImprovementAreasList.appendChild(li);
+                    });
+                } else {
+                    const li = document.createElement('li');
+                    li.textContent = translations['noAdsenseImprovements'] || 'No specific improvement areas suggested.';
+                    adsenseImprovementAreasList.appendChild(li);
+                }
+                showElement(adsenseReadinessSection);
+            } else {
+                adsenseAssessmentText.textContent = translations['aiFeatureLimited'] || 'AI AdSense assessment is limited or unavailable in the free version.';
+                adsenseImprovementAreasList.innerHTML = `<li>${translations['loadingMessage']}</li>`; // Reset to loading message
+                showElement(adsenseReadinessSection); // Still show the section but with a message
+            }
         }
     }
 
@@ -477,12 +545,19 @@ document.addEventListener('DOMContentLoaded', () => {
         websiteUrlInput.value = ''; 
         showElement(document.getElementById('input-section')); 
         // Clear AI outputs
-        rewriteSeoOutput.innerHTML = `<p>${translations['loadingAiRewrites']}</p>`;
-        hideElement(rewriteSeoOutput);
-        refineContentOutput.innerHTML = `<p>${translations['loadingAiRefinement']}</p>`;
-        hideElement(refineContentOutput);
-        adsenseAssessmentText.textContent = translations['loadingAdsenseAssessment'];
-        adsenseImprovementAreasList.innerHTML = `<li>${translations['loadingMessage']}</li>`;
+        if (rewriteSeoOutput) {
+            rewriteSeoOutput.innerHTML = `<p>${translations['loadingAiRewrites']}</p>`;
+            hideElement(rewriteSeoOutput);
+        }
+        if (refineContentOutput) {
+            refineContentOutput.innerHTML = `<p>${translations['loadingAiRefinement']}</p>`;
+            hideElement(refineContentOutput);
+        }
+        if (adsenseAssessmentText) adsenseAssessmentText.textContent = translations['loadingAdsenseAssessment'];
+        if (adsenseImprovementAreasList) adsenseImprovementAreasList.innerHTML = `<li>${translations['loadingMessage']}</li>`;
+        if (brokenLinksList) brokenLinksList.innerHTML = `<li>${translations['loadingMessage']}</li>`;
+        if (brokenLinksFixSuggestionsText) brokenLinksFixSuggestionsText.textContent = translations['loadingAiSuggestions'];
+        if (brokenLinksDetailsSection) hideElement(brokenLinksDetailsSection);
     });
 
     // Event handler for Export PDF button
@@ -493,8 +568,10 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        exportPdfButton.textContent = translations['generatingPdf'] || 'Generating PDF...'; 
-        exportPdfButton.disabled = true;
+        if (exportPdfButton) { // Null check for exportPdfButton
+            exportPdfButton.textContent = translations['generatingPdf'] || 'Generating PDF...'; 
+            exportPdfButton.disabled = true;
+        }
 
         try {
             const backendReportUrl = `/generate_report`; 
@@ -526,8 +603,10 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('PDF export failed:', error);
             displayError(`${translations['pdfExportFailed'] || 'PDF export failed'}: ${error.message}`); 
         } finally {
-            exportPdfButton.textContent = translations['exportPdfButton'] || 'Export PDF Report'; 
-            exportPdfButton.disabled = false;
+            if (exportPdfButton) { // Null check for exportPdfButton
+                exportPdfButton.textContent = translations['exportPdfButton'] || 'Export PDF Report'; 
+                exportPdfButton.disabled = false;
+            }
         }
     });
 
@@ -543,9 +622,11 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        showElement(rewriteSeoOutput);
-        rewriteSeoOutput.innerHTML = `<p>${translations['loadingAiRewrites']}</p>`;
-        rewriteSeoButton.disabled = true;
+        if (rewriteSeoOutput) { // Null check for rewriteSeoOutput
+            showElement(rewriteSeoOutput);
+            rewriteSeoOutput.innerHTML = `<p>${translations['loadingAiRewrites']}</p>`;
+        }
+        if (rewriteSeoButton) rewriteSeoButton.disabled = true; // Null check for rewriteSeoButton
 
         try {
             const response = await fetch('/ai_rewrite_seo', {
@@ -592,13 +673,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!aiRewrites.titles.length && !aiRewrites.meta_descriptions.length) { 
                 outputHtml += `<p>${translations['noAiRewritesAvailable'] || 'No AI rewrites available.'}</p>`;
             }
-            rewriteSeoOutput.innerHTML = outputHtml;
+            if (rewriteSeoOutput) rewriteSeoOutput.innerHTML = outputHtml; // Null check
 
         } catch (error) {
             console.error('AI Rewrite failed:', error);
-            rewriteSeoOutput.innerHTML = `<p class="text-red-600">${error.message}</p>`; 
+            if (rewriteSeoOutput) rewriteSeoOutput.innerHTML = `<p class="text-red-600">${error.message}</p>`; 
         } finally {
-            rewriteSeoButton.disabled = false;
+            if (rewriteSeoButton) rewriteSeoButton.disabled = false; // Null check
         }
     });
 
@@ -611,9 +692,11 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        showElement(refineContentOutput);
-        refineContentOutput.innerHTML = `<p>${translations['loadingAiRefinement']}</p>`;
-        refineContentButton.disabled = true;
+        if (refineContentOutput) { // Null check
+            showElement(refineContentOutput);
+            refineContentOutput.innerHTML = `<p>${translations['loadingAiRefinement']}</p>`;
+        }
+        if (refineContentButton) refineContentButton.disabled = true; // Null check
 
         try {
             const response = await fetch('/ai_refine_content', {
@@ -651,13 +734,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!aiRefinement.refined_text && (!aiRefinement.suggestions || aiRefinement.suggestions.length === 0)) { 
                 outputHtml += `<p>${translations['noAiRefinementAvailable'] || 'No AI refinement available.'}</p>`;
             }
-            refineContentOutput.innerHTML = outputHtml;
+            if (refineContentOutput) refineContentOutput.innerHTML = outputHtml; // Null check
 
         } catch (error) {
             console.error('AI Content Refinement failed:', error);
-            refineContentOutput.innerHTML = `<p class="text-red-600">${error.message}</p>`; 
+            if (refineContentOutput) refineContentOutput.innerHTML = `<p class="text-red-600">${error.message}</p>`; 
         } finally {
-            refineContentButton.disabled = false;
+            if (refineContentButton) refineContentButton.disabled = false; // Null check
         }
     });
 
