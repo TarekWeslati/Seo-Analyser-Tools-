@@ -79,5 +79,10 @@
     "domainAuthorityApiLimit": "تتطلب نقاط سلطة النطاق مفتاح API مميزاً.",
     "domainAgeApiLimit": "غير متاح (قد تكون البيانات محدودة بواسطة خدمة WHOIS أو حصة API).",
     "pageSpeedApiLimit": "تتطلب بيانات سرعة الصفحة مفتاح Google PageSpeed Insights API (تنطبق قيود المستوى المجاني).",
-    "aiFeatureLimited": "ميزات الذكاء الاصطناعي محدودة أو غير متوفرة في الإصدار المجاني. قم بالترقية للوصول الكامل."
+    "aiFeatureLimited": "ميزات الذكاء الاصطناعي محدودة أو غير متوفرة في الإصدار المجاني. قم بالترقية للوصول الكامل.",
+    "adsenseReadinessTitle": "تقييم جاهزية AdSense",
+    "loadingAdsenseAssessment": "جاري تحميل تقييم جاهزية AdSense...",
+    "overallAssessment": "التقييم العام:",
+    "keyAreasForImprovement": "المجالات الرئيسية للتحسين:",
+    "noAdsenseImprovements": "لا توجد مجالات تحسين محددة مقترحة."
 }
