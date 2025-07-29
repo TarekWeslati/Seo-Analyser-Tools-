@@ -22,7 +22,8 @@ def call_gemini_api(prompt, api_key, response_schema=None, lang="en"):
     full_prompt = f"{prompt}\n\nRespond in {lang} language."
 
     chat_history = []
-    chat_history.push({ "role": "user", "parts": [{ "text": full_prompt }] })
+    # FIX: Changed .push to .append for Python lists
+    chat_history.append({ "role": "user", "parts": [{ "text": full_prompt }] })
 
     payload = {
         "contents": chat_history,
@@ -318,6 +319,7 @@ def get_broken_link_fix_suggestions(broken_links_list, lang="en"):
         return {"suggestions": "No broken links provided for suggestions."}
 
     # Limit the number of broken links sent to AI to avoid exceeding context window
+    # Ensure broken_links_list contains actual URLs, not just counts
     links_sample = broken_links_list[:5] # Take first 5 broken links for the prompt
 
     prompt = f"""
@@ -349,4 +351,84 @@ def get_broken_link_fix_suggestions(broken_links_list, lang="en"):
         return {
             "suggestions": "Error generating broken link fix suggestions. (AI features are limited or unavailable in the free version.)"
         }
+
+# --- New AI functions for Article Analyzer (Phase 3 - will be used later) ---
+
+def analyze_article_content_ai(article_text, lang="en"):
+    """
+    Analyzes an article for SEO structure, keywords, content health, and originality.
+    """
+    api_key = os.getenv('GEMINI_API_KEY')
+    if not api_key:
+        raise Exception("GEMINI_API_KEY environment variable not set. Cannot analyze article content.")
+
+    prompt = f"""
+    As an SEO and content specialist, analyze the following article text.
+    Provide:
+    1.  **Suggested Article Structure:** A clear, SEO-friendly heading structure (H1, H2s, H3s) based on the content.
+    2.  **Keyword Suggestions:** 5-10 relevant keywords and long-tail keywords.
+    3.  **Content Health Assessment:** A brief evaluation of clarity, engagement, and readability.
+    4.  **Originality Assessment:** An assessment of how original the content appears (e.g., "appears original," "contains common phrases," "needs more unique insights"). Do NOT give a percentage.
+
+    Article Text:
+    "{article_text}"
+
+    Provide the output in JSON format, with keys:
+    'structure_suggestions' (string),
+    'keyword_suggestions' (list of strings),
+    'content_health' (string),
+    'originality_assessment' (string).
+    Ensure the response is in {lang} language.
+    """
+
+    response_schema = {
+        "type": "OBJECT",
+        "properties": {
+            "structure_suggestions": {"type": "STRING"},
+            "keyword_suggestions": {"type": "ARRAY", "items": {"type": "STRING"}},
+            "content_health": {"type": "STRING"},
+            "originality_assessment": {"type": "STRING"}
+        },
+        "required": ["structure_suggestions", "keyword_suggestions", "content_health", "originality_assessment"]
+    }
+
+    try:
+        return call_gemini_api(prompt, api_key, response_schema, lang)
+    except Exception as e:
+        print(f"Error in analyze_article_content_ai: {e}")
+        return {
+            "structure_suggestions": "N/A",
+            "keyword_suggestions": [],
+            "content_health": "N/A",
+            "originality_assessment": "N/A",
+            "error": str(e)
+        }
+
+def rewrite_article_ai(article_text, lang="en"):
+    """
+    Rewrites an article for improved quality and SEO, aiming for high originality.
+    """
+    api_key = os.getenv('GEMINI_API_KEY')
+    if not api_key:
+        raise Exception("Gemini API Key is not provided. Cannot rewrite article.")
+
+    prompt = f"""
+    As a professional content writer and SEO expert, rewrite the following article text.
+    Your goal is to improve its clarity, engagement, readability, and SEO effectiveness,
+    while ensuring the rewritten content is highly original and sounds natural.
+    Do NOT just rephrase sentences; aim for a fresh perspective and improved flow.
+
+    Article Text:
+    "{article_text}"
+
+    Provide ONLY the rewritten article text. Do NOT include any introductory or concluding remarks.
+    Ensure the rewritten text is in {lang} language.
+    """
+    # No specific response_schema for plain text output
+    try:
+        response = call_gemini_api(prompt, api_key, lang=lang)
+        return {"rewritten_text": response.get("text", "N/A")}
+    except Exception as e:
+        print(f"Error in rewrite_article_ai: {e}")
+        return {"rewritten_text": f"Error during article rewriting: {str(e)}"}
 
