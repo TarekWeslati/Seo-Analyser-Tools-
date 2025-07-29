@@ -76,6 +76,9 @@ def generate_pdf_report(url, results):
                 'external_links_count': seo_elements.get('external_links_count', 'N/A'),
                 'h_tags': formatted_h_tags,
                 'keyword_density': formatted_keyword_density,
+                'content_length': seo_elements.get('content_length', {}), # New: Content Length
+                'robots_txt_present': seo_elements.get('robots_txt_present', False), # New: Robots.txt
+                'sitemap_xml_present': seo_elements.get('sitemap_xml_present', False), # New: Sitemap.xml
             },
             'improvement_tips': seo_improvement_tips,
             'seo_score_int': seo_score_int # Pass integer score for comparison
@@ -83,6 +86,7 @@ def generate_pdf_report(url, results):
         'user_experience': {
             'issues': ux_issues,
             'suggestions': ux_suggestions,
+            'viewport_meta_present': results.get('user_experience', {}).get('viewport_meta_present', False), # New: Viewport Meta
         },
         'ai_insights': results.get('ai_insights', {}),
         'adsense_readiness': results.get('adsense_readiness', {}), # AdSense readiness data
@@ -115,6 +119,11 @@ def generate_pdf_report(url, results):
         .ai-section { background-color: #eff6ff; border-left: 5px solid #60a5fa; padding: 10px; margin-top: 10px; border-radius: 5px; } /* blue-100 & blue-400 */
         .ai-section p { color: #1e40af; } /* blue-700 */
         a { color: #2563eb; text-decoration: none; } /* blue-600 */
+
+        /* PDF specific styles for status indicators */
+        .status-good { color: #16a34a; font-weight: bold; } /* green-600 */
+        .status-bad { color: #dc2626; font-weight: bold; } /* red-600 */
+        .status-neutral { color: #4b5563; } /* gray-600 */
     ''')])
     
     return pdf_path
