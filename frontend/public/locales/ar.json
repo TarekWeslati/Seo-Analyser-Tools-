@@ -116,5 +116,6 @@
     "articleAnalysisFailed": "فشل تحليل المقال",
     "failedToRewriteArticle": "فشل في إعادة صياغة المقال.",
     "noSuggestionsAvailable": "لا توجد اقتراحات متاحة.",
-    "noAssessmentAvailable": "لا يوجد تقييم متاح."
+    "noAssessmentAvailable": "لا يوجد تقييم متاح.",
+    "articleAnalyzerLink": "محلل المقالات"
 }
