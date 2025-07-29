@@ -6,10 +6,11 @@ import json
 # Import services and utilities with full relative paths from the project root.
 from backend.services.domain_analysis import get_domain_analysis
 from backend.services.pagespeed_analysis import get_pagespeed_insights
-from backend.services.seo_analysis import perform_seo_analysis, get_content_length, check_robots_txt, check_sitemap_xml # Added new functions
-from backend.services.ux_analysis import perform_ux_analysis, check_viewport_meta # Added new function
+from backend.services.seo_analysis import perform_seo_analysis, get_content_length, check_robots_txt, check_sitemap_xml
+# UPDATED IMPORT: Changed perform_ux_analysis to analyze_user_experience
+from backend.services.ux_analysis import analyze_user_experience, check_viewport_meta 
 # Updated imports for AI services
-from backend.services.ai_suggestions import get_ai_suggestions, generate_seo_rewrites, refine_content, get_adsense_readiness_assessment, get_broken_link_fix_suggestions, analyze_article_content_ai, rewrite_article_ai # Added new AI functions
+from backend.services.ai_suggestions import get_ai_suggestions, generate_seo_rewrites, refine_content, get_adsense_readiness_assessment, get_broken_link_fix_suggestions, analyze_article_content_ai, rewrite_article_ai
 from backend.utils.url_validator import is_valid_url
 from backend.utils.pdf_generator import generate_pdf_report
 
@@ -88,7 +89,8 @@ def analyze_website():
 
 
         print("Performing UX analysis...")
-        ux_data = perform_ux_analysis(url)
+        # UPDATED CALL: Changed perform_ux_analysis to analyze_user_experience
+        ux_data = analyze_user_experience(url) 
         results['user_experience'] = ux_data
         print("UX analysis complete.")
 
