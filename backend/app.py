@@ -7,7 +7,6 @@ import json
 from backend.services.domain_analysis import get_domain_analysis
 from backend.services.pagespeed_analysis import get_pagespeed_insights
 from backend.services.seo_analysis import perform_seo_analysis, get_content_length, check_robots_txt, check_sitemap_xml
-# UPDATED IMPORT: Changed perform_ux_analysis to analyze_user_experience
 from backend.services.ux_analysis import analyze_user_experience, check_viewport_meta 
 # Updated imports for AI services
 from backend.services.ai_suggestions import get_ai_suggestions, generate_seo_rewrites, refine_content, get_adsense_readiness_assessment, get_broken_link_fix_suggestions, analyze_article_content_ai, rewrite_article_ai
@@ -35,6 +34,12 @@ last_analysis_results = {}
 def index():
     print("Serving index.html") 
     return send_from_directory(app.static_folder, 'index.html')
+
+# New route for the Article Analyzer page
+@app.route('/article_analyzer.html')
+def article_analyzer_page():
+    print("Serving article_analyzer.html")
+    return send_from_directory(app.static_folder, 'article_analyzer.html')
 
 # Route to serve other static files (like CSS and JS)
 @app.route('/<path:filename>')
