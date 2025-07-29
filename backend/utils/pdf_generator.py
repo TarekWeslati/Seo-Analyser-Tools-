@@ -1,268 +1,133 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title data-translate="appTitle">Web Analyzer Pro</title>
-    <link rel="stylesheet" href="/css/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- Ensure main.js loads after DOM is ready -->
-</head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col items-center justify-center p-4 transition-colors duration-300">
-    <div class="container bg-white dark:bg-gray-800 shadow-lg rounded-xl p-8 max-w-4xl w-full transition-colors duration-300">
-        <header class="flex flex-col sm:flex-row items-center justify-between mb-8">
-            <h1 class="text-4xl font-bold text-blue-700 dark:text-blue-400 mb-4 sm:mb-0 flex items-center">
-                <i class="fas fa-chart-line mr-3"></i>
-                <span data-translate="appTitle">Web Analyzer Pro</span>
-            </h1>
-            <div class="flex items-center space-x-4">
-                <!-- New: Article Analyzer Button/Link -->
-                <a href="/article_analyzer.html" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 flex items-center justify-center text-sm">
-                    <i class="fas fa-file-alt mr-2"></i>
-                    <span data-translate="articleAnalyzerLink">Article Analyzer</span>
-                </a>
-                <select id="language-select" class="p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200">
-                    <option value="en">English</option>
-                    <option value="ar">العربية</option>
-                    <option value="fr">Français</option>
-                </select>
-                <button id="theme-toggle" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <i class="fas fa-moon dark:hidden"></i>
-                    <i class="fas fa-sun hidden dark:inline-block"></i>
-                </button>
-            </div>
-        </header>
+import os
+from weasyprint import HTML, CSS
+from jinja2 import Environment, FileSystemLoader
 
-        <section id="input-section" class="mb-8 text-center">
-            <h2 class="text-2xl font-semibold mb-4" data-translate="analyzeWebsiteTitle">Analyze Any Website</h2>
-            <div class="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
-                <input type="url" id="website-url" placeholder="https://www.google.com" class="flex-grow p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100">
-                <button id="analyze-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 flex items-center justify-center">
-                    <i class="fas fa-play-circle mr-2"></i>
-                    <span data-translate="analyzeButton">Analyze</span>
-                </button>
-            </div>
-            <p id="error-message" class="text-red-600 mt-4 hidden" role="alert"></p>
-            <div id="loading-spinner" class="hidden mt-4">
-                <i class="fas fa-spinner fa-spin text-blue-500 text-3xl"></i>
-                <p class="text-blue-500 mt-2" data-translate="analyzingMessage">Analyzing website, please wait...</p>
-            </div>
-        </section>
+def generate_pdf_report(url, results):
+    # تحديد مسار القوالب (مجلد 'templates' داخل 'backend/utils')
+    template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'templates'))
+    env = Environment(loader=FileSystemLoader(template_dir))
+    template = env.get_template('report_template.html')
 
-        <section id="results-dashboard" class="hidden mt-8">
-            <h2 class="text-2xl font-semibold mb-4" data-translate="analysisResultsFor">Analysis Results for <span id="analyzed-url" class="text-blue-600 dark:text-blue-300 break-all"></span></h2>
-            
-            <!-- Global Toggle Buttons -->
-            <div class="flex justify-end gap-2 mb-4">
-                <button id="expand-all-button" class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 py-2 px-4 rounded-lg text-sm transition duration-300">
-                    <i class="fas fa-expand-alt mr-1"></i> <span data-translate="expandAll">Expand All</span>
-                </button>
-                <button id="collapse-all-button" class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 py-2 px-4 rounded-lg text-sm transition duration-300">
-                    <i class="fas fa-compress-alt mr-1"></i> <span data-translate="collapseAll">Collapse All</span>
-                </button>
-            </div>
+    # تحضير البيانات للقالب
+    pagespeed_scores = results.get('page_speed', {}).get('scores', {})
+    pagespeed_issues = results.get('page_speed', {}).get('issues', [])
+    core_web_vitals = results.get('page_speed', {}).get('core_web_vitals', {})
 
-            <!-- Domain Authority Section -->
-            <div id="domain-authority-section" class="section-container bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow-md mb-6">
-                <h3 class="text-xl font-semibold mb-3 flex justify-between items-center cursor-pointer toggle-section" data-target="domain-authority-content">
-                    <span data-translate="domainAuthorityTitle">Domain Authority</span>
-                    <i class="fas fa-chevron-down toggle-icon"></i>
-                </h3>
-                <div id="domain-authority-content" class="section-content">
-                    <p class="mb-2"><strong data-translate="domainLabel">Domain:</strong> <span id="domain-name">N/A</span></p>
-                    <div class="score-display">
-                        <p class="mb-2"><strong data-translate="scoreLabel">Score:</strong> <span id="domain-authority-score">N/A</span>/100</p>
-                        <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-600 mb-2">
-                            <div id="domain-authority-progress" class="h-2.5 rounded-full" style="width: 0%"></div>
-                        </div>
-                        <p id="domain-authority-text" class="text-sm text-gray-600 dark:text-gray-400" data-translate="calculatingMessage">Calculating...</p>
-                    </div>
-                    <p class="mt-2"><strong data-translate="domainAgeLabel">Domain Age:</strong> <span id="domain-age">N/A</span></p>
-                    <p class="mt-2"><strong data-translate="sslStatusLabel">SSL Status:</strong> <span id="ssl-status">N/A</span></p>
-                    <p class="mt-2"><strong data-translate="blacklistStatusLabel">Blacklist Status:</strong> <span id="blacklist-status">N/A</span></p>
-                    <p class="mt-2"><strong data-translate="dnsHealthLabel">DNS Health:</strong> <span id="dns-health">N/A</span></p>
-                </div>
-            </div>
+    seo_elements = results.get('seo_quality', {}).get('elements', {})
+    seo_improvement_tips = results.get('seo_quality', {}).get('improvement_tips', [])
+    h_tags = seo_elements.get('h_tags', {})
+    keyword_density = seo_elements.get('keyword_density', {})
+    broken_links = seo_elements.get('broken_links', []) # Get actual broken links
 
-            <!-- Page Speed Section -->
-            <div id="page-speed-section" class="section-container bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow-md mb-6">
-                <h3 class="text-xl font-semibold mb-3 flex justify-between items-center cursor-pointer toggle-section" data-target="page-speed-content">
-                    <span data-translate="pageSpeedTitle">Page Speed</span>
-                    <i class="fas fa-chevron-down toggle-icon"></i>
-                </h3>
-                <div id="page-speed-content" class="section-content">
-                    <div class="score-display">
-                        <p class="mb-2"><strong data-translate="performanceScoreLabel">Performance Score:</strong> <span id="performance-score">N/A</span>/100</p>
-                        <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-600 mb-2">
-                            <div id="performance-progress" class="h-2.5 rounded-full" style="width: 0%"></div>
-                        </div>
-                        <p id="performance-text" class="text-sm text-gray-600 dark:text-gray-400" data-translate="calculatingMessage">Calculating...</p>
-                    </div>
-                    <h4 class="text-lg font-medium mt-4 mb-2" data-translate="coreWebVitalsTitle">Core Web Vitals:</h4>
-                    <ul id="core-web-vitals" class="list-disc list-inside ml-4">
-                        <li data-translate="loadingMessage">Loading...</li>
-                    </ul>
-                    <h4 class="text-lg font-medium mt-4 mb-2" data-translate="potentialIssuesTitle">Potential Issues:</h4>
-                    <ul id="performance-issues" class="list-disc list-inside ml-4">
-                        <li data-translate="loadingMessage">Loading...</li>
-                    </ul>
-                    <p class="mt-4"><a id="pagespeed-link" href="#" target="_blank" class="text-blue-600 hover:underline" data-translate="viewPagespeedReport">View Full PageSpeed Report</a></p>
-                </div>
-            </div>
+    ux_issues = results.get('user_experience', {}).get('issues', [])
+    ux_suggestions = results.get('user_experience', {}).get('suggestions', [])
 
-            <!-- SEO Quality Section -->
-            <div id="seo-quality-section" class="section-container bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow-md mb-6">
-                <h3 class="text-xl font-semibold mb-3 flex justify-between items-center cursor-pointer toggle-section" data-target="seo-quality-content">
-                    <span data-translate="seoQualityTitle">SEO Quality</span>
-                    <i class="fas fa-chevron-down toggle-icon"></i>
-                </h3>
-                <div id="seo-quality-content" class="section-content">
-                    <div class="score-display">
-                        <p class="mb-2"><strong data-translate="overallSeoScoreLabel">Overall SEO Score:</strong> <span id="seo-overall-score">N/A</span>/100</p>
-                        <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-600 mb-2">
-                            <div id="seo-overall-progress" class="h-2.5 rounded-full" style="width: 0%"></div>
-                        </div>
-                        <p id="seo-overall-text" class="text-sm text-gray-600 dark:text-gray-400" data-translate="calculatingMessage">Calculating...</p>
-                    </div>
-                    
-                    <p class="mt-4"><strong data-translate="titleTagLabel">Title Tag:</strong> <span id="seo-title">N/A</span></p>
-                    <p class="mt-2"><strong data-translate="metaDescriptionLabel">Meta Description:</strong> <span id="seo-meta-description">N/A</span></p>
-                    <p class="mt-2"><strong data-translate="brokenLinksLabel">Broken Links:</strong> <span id="seo-broken-links">N/A</span></p>
-                    <p class="mt-2"><strong data-translate="imagesMissingAltLabel">Images Missing Alt:</strong> <span id="seo-missing-alt">N/A</span></p>
-                    <p class="mt-2"><strong data-translate="internalLinksLabel">Internal Links:</strong> <span id="seo-internal-links">N/A</span></p>
-                    <p class="mt-2"><strong data-translate="externalLinksLabel">External Links:</strong> <span id="seo-external-links">N/A</span></p>
+    # تحويل القواميس إلى قوائم من أزواج (key, value) لتجنب TypeError في بعض الحالات
+    formatted_h_tags = []
+    for tag, content_list in h_tags.items():
+        formatted_h_tags.append(f"{tag}: {', '.join(content_list)}")
 
-                    <!-- New: Content Length -->
-                    <p class="mt-2"><strong data-translate="wordCountLabel">Word Count:</strong> <span id="content-word-count">N/A</span></p>
-                    <p class="mt-2"><strong data-translate="characterCountLabel">Character Count:</strong> <span id="content-char-count">N/A</span></p>
+    formatted_keyword_density = []
+    # فرز الكلمات الرئيسية حسب الكثافة
+    sorted_keywords = sorted(keyword_density.items(), key=lambda item: item[1], reverse=True)[:10]
+    for keyword, density in sorted_keywords:
+        formatted_keyword_density.append(f"{keyword}: {density}%")
 
-                    <!-- New: Robots.txt & Sitemap.xml -->
-                    <p class="mt-2"><strong data-translate="robotsTxtPresentLabel">Robots.txt Present:</strong> <span id="robots-txt-present">N/A</span></p>
-                    <p class="mt-2"><strong data-translate="sitemapXmlPresentLabel">Sitemap.xml Present:</strong> <span id="sitemap-xml-present">N/A</span></p>
+    # تحويل Core Web Vitals إلى قائمة من السلاسل النصية
+    formatted_core_web_vitals = []
+    for metric, value in core_web_vitals.items():
+        formatted_core_web_vitals.append(f"{metric}: {value}")
+
+    # Helper function to safely get integer score
+    def get_int_score(data, key, default_value='N/A'):
+        score = data.get(key, default_value)
+        try:
+            return int(score)
+        except (ValueError, TypeError):
+            return default_value
+
+    # Prepare scores for safe comparison
+    seo_score_int = get_int_score(results.get('seo_quality', {}), 'score')
+    da_score_int = get_int_score(results.get('domain_authority', {}), 'domain_authority_score')
+    perf_score_int = get_int_score(results.get('page_speed', {}).get('scores', {}), 'Performance Score')
+
+    # Calculate missing alt text count for PDF
+    missing_alt_count = len([s for s in seo_elements.get('image_alt_status', []) if "Missing" in s or "Empty" in s])
 
 
-                    <h4 class="text-lg font-medium mt-4 mb-2" data-translate="headingTagsTitle">Heading Tags (H1-H6):</h4>
-                    <ul id="h-tags-list" class="list-disc list-inside ml-4">
-                        <li data-translate="loadingMessage">Loading...</li>
-                    </ul>
-                    <h4 class="text-lg font-medium mt-4 mb-2" data-translate="topKeywordsTitle">Top Keywords Density:</h4>
-                    <ul id="keyword-density-list" class="list-disc list-inside ml-4">
-                        <li data-translate="loadingMessage">Loading...</li>
-                    </ul>
-                    <h4 class="text-lg font-medium mt-4 mb-2" data-translate="improvementTipsTitle">Improvement Tips:</h4>
-                    <ul id="seo-improvement-tips" class="list-disc list-inside ml-4">
-                        <li data-translate="loadingMessage">Loading...</li>
-                    </ul>
+    # بناء سياق البيانات للقالب
+    context = {
+        'url': url,
+        'results': results, # نمرر النتائج الكاملة أيضاً، ولكن نستخدم المتغيرات المحضرة للوصول الآمن
+        'domain_authority': results.get('domain_authority', {}),
+        'page_speed': {
+            'scores': pagespeed_scores,
+            'issues': pagespeed_issues,
+            'core_web_vitals': formatted_core_web_vitals,
+            'pagespeed_report_link': results.get('page_speed', {}).get('pagespeed_report_link', '#'),
+            'perf_score_int': perf_score_int # Pass integer score for comparison
+        },
+        'seo_quality': {
+            'score': results.get('seo_quality', {}).get('score', 'N/A'),
+            'seo_overall_text': results.get('seo_quality', {}).get('seo_overall_text', 'N/A'),
+            'elements': {
+                'title': seo_elements.get('title', 'N/A'),
+                'meta_description': seo_elements.get('meta_description', 'N/A'),
+                'broken_links': broken_links, # Pass actual broken links
+                'image_alt_status': seo_elements.get('image_alt_status', []),
+                'missing_alt_count': missing_alt_count, # Pass pre-calculated missing alt count
+                'internal_links_count': seo_elements.get('internal_links_count', 'N/A'),
+                'external_links_count': seo_elements.get('external_links_count', 'N/A'),
+                'h_tags': formatted_h_tags,
+                'keyword_density': formatted_keyword_density,
+                'content_length': seo_elements.get('content_length', {}), # New: Content Length
+                'robots_txt_present': seo_elements.get('robots_txt_present', False), # New: Robots.txt
+                'sitemap_xml_present': seo_elements.get('sitemap_xml_present', False), # New: Sitemap.xml
+            },
+            'improvement_tips': seo_improvement_tips,
+            'seo_score_int': seo_score_int # Pass integer score for comparison
+        },
+        'user_experience': {
+            'issues': ux_issues,
+            'suggestions': ux_suggestions,
+            'viewport_meta_present': results.get('user_experience', {}).get('viewport_meta_present', False), # New: Viewport Meta
+        },
+        'ai_insights': results.get('ai_insights', {}),
+        'adsense_readiness': results.get('adsense_readiness', {}), # AdSense readiness data
+        'broken_link_suggestions': results.get('broken_link_suggestions', {}) # New: Broken link suggestions
+    }
 
-                    <div id="ai-seo-suggestions-section" class="ai-section p-4 rounded-lg mt-4 hidden">
-                        <h4 class="text-lg font-medium mb-2" data-translate="aiSeoSuggestionsTitle">AI SEO Suggestions:</h4>
-                        <p id="ai-seo-suggestions-text" data-translate="loadingAiSuggestions">Loading AI suggestions...</p>
-                    </div>
+    # رندر القالب ببيانات السياق
+    html_content = template.render(context)
 
-                    <!-- Broken Links Details Section -->
-                    <div id="broken-links-details-section" class="bg-gray-100 dark:bg-gray-600 p-4 rounded-lg mt-4 hidden">
-                        <h4 class="text-lg font-medium mb-2" data-translate="brokenLinksDetailsTitle">Broken Links Details:</h4>
-                        <ul id="broken-links-list" class="list-disc list-inside ml-4">
-                            <li data-translate="loadingMessage">Loading...</li>
-                        </ul>
-                        <div id="broken-links-fix-suggestions-section" class="ai-section p-4 rounded-lg mt-4 hidden">
-                            <h4 class="text-lg font-medium mb-2" data-translate="brokenLinksFixSuggestionsTitle">AI Fix Suggestions:</h4>
-                            <p id="broken-links-fix-suggestions-text" data-translate="loadingAiSuggestions">Loading AI suggestions...</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    # إنشاء ملف PDF
+    pdf_path = os.path.join(template_dir, 'report.pdf') # يمكن حفظه في مجلد مؤقت
+    HTML(string=html_content).write_pdf(pdf_path, stylesheets=[CSS(string='''
+        body { font-family: sans-serif; margin: 20mm; }
+        h1, h2, h3 { color: #1e40af; } /* blue-700 */
+        .section { margin-bottom: 15mm; border: 1px solid #e2e8f0; padding: 10mm; border-radius: 5mm; }
+        .score-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 5px;
+            font-weight: bold;
+            color: white;
+            margin-left: 5px;
+        }
+        .score-good { background-color: #10B981; } /* green-500 */
+        .score-medium { background-color: #FBBF24; } /* yellow-400 */
+        .score-bad { background-color: #EF4444; } /* red-500 */
+        ul { list-style-type: disc; margin-left: 20px; }
+        li { margin-bottom: 5px; }
+        strong { font-weight: bold; }
+        .ai-section { background-color: #eff6ff; border-left: 5px solid #60a5fa; padding: 10px; margin-top: 10px; border-radius: 5px; } /* blue-100 & blue-400 */
+        .ai-section p { color: #1e40af; } /* blue-700 */
+        a { color: #2563eb; text-decoration: none; } /* blue-600 */
 
-            <!-- User Experience Section -->
-            <div id="user-experience-section" class="section-container bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow-md mb-6">
-                <h3 class="text-xl font-semibold mb-3 flex justify-between items-center cursor-pointer toggle-section" data-target="user-experience-content">
-                    <span data-translate="uxTitle">User Experience (UX)</span>
-                    <i class="fas fa-chevron-down toggle-icon"></i>
-                </h3>
-                <div id="user-experience-content" class="section-content">
-                    <!-- New: Viewport Meta -->
-                    <p class="mt-2"><strong data-translate="viewportMetaPresentLabel">Viewport Meta Tag Present:</strong> <span id="viewport-meta-present">N/A</span></p>
-
-                    <h4 class="text-lg font-medium mt-4 mb-2" data-translate="potentialIssuesTitle">Potential Issues:</h4>
-                    <ul id="ux-issues-list" class="list-disc list-inside ml-4">
-                        <li data-translate="loadingMessage">Loading...</li>
-                    </ul>
-                    <h4 class="text-lg font-medium mt-4 mb-2" data-translate="suggestionsTitle">Suggestions:</h4>
-                    <ul id="ux-suggestions-list" class="list-disc list-inside ml-4">
-                        <li data-translate="loadingMessage">Loading...</li>
-                    </ul>
-                    <div id="ai-content-insights-section" class="ai-section p-4 rounded-lg mt-4 hidden">
-                        <h4 class="text-lg font-medium mb-2" data-translate="aiContentInsightsTitle">AI Content Insights:</h4>
-                        <p id="ai-content-insights-text" data-translate="loadingAiInsights">Loading AI insights...</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- New AdSense Readiness Section -->
-            <div id="adsense-readiness-section" class="section-container bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow-md mb-6 hidden">
-                <h3 class="text-xl font-semibold mb-3 flex justify-between items-center cursor-pointer toggle-section" data-target="adsense-readiness-content">
-                    <span data-translate="adsenseReadinessTitle">AdSense Readiness Assessment</span>
-                    <i class="fas fa-chevron-down toggle-icon"></i>
-                </h3>
-                <div id="adsense-readiness-content" class="section-content">
-                    <div class="ai-section p-4 rounded-lg mt-4">
-                        <h4 class="text-lg font-medium mb-2" data-translate="overallAssessment">Overall Assessment:</h4>
-                        <p id="adsense-assessment-text" data-translate="loadingAdsenseAssessment">Loading AdSense readiness assessment...</p>
-                    </div>
-                    <h4 class="text-lg font-medium mt-4 mb-2" data-translate="keyAreasForImprovement">Key Areas for Improvement:</h4>
-                    <ul id="adsense-improvement-areas-list" class="list-disc list-inside ml-4">
-                        <li data-translate="loadingMessage">Loading...</li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- AI Overall Summary Section -->
-            <div id="ai-summary-section" class="section-container ai-section p-4 rounded-lg shadow-md mb-6 hidden">
-                <h3 class="text-xl font-semibold mb-3 flex justify-between items-center cursor-pointer toggle-section" data-target="ai-summary-content">
-                    <span data-translate="aiOverallSummaryTitle">AI Overall Summary</span>
-                    <i class="fas fa-chevron-down toggle-icon"></i>
-                </h3>
-                <div id="ai-summary-content" class="section-content">
-                    <p id="ai-summary-text" data-translate="loadingAiSummary">Loading AI summary...</p>
-                </div>
-            </div>
-
-            <!-- AI Tools Section -->
-            <div id="ai-tools-section" class="section-container bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow-md mb-6">
-                <h3 class="text-xl font-semibold mb-3 flex justify-between items-center cursor-pointer toggle-section" data-target="ai-tools-content">
-                    <span data-translate="aiToolsTitle">AI Tools</span>
-                    <i class="fas fa-chevron-down toggle-icon"></i>
-                </h3>
-                <div id="ai-tools-content" class="section-content">
-                    <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 mb-4">
-                        <button id="rewrite-seo-button" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 flex items-center justify-center">
-                            <i class="fas fa-magic mr-2"></i>
-                            <span data-translate="rewriteSeoButton">✨ Rewrite Title/Meta Description</span>
-                        </button>
-                        <button id="refine-content-button" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 flex items-center justify-center">
-                            <i class="fas fa-pencil-alt mr-2"></i>
-                            <span data-translate="refineContentButton">✨ Refine Content</span>
-                        </button>
-                    </div>
-                    <div id="rewrite-seo-output" class="ai-section p-4 rounded-lg mt-4 hidden">
-                        <p data-translate="loadingAiRewrites">Loading AI rewrites...</p>
-                    </div>
-                    <div id="refine-content-output" class="ai-section p-4 rounded-lg mt-4 hidden">
-                        <p data-translate="loadingAiRefinement">Loading AI content refinement...</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex justify-center space-x-4 mt-8">
-                <button id="analyze-another-button" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-6 rounded-lg shadow-md transition duration-300">
-                    <span data-translate="analyzeAnotherButton">Analyze Another</span>
-                </button>
-                <button id="export-pdf-button" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300">
-                    <span data-translate="exportPdfButton">Export PDF Report</span>
-                </button>
-            </div>
-        </section>
-    </div>
-    <script src="/js/main.js" defer></script>
-</body>
-</html>
+        /* PDF specific styles for status indicators */
+        .status-good { color: #16a34a; font-weight: bold; } /* green-600 */
+        .status-bad { color: #dc2626; font-weight: bold; } /* red-600 */
+        .status-neutral { color: #4b5563; } /* gray-600 */
+    ''')])
+    
+    return pdf_path
