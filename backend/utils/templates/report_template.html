@@ -116,8 +116,8 @@
             </span>
         </p>
         <p class="data-point"><strong>Images Missing Alt:</strong> 
-            <span class="{% if seo_quality.elements.image_alt_status | selectattr('startswith', 'Missing') | list | length == 0 %}status-good{% elif seo_quality.elements.image_alt_status | selectattr('startswith', 'Missing') | list | length > 0 %}status-bad{% else %}status-neutral{% endif %}">
-                {{ seo_quality.elements.image_alt_status | selectattr('startswith', 'Missing') | list | length | default('N/A') }}
+            <span class="{% if seo_quality.elements.missing_alt_count == 0 %}status-good{% elif seo_quality.elements.missing_alt_count > 0 %}status-bad{% else %}status-neutral{% endif %}">
+                {{ seo_quality.elements.missing_alt_count | default('N/A') }}
             </span>
         </p>
         <p class="data-point"><strong>Internal Links:</strong> {{ seo_quality.elements.internal_links_count | default('N/A') }}</p>
