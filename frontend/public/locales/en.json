@@ -116,5 +116,6 @@
     "articleAnalysisFailed": "Article analysis failed",
     "failedToRewriteArticle": "Failed to rewrite article.",
     "noSuggestionsAvailable": "No suggestions available.",
-    "noAssessmentAvailable": "No assessment available."
+    "noAssessmentAvailable": "No assessment available.",
+    "articleAnalyzerLink": "Article Analyzer"
 }
