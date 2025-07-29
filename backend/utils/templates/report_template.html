@@ -30,6 +30,11 @@
         a { color: #2563eb; text-decoration: none; }
         .data-point { margin-bottom: 5px; }
         .data-point strong { display: inline-block; width: 150px; }
+
+        /* PDF specific styles for status indicators */
+        .status-good { color: #16a34a; font-weight: bold; } /* green-600 */
+        .status-bad { color: #dc2626; font-weight: bold; } /* red-600 */
+        .status-neutral { color: #4b5563; } /* gray-600 */
     </style>
 </head>
 <body>
@@ -45,9 +50,21 @@
         </p>
         <p class="data-point"><strong>Text:</strong> {{ domain_authority.domain_authority_text | default('N/A') }}</p>
         <p class="data-point"><strong>Domain Age:</strong> {{ domain_authority.domain_age_years | default('N/A') }} years</p>
-        <p class="data-point"><strong>SSL Status:</strong> {{ domain_authority.ssl_status | default('N/A') }}</p>
-        <p class="data-point"><strong>Blacklist Status:</strong> {{ domain_authority.blacklist_status | default('N/A') }}</p>
-        <p class="data-point"><strong>DNS Health:</strong> {{ domain_authority.dns_health | default('N/A') }}</p>
+        <p class="data-point"><strong>SSL Status:</strong> 
+            <span class="{% if domain_authority.ssl_status == 'Valid' %}status-good{% elif domain_authority.ssl_status == 'Invalid' or domain_authority.ssl_status == 'No SSL Certificate' %}status-bad{% else %}status-neutral{% endif %}">
+                {{ domain_authority.ssl_status | default('N/A') }}
+            </span>
+        </p>
+        <p class="data-point"><strong>Blacklist Status:</strong> 
+            <span class="{% if domain_authority.blacklist_status == 'Clean' %}status-good{% elif domain_authority.blacklist_status == 'Listed' %}status-bad{% else %}status-neutral{% endif %}">
+                {{ domain_authority.blacklist_status | default('N/A') }}
+            </span>
+        </p>
+        <p class="data-point"><strong>DNS Health:</strong> 
+            <span class="{% if domain_authority.dns_health == 'Healthy' %}status-good{% elif domain_authority.dns_health == 'Unhealthy' %}status-bad{% else %}status-neutral{% endif %}">
+                {{ domain_authority.dns_health | default('N/A') }}
+            </span>
+        </p>
     </div>
 
     <div class="section">
@@ -93,10 +110,36 @@
         <p class="data-point"><strong>Text:</strong> {{ seo_quality.seo_overall_text | default('N/A') }}</p>
         <p class="data-point"><strong>Title Tag:</strong> {{ seo_quality.elements.title | default('N/A') }}</p>
         <p class="data-point"><strong>Meta Description:</strong> {{ seo_quality.elements.meta_description | default('N/A') }}</p>
-        <p class="data-point"><strong>Broken Links:</strong> {{ seo_quality.elements.broken_links | length | default('N/A') }}</p>
-        <p class="data-point"><strong>Images Missing Alt:</strong> {{ seo_quality.elements.image_alt_status | selectattr('startswith', 'Missing') | list | length | default('N/A') }}</p>
+        <p class="data-point"><strong>Broken Links:</strong> 
+            <span class="{% if seo_quality.elements.broken_links | length == 0 %}status-good{% elif seo_quality.elements.broken_links | length > 0 %}status-bad{% else %}status-neutral{% endif %}">
+                {{ seo_quality.elements.broken_links | length | default('N/A') }}
+            </span>
+        </p>
+        <p class="data-point"><strong>Images Missing Alt:</strong> 
+            <span class="{% if seo_quality.elements.image_alt_status | selectattr('startswith', 'Missing') | list | length == 0 %}status-good{% elif seo_quality.elements.image_alt_status | selectattr('startswith', 'Missing') | list | length > 0 %}status-bad{% else %}status-neutral{% endif %}">
+                {{ seo_quality.elements.image_alt_status | selectattr('startswith', 'Missing') | list | length | default('N/A') }}
+            </span>
+        </p>
         <p class="data-point"><strong>Internal Links:</strong> {{ seo_quality.elements.internal_links_count | default('N/A') }}</p>
         <p class="data-point"><strong>External Links:</strong> {{ seo_quality.elements.external_links_count | default('N/A') }}</p>
+        
+        <!-- New: Content Length -->
+        <p class="data-point"><strong>Word Count:</strong> {{ seo_quality.elements.content_length.word_count | default('N/A') }}</p>
+        <p class="data-point"><strong>Character Count:</strong> {{ seo_quality.elements.content_length.character_count | default('N/A') }}</p>
+
+        <!-- New: Robots.txt & Sitemap.xml -->
+        <p class="data-point"><strong>Robots.txt Present:</strong> 
+            <span class="{% if seo_quality.elements.robots_txt_present %}status-good{% else %}status-bad{% endif %}">
+                {{ 'Yes' if seo_quality.elements.robots_txt_present else 'No' }}
+            </span>
+        </p>
+        <p class="data-point"><strong>Sitemap.xml Present:</strong> 
+            <span class="{% if seo_quality.elements.sitemap_xml_present %}status-good{% else %}status-bad{% endif %}">
+                {{ 'Yes' if seo_quality.elements.sitemap_xml_present else 'No' }}
+            </span>
+        </p>
+
+
         <h3>Heading Tags (H1-H6):</h3>
         <ul>
             {% if seo_quality.elements.h_tags %}
@@ -155,6 +198,13 @@
 
     <div class="section">
         <h2>User Experience (UX)</h2>
+        <!-- New: Viewport Meta -->
+        <p class="data-point"><strong>Viewport Meta Tag Present:</strong> 
+            <span class="{% if user_experience.viewport_meta_present %}status-good{% else %}status-bad{% endif %}">
+                {{ 'Yes' if user_experience.viewport_meta_present else 'No' }}
+            </span>
+        </p>
+
         <h3>Potential Issues:</h3>
         <ul>
             {% if user_experience.issues %}
