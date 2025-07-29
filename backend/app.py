@@ -45,6 +45,8 @@ def article_analyzer_page():
 @app.route('/<path:filename>')
 def serve_static(filename):
     print(f"Serving static file: {filename}") 
+    # This route will catch any file requests not explicitly defined above.
+    # It's important to ensure it doesn't try to serve files outside the static_folder.
     return send_from_directory(app.static_folder, filename)
 
 @app.route('/analyze', methods=['POST'])
