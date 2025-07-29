@@ -155,3 +155,9 @@ button {
     padding-top: 0;
     padding-bottom: 0;
 }
+
+/* Specific style for Article Analyzer link/button to ensure visibility */
+.header .flex.items-center.space-x-4 a {
+    /* Add any specific styles here if needed to override default a styles */
+    /* For example, if it's getting hidden by other flex items */
+}
