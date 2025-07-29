@@ -99,3 +99,59 @@ button {
     animation: spin 1s linear infinite;
 }
 
+/* Styles for collapsible sections */
+.section-container {
+    border: 1px solid #e2e8f0; /* gray-200 */
+    border-radius: 0.5rem; /* rounded-lg */
+    overflow: hidden; /* Hide overflow when collapsed */
+}
+
+.dark .section-container {
+    border-color: #4b5563; /* gray-600 */
+}
+
+.toggle-section {
+    padding: 1rem;
+    background-color: #f0f4f8; /* Light background for header */
+    border-bottom: 1px solid #e2e8f0;
+    transition: background-color 0.3s ease;
+}
+
+.dark .toggle-section {
+    background-color: #374151; /* Darker background for header */
+    border-bottom-color: #4b5563;
+}
+
+.toggle-section:hover {
+    background-color: #e2e8f0; /* Lighter hover */
+    cursor: pointer;
+}
+
+.dark .toggle-section:hover {
+    background-color: #4b5563; /* Darker hover */
+}
+
+.toggle-icon {
+    transition: transform 0.3s ease-in-out;
+}
+
+.fa-chevron-up {
+    transform: rotate(180deg);
+}
+
+.section-content {
+    padding: 1rem;
+    padding-top: 0.5rem; /* Adjust padding for better look */
+    transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
+    max-height: 1000px; /* Max height for expanded state */
+    opacity: 1;
+    overflow: hidden;
+}
+
+/* Initial hidden state for content */
+.section-content.hidden {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+}
