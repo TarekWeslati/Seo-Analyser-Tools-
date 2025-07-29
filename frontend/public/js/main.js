@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const domainAuthorityText = document.getElementById('domain-authority-text');
     const domainAgeSpan = document.getElementById('domain-age');
     const sslStatusSpan = document.getElementById('ssl-status');
-    const blacklistStatusSpan = document.getElementById('blacklist-status');
+    const blacklistStatusSpan = document = document.getElementById('blacklist-status');
     const dnsHealthSpan = document.getElementById('dns-health');
 
     const performanceScoreSpan = document.getElementById('performance-score');
@@ -74,6 +74,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const robotsTxtPresentSpan = document.getElementById('robots-txt-present');
     const sitemapXmlPresentSpan = document.getElementById('sitemap-xml-present');
     const viewportMetaPresentSpan = document.getElementById('viewport-meta-present');
+
+    // New global toggle buttons
+    const expandAllButton = document.getElementById('expand-all-button');
+    const collapseAllButton = document.getElementById('collapse-all-button');
 
 
     let translations = {}; // Stores loaded translations
@@ -627,6 +631,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (brokenLinksList) brokenLinksList.innerHTML = `<li>${translations['loadingMessage']}</li>`;
         if (brokenLinksFixSuggestionsText) brokenLinksFixSuggestionsText.textContent = translations['loadingAiSuggestions'];
         if (brokenLinksDetailsSection) hideElement(brokenLinksDetailsSection);
+
+        // Reset all section contents to hidden and rotate icons
+        document.querySelectorAll('.section-content').forEach(content => {
+            hideElement(content);
+            const icon = content.previousElementSibling.querySelector('.toggle-icon');
+            if (icon) {
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+            }
+        });
     });
 
     // Event handler for Export PDF button
@@ -654,8 +668,14 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || translations['failedToGeneratePdf'] || 'Failed to generate PDF report.'); 
+                const errorText = await response.text(); // Get raw error text
+                console.error("PDF Backend response not OK. Raw text:", errorText);
+                try {
+                    const errorData = JSON.parse(errorText);
+                    throw new Error(errorData.error || `${translations['failedToGeneratePdf'] || 'Failed to generate PDF report.'} (Status: ${response.status})`);
+                } catch (jsonParseError) {
+                    throw new Error(`${translations['failedToGeneratePdf'] || 'Failed to generate PDF report.'} (Status: ${response.status}): ${errorText.substring(0, 100)}...`);
+                }
             }
 
             const blob = await response.blob();
@@ -835,6 +855,49 @@ document.addEventListener('DOMContentLoaded', () => {
         currentLanguage = event.target.value;
         loadTranslations(currentLanguage);
     });
+
+    // Toggle section visibility
+    document.querySelectorAll('.toggle-section').forEach(header => {
+        header.addEventListener('click', () => {
+            const targetId = header.dataset.target;
+            const content = document.getElementById(targetId);
+            const icon = header.querySelector('.toggle-icon');
+            if (content.classList.contains('hidden')) {
+                showElement(content);
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+            } else {
+                hideElement(content);
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+            }
+        });
+    });
+
+    // Expand All button
+    expandAllButton.addEventListener('click', () => {
+        document.querySelectorAll('.section-content').forEach(content => {
+            showElement(content);
+            const icon = content.previousElementSibling.querySelector('.toggle-icon');
+            if (icon) {
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+            }
+        });
+    });
+
+    // Collapse All button
+    collapseAllButton.addEventListener('click', () => {
+        document.querySelectorAll('.section-content').forEach(content => {
+            hideElement(content);
+            const icon = content.previousElementSibling.querySelector('.toggle-icon');
+            if (icon) {
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+            }
+        });
+    });
+
 
     // Initialize translations and theme on page load
     loadTranslations(currentLanguage);
