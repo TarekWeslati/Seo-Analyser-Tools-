@@ -51,6 +51,9 @@ def generate_pdf_report(url, results):
     da_score_int = get_int_score(results.get('domain_authority', {}), 'domain_authority_score')
     perf_score_int = get_int_score(results.get('page_speed', {}).get('scores', {}), 'Performance Score')
 
+    # Calculate missing alt text count for PDF
+    missing_alt_count = len([s for s in seo_elements.get('image_alt_status', []) if "Missing" in s or "Empty" in s])
+
 
     # بناء سياق البيانات للقالب
     context = {
@@ -72,6 +75,7 @@ def generate_pdf_report(url, results):
                 'meta_description': seo_elements.get('meta_description', 'N/A'),
                 'broken_links': broken_links, # Pass actual broken links
                 'image_alt_status': seo_elements.get('image_alt_status', []),
+                'missing_alt_count': missing_alt_count, # Pass pre-calculated missing alt count
                 'internal_links_count': seo_elements.get('internal_links_count', 'N/A'),
                 'external_links_count': seo_elements.get('external_links_count', 'N/A'),
                 'h_tags': formatted_h_tags,
