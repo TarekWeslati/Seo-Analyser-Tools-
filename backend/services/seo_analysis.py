@@ -1,158 +1,199 @@
 import requests
 from bs4 import BeautifulSoup
-import re
 from collections import Counter
+import re
 from urllib.parse import urljoin, urlparse
 
 def perform_seo_analysis(url):
-    seo_results = {
-        "score": "N/A",
-        "seo_overall_text": "Analysis pending or failed.",
+    """
+    Performs a comprehensive SEO analysis of the given URL.
+    """
+    results = {
+        "score": 0, # Overall SEO score
+        "seo_overall_text": "Needs improvement",
         "elements": {
             "title": "N/A",
             "meta_description": "N/A",
             "h_tags": {},
             "keyword_density": {},
-            "internal_links_count": "N/A",
-            "external_links_count": "N/A",
             "broken_links": [],
             "image_alt_status": [],
-            "page_text": "N/A"
+            "internal_links_count": 0,
+            "external_links_count": 0,
+            "page_text": ""
         },
         "improvement_tips": []
     }
 
     try:
-        # إضافة مهلة لطلب HTTP (30 ثانية)
-        response = requests.get(url, timeout=30)
-        response.raise_for_status() # رفع استثناء لأخطاء HTTP (4xx أو 5xx)
-        soup = BeautifulSoup(response.text, 'lxml')
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
+        soup = BeautifulSoup(response.text, 'html.parser')
 
-        # استخراج العنوان (Title Tag)
+        # 1. Title Tag
         title_tag = soup.find('title')
-        seo_results["elements"]["title"] = title_tag.get_text(strip=True) if title_tag else "Missing"
-        if not title_tag or not title_tag.get_text(strip=True):
-            seo_results["improvement_tips"].append("Add a concise and keyword-rich title tag.")
-        elif len(seo_results["elements"]["title"]) < 10 or len(seo_results["elements"]["title"]) > 70:
-            seo_results["improvement_tips"].append("Optimize title tag length (10-70 characters).")
+        if title_tag:
+            results["elements"]["title"] = title_tag.get_text(strip=True)
+            if 10 <= len(results["elements"]["title"]) <= 70:
+                results["score"] += 15
+            else:
+                results["improvement_tips"].append("Optimize title tag length (10-70 characters).")
+        else:
+            results["improvement_tips"].append("Add a title tag to your page.")
 
-        # استخراج الوصف التعريفي (Meta Description)
-        meta_description_tag = soup.find('meta', attrs={'name': 'description'})
-        seo_results["elements"]["meta_description"] = meta_description_tag['content'].strip() if meta_description_tag and 'content' in meta_description_tag.attrs else "Missing"
-        if not meta_description_tag or not seo_results["elements"]["meta_description"]:
-            seo_results["improvement_tips"].append("Add a compelling meta description (50-160 characters).")
-        elif len(seo_results["elements"]["meta_description"]) < 50 or len(seo_results["elements"]["meta_description"]) > 160:
-            seo_results["improvement_tips"].append("Optimize meta description length (50-160 characters).")
+        # 2. Meta Description
+        meta_description = soup.find('meta', attrs={'name': 'description'})
+        if meta_description and meta_description.get('content'):
+            results["elements"]["meta_description"] = meta_description['content'].strip()
+            if 120 <= len(results["elements"]["meta_description"]) <= 160:
+                results["score"] += 15
+            else:
+                results["improvement_tips"].append("Optimize meta description length (120-160 characters).")
+        else:
+            results["improvement_tips"].append("Add a meta description to your page.")
 
-        # استخراج علامات العناوين (H-Tags)
+        # 3. H Tags (H1-H6)
         h_tags = {}
-        for i in range(1, 7): # H1 to H6
+        for i in range(1, 7):
             tags = soup.find_all(f'h{i}')
             if tags:
                 h_tags[f'h{i}'] = [tag.get_text(strip=True) for tag in tags]
-        seo_results["elements"]["h_tags"] = h_tags
-        if not h_tags.get('h1'):
-            seo_results["improvement_tips"].append("Ensure there is one H1 tag per page.")
-        if len(h_tags.get('h1', [])) > 1:
-            seo_results["improvement_tips"].append("Avoid multiple H1 tags; use only one per page.")
+        results["elements"]["h_tags"] = h_tags
+        if 'h1' in h_tags and len(h_tags['h1']) == 1:
+            results["score"] += 10
+        elif 'h1' not in h_tags:
+            results["improvement_tips"].append("Ensure your page has a single H1 tag.")
+        else:
+            results["improvement_tips"].append("Ensure your page has only one H1 tag.")
+        
+        if len(h_tags) > 1: # Check if there are other heading tags beyond just H1
+             results["score"] += 5 # Give some score for using hierarchy
 
-
-        # استخراج النص الكامل للصفحة لحساب كثافة الكلمات المفتاحية
+        # 4. Keyword Density
         page_text = soup.get_text(separator=' ', strip=True)
-        seo_results["elements"]["page_text"] = page_text
-
-        # حساب كثافة الكلمات المفتاحية (أكثر 10 كلمات شيوعاً)
+        results["elements"]["page_text"] = page_text # Store page text for other analyses
         words = re.findall(r'\b\w+\b', page_text.lower())
         word_counts = Counter(words)
         total_words = sum(word_counts.values())
-        
-        keyword_density = {}
+
         if total_words > 0:
-            for word, count in word_counts.most_common(20): # خذ أكثر 20 كلمة شيوعاً
-                if len(word) > 2: # تجاهل الكلمات القصيرة جداً
-                    density = (count / total_words) * 100
-                    keyword_density[word] = round(density, 2)
-        
-        # تصفية لأفضل 10 كلمات مفتاحية مع كثافة معقولة (أكثر من 0.5%)
-        seo_results["elements"]["keyword_density"] = {
-            k: v for k, v in sorted(keyword_density.items(), key=lambda item: item[1], reverse=True) if v > 0.5
-        }
-        # اقتطاع لأفضل 10
-        seo_results["elements"]["keyword_density"] = dict(list(seo_results["elements"]["keyword_density"].items())[:10])
+            keyword_density = {word: round((count / total_words) * 100, 2) for word, count in word_counts.items()}
+            results["elements"]["keyword_density"] = {k: v for k, v in sorted(keyword_density.items(), key=lambda item: item[1], reverse=True) if v > 0.5} # Only show keywords with >0.5% density
+            if len(results["elements"]["keyword_density"]) > 0:
+                results["score"] += 10
+        else:
+            results["improvement_tips"].append("Insufficient text content for keyword density analysis.")
 
-
-        # تحليل الروابط (الداخلية والخارجية) والروابط المعطلة
-        internal_links_count = 0
-        external_links_count = 0
+        # 5. Broken Links (Internal and External)
+        internal_links = set()
+        external_links = set()
         broken_links = []
         
-        base_netloc = urlparse(url).netloc
+        base_domain = urlparse(url).netloc
 
         for a_tag in soup.find_all('a', href=True):
-            href = a_tag['href']
+            href = a_tag['href'].strip()
             full_url = urljoin(url, href)
             parsed_full_url = urlparse(full_url)
 
-            if parsed_full_url.netloc == base_netloc:
-                internal_links_count += 1
-            elif parsed_full_url.netloc: # إذا كان له netloc وليس نفس الموقع
-                external_links_count += 1
+            if parsed_full_url.netloc == base_domain:
+                internal_links.add(full_url)
+            elif parsed_full_url.netloc: # It's an external link
+                external_links.add(full_url)
             
-            # فحص الروابط المعطلة (فقط لعدد محدود لتجنب بطء التحليل)
-            # يمكن تحسين هذا ليكون أكثر كفاءة أو يتم في خدمة منفصلة
-            if parsed_full_url.scheme in ['http', 'https'] and parsed_full_url.netloc:
+            # Check for broken links (only for HTTP/HTTPS schemes)
+            if parsed_full_url.scheme in ['http', 'https']:
                 try:
-                    # مهلة قصيرة لفحص الروابط لتجنب تعليق طويل
+                    # Use stream=True and close to be more efficient with connections
                     head_response = requests.head(full_url, timeout=5, allow_redirects=True)
                     if head_response.status_code >= 400:
                         broken_links.append(full_url)
-                except requests.exceptions.RequestException:
-                    broken_links.append(full_url)
+                except requests.exceptions.RequestException as e:
+                    # Consider network errors, timeouts, SSL errors as broken
+                    broken_links.append(f"{full_url} (Error: {e})")
         
-        seo_results["elements"]["internal_links_count"] = internal_links_count
-        seo_results["elements"]["external_links_count"] = external_links_count
-        seo_results["elements"]["broken_links"] = broken_links
-        if broken_links:
-            seo_results["improvement_tips"].append(f"Fix {len(broken_links)} broken links found.")
+        results["elements"]["internal_links_count"] = len(internal_links)
+        results["elements"]["external_links_count"] = len(external_links)
+        results["elements"]["broken_links"] = broken_links # Store actual broken URLs
 
+        if not broken_links:
+            results["score"] += 15
+        else:
+            results["improvement_tips"].append(f"Fix {len(broken_links)} broken links found.")
 
-        # حالة Alt للصور
-        image_alt_status = []
-        for img_tag in soup.find_all('img'):
-            src = img_tag.get('src', 'No src')
-            alt = img_tag.get('alt', '').strip()
-            if not alt:
-                image_alt_status.append(f"Missing Alt: {src[:50]}...")
-            elif alt == "":
-                image_alt_status.append(f"Empty Alt: {src[:50]}...")
-        seo_results["elements"]["image_alt_status"] = image_alt_status
-        if image_alt_status:
-            seo_results["improvement_tips"].append(f"Add descriptive alt text to {len(image_alt_status)} images.")
-
-        # حساب النتيجة الإجمالية (مثال بسيط)
-        score = 100
-        if "Missing" in seo_results["elements"]["title"] or "Optimize title tag length" in seo_results["improvement_tips"]:
-            score -= 15
-        if "Missing" in seo_results["elements"]["meta_description"] or "Optimize meta description length" in seo_results["improvement_tips"]:
-            score -= 10
-        if not h_tags.get('h1') or len(h_tags.get('h1', [])) > 1:
-            score -= 10
-        if broken_links:
-            score -= 20
-        if image_alt_status:
-            score -= 10
+        # 6. Image Alt Text
+        images = soup.find_all('img')
+        for img in images:
+            alt_text = img.get('alt', '').strip()
+            if not alt_text:
+                results["elements"]["image_alt_status"].append(f"Missing alt for image: {img.get('src', 'N/A')}")
+            else:
+                results["elements"]["image_alt_status"].append(f"Alt text present for image: {img.get('src', 'N/A')}")
         
-        seo_results["score"] = max(0, score) # تأكد أن النتيجة ليست سالبة
-        seo_results["seo_overall_text"] = "Good" if score >= 80 else ("Fair" if score >= 50 else "Poor")
+        if not any("Missing" in s for s in results["elements"]["image_alt_status"]) and not any("Empty" in s for s in results["elements"]["image_alt_status"]):
+            results["score"] += 10
+        elif len(results["elements"]["image_alt_status"]) > 0:
+            results["improvement_tips"].append(f"Add descriptive alt text to {len([s for s in results['elements']['image_alt_status'] if 'Missing' in s or 'Empty' in s])} images.")
+        else:
+            results["improvement_tips"].append("No images found to check alt text.")
+
+
+        # Determine overall SEO text based on score
+        if results["score"] >= 80:
+            results["seo_overall_text"] = "Excellent"
+        elif results["score"] >= 60:
+            results["seo_overall_text"] = "Good"
+        elif results["score"] >= 40:
+            results["seo_overall_text"] = "Fair"
+        else:
+            results["seo_overall_text"] = "Poor"
 
     except requests.exceptions.RequestException as e:
-        print(f"Error fetching content for SEO analysis: {e}")
-        seo_results["seo_overall_text"] = f"Failed to fetch content for SEO analysis: {e}"
-        seo_results["improvement_tips"].append(f"Failed to fetch page content for SEO analysis: {e}")
+        results["seo_overall_text"] = f"Could not connect to URL for SEO analysis: {e}"
+        results["improvement_tips"].append(f"Website might be down or inaccessible: {e}")
+        print(f"Error during SEO analysis for {url}: {e}")
     except Exception as e:
-        print(f"An unexpected error occurred during SEO analysis: {e}")
-        seo_results["seo_overall_text"] = f"An unexpected error occurred: {e}"
-        seo_results["improvement_tips"].append(f"An unexpected error occurred during SEO analysis: {e}")
-    
-    return seo_results
+        results["seo_overall_text"] = f"An unexpected error occurred during SEO analysis: {e}"
+        results["improvement_tips"].append(f"An unexpected error occurred during SEO analysis: {e}")
+        print(f"Unexpected error in perform_seo_analysis for {url}: {e}")
+
+    return results
+
+# --- New non-API SEO analysis functions ---
+
+def get_content_length(text_content):
+    """
+    Calculates word count and character count of a given text.
+    """
+    word_count = len(text_content.split())
+    char_count = len(text_content) # includes spaces
+    return {"word_count": word_count, "character_count": char_count}
+
+def check_robots_txt(url):
+    """
+    Checks if robots.txt file is accessible for the given URL's domain.
+    """
+    parsed_url = urlparse(url)
+    robots_url = f"{parsed_url.scheme}://{parsed_url.netloc}/robots.txt"
+    try:
+        response = requests.get(robots_url, timeout=5)
+        return response.status_code == 200
+    except requests.exceptions.RequestException:
+        return False
+
+def check_sitemap_xml(url):
+    """
+    Checks if sitemap.xml file is accessible for the given URL's domain.
+    This is a basic check; actual sitemap location can vary.
+    """
+    parsed_url = urlparse(url)
+    sitemap_url = f"{parsed_url.scheme}://{parsed_url.netloc}/sitemap.xml"
+    try:
+        response = requests.get(sitemap_url, timeout=5)
+        return response.status_code == 200
+    except requests.exceptions.RequestException:
+        return False
 
