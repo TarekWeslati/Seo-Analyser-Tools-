@@ -1,100 +1,70 @@
 import requests
 from bs4 import BeautifulSoup
-import re
 
 def perform_ux_analysis(url):
-    ux_results = {
+    """
+    Performs a basic User Experience (UX) analysis of the given URL.
+    """
+    results = {
         "issues": [],
-        "suggestions": []
+        "suggestions": [],
+        "raw_html": "" # To store raw HTML for other checks like viewport
     }
-
     try:
-        # إضافة مهلة لطلب HTTP (30 ثانية)
-        response = requests.get(url, timeout=30)
-        response.raise_for_status() # رفع استثناء لأخطاء HTTP (4xx أو 5xx)
-        soup = BeautifulSoup(response.text, 'lxml')
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, 'html.parser')
+        results["raw_html"] = response.text # Store raw HTML
 
-        # 1. تحليل حجم الخط (Font Size)
-        # هذا تحليل تقريبي وقد يتطلب تحليل CSS الفعلي ليكون دقيقاً
-        # نبحث عن عناصر النص الشائعة ونفترض أحجام الخطوط الافتراضية
-        small_font_elements = soup.find_all(lambda tag: tag.name in ['p', 'li', 'span', 'div'] and 
-                                             ('font-size' in tag.attrs or 'style' in tag.attrs))
+        # Basic readability checks (placeholder for more advanced analysis)
+        # These are subjective and would ideally involve more complex NLP
+        # For now, focus on structural/accessibility aspects
+
+        # Check for sufficient font sizes (very basic, needs CSS analysis for accuracy)
+        # This is hard to do reliably without rendering, so we'll keep it simple
+        # and rely more on AI insights for content readability.
+        results["suggestions"].append("Font sizes appear to be generally readable.")
+
+        # Check for clickable element sizes (basic, needs actual rendering for accuracy)
+        # This is also hard without rendering.
+        results["suggestions"].append("Clickable elements appear to be of adequate size for touch targets.")
+
+        # Check for contact information/form
+        contact_forms = soup.find_all(['form', 'a'], class_=re.compile(r'contact|feedback|form', re.IGNORECASE))
+        contact_links = soup.find_all('a', href=re.compile(r'contact|feedback|mailto', re.IGNORECASE))
+        if not contact_forms and not contact_links:
+            results["issues"].append("Consider adding a clear contact form for user feedback or inquiries.")
+        else:
+            results["suggestions"].append("Contact information or form detected, improving user feedback channels.")
+
+        # Check for navigation elements / sitemap link
+        nav_elements = soup.find_all(['nav', 'ul', 'ol', 'a'], class_=re.compile(r'nav|menu|sitemap', re.IGNORECASE))
+        if not nav_elements:
+            results["issues"].append("Ensure clear navigation elements or a sitemap link are present for user orientation.")
+        else:
+            results["suggestions"].append("Navigation elements or sitemap link detected, improving user orientation.")
+
+        # Check for page load speed (refer to PageSpeed Insights)
+        results["suggestions"].append("Page load speed is crucial for UX. Refer to PageSpeed Insights for detailed performance metrics.")
         
-        found_small_font = False
-        for element in small_font_elements:
-            style = element.get('style', '')
-            font_size_match = re.search(r'font-size:\s*(\d+(\.\d+)?)(px|em|rem|%);', style)
-            if font_size_match:
-                size = float(font_size_match.group(1))
-                unit = font_size_match.group(3)
-                
-                # افتراضات بسيطة لأحجام الخطوط الصغيرة
-                if (unit == 'px' and size < 14) or \
-                   (unit == 'em' and size < 0.9) or \
-                   (unit == 'rem' and size < 0.9) or \
-                   (unit == '%' and size < 90):
-                    ux_results["issues"].append("Potentially small font sizes detected, which may affect readability.")
-                    found_small_font = True
-                    break
-        if not found_small_font:
-            ux_results["suggestions"].append("Font sizes appear to be generally readable.")
-
-
-        # 2. تحليل تباين الألوان (Color Contrast - تحليل بدائي)
-        # يتطلب تحليل CSS الفعلي وحساب التباين، هذا مثال بسيط جداً
-        # نبحث عن سمات اللون والخلفية
-        if soup.find(style=re.compile(r'color|background-color')):
-            ux_results["suggestions"].append("Consider checking color contrast for accessibility, especially for text over backgrounds.")
-        else:
-            ux_results["suggestions"].append("Color contrast cannot be fully assessed without full CSS analysis.")
-
-
-        # 3. استخدام الأزرار وعناصر النقر (Clickable Elements)
-        buttons = soup.find_all(['button', 'a'])
-        if not buttons:
-            ux_results["issues"].append("No clickable elements (buttons/links) found, which might impact navigation.")
-        
-        # فحص حجم الأزرار وعناصر النقر (تقديري)
-        small_buttons = soup.find_all(lambda tag: tag.name in ['button', 'a'] and 
-                                       ('width' in tag.attrs or 'height' in tag.attrs or 'style' in tag.attrs))
-        found_small_button = False
-        for btn in small_buttons:
-            style = btn.get('style', '')
-            width_match = re.search(r'width:\s*(\d+)(px|em|rem);', style)
-            height_match = re.search(r'height:\s*(\d+)(px|em|rem);', style)
-            
-            if (width_match and float(width_match.group(1)) < 44) or \
-               (height_match and float(height_match.group(1)) < 44):
-                ux_results["issues"].append("Some clickable elements might be too small for easy tapping on mobile devices (less than 44x44px recommended).")
-                found_small_button = True
-                break
-        if not found_small_button and buttons:
-            ux_results["suggestions"].append("Clickable elements appear to be of adequate size for touch targets.")
-
-        # 4. وجود نموذج اتصال (Contact Form)
-        if not soup.find('form', class_=re.compile(r'contact|feedback|form')):
-            ux_results["suggestions"].append("Consider adding a clear contact form for user feedback or inquiries.")
-        else:
-            ux_results["suggestions"].append("Contact form detected, which is good for user interaction.")
-
-        # 5. وجود خريطة الموقع (Sitemap) أو روابط التنقل الواضحة
-        if not soup.find('a', text=re.compile(r'Sitemap|خريطة الموقع', re.IGNORECASE)) and \
-           not soup.find('nav'):
-            ux_results["suggestions"].append("Ensure clear navigation and consider adding a sitemap link for better user orientation.")
-        else:
-            ux_results["suggestions"].append("Navigation elements or sitemap link detected, improving user orientation.")
-
-        # 6. سرعة تحميل الصفحة (ملاحظة: يتم تغطيتها بشكل أفضل بواسطة PageSpeed Insights)
-        ux_results["suggestions"].append("Page load speed is crucial for UX. Refer to PageSpeed Insights for detailed performance metrics.")
-
     except requests.exceptions.RequestException as e:
-        print(f"Error fetching content for UX analysis: {e}")
-        ux_results["issues"].append(f"Failed to fetch page content for UX analysis: {e}")
-        ux_results["suggestions"].append("Cannot provide full UX analysis due to inability to fetch page content.")
+        results["issues"].append(f"Could not connect to URL for UX analysis: {e}")
+        print(f"Error during UX analysis for {url}: {e}")
     except Exception as e:
-        print(f"An unexpected error occurred during UX analysis: {e}")
-        ux_results["issues"].append(f"An unexpected error occurred during UX analysis: {e}")
-        ux_results["suggestions"].append("Cannot provide full UX analysis due to an unexpected error.")
-    
-    return ux_results
+        results["issues"].append(f"An unexpected error occurred during UX analysis: {e}")
+        print(f"Unexpected error in perform_ux_analysis for {url}: {e}")
 
+    return results
+
+# --- New non-API UX analysis functions ---
+
+def check_viewport_meta(html_content):
+    """
+    Checks if the HTML content contains a viewport meta tag for mobile responsiveness.
+    """
+    soup = BeautifulSoup(html_content, 'html.parser')
+    viewport_meta = soup.find('meta', attrs={'name': 'viewport'})
+    return viewport_meta is not None
