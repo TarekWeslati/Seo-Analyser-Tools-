@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const seoBrokenLinksSpan = document.getElementById('seo-broken-links');
     const seoMissingAltSpan = document.getElementById('seo-missing-alt');
     const seoInternalLinksSpan = document.getElementById('seo-internal-links');
-    const seoExternalLinksSpan = document = document.getElementById('seo-external-links');
+    const seoExternalLinksSpan = document.getElementById('seo-external-links');
     const hTagsList = document.getElementById('h-tags-list');
     const keywordDensityList = document.getElementById('keyword-density-list');
     const seoImprovementTipsList = document.getElementById('seo-improvement-tips');
@@ -67,6 +67,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const aiSummarySection = document.getElementById('ai-summary-section');
     const aiSummaryText = document.getElementById('ai-summary-text');
+
+    // New elements for non-API analyses
+    const contentWordCountSpan = document.getElementById('content-word-count');
+    const contentCharCountSpan = document.getElementById('content-char-count');
+    const robotsTxtPresentSpan = document.getElementById('robots-txt-present');
+    const sitemapXmlPresentSpan = document.getElementById('sitemap-xml-present');
+    const viewportMetaPresentSpan = document.getElementById('viewport-meta-present');
+
 
     let translations = {}; // Stores loaded translations
     let currentLanguage = localStorage.getItem('lang') || 'en'; // Get saved language or default to English
@@ -146,7 +154,8 @@ document.addEventListener('DOMContentLoaded', () => {
             domainNameSpan, domainAuthorityScoreSpan, domainAgeSpan, sslStatusSpan,
             blacklistStatusSpan, dnsHealthSpan, performanceScoreSpan, seoOverallScoreSpan,
             seoTitleSpan, seoMetaDescriptionSpan, seoBrokenLinksSpan, seoMissingAltSpan,
-            seoInternalLinksSpan, seoExternalLinksSpan
+            seoInternalLinksSpan, seoExternalLinksSpan,
+            contentWordCountSpan, contentCharCountSpan, robotsTxtPresentSpan, sitemapXmlPresentSpan, viewportMetaPresentSpan
         ];
         naElements.forEach(el => {
             if (el && el.textContent === 'N/A') { // Add null check for el
@@ -165,7 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!progressBarElement) return; // Add null check for progressBarElement
 
         let width = 0;
-        let colorClass = 'progress-bad'; 
+        let colorClass = 'bg-red-600'; // Default to red (bad)
 
         // Ensure score is a number for comparison
         const numericScore = parseFloat(score);
@@ -173,16 +182,29 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!isNaN(numericScore)) {
             width = Math.max(0, Math.min(100, numericScore)); 
             if (numericScore >= 80) {
-                colorClass = 'progress-good';
+                colorClass = 'bg-green-600'; // Good
             } else if (numericScore >= 50) {
-                colorClass = 'progress-medium';
+                colorClass = 'bg-yellow-500'; // Medium
             } else {
-                colorClass = 'progress-bad';
+                colorClass = 'bg-red-600'; // Bad
             }
         }
 
         progressBarElement.style.width = `${width}%`;
-        progressBarElement.className = `progress-bar ${colorClass}`;
+        progressBarElement.className = `h-2.5 rounded-full ${colorClass}`; // Apply Tailwind color class
+    };
+
+    // Function to apply status color to text
+    const applyStatusColor = (element, isPositive) => {
+        if (!element) return;
+        element.classList.remove('text-green-600', 'text-red-600', 'text-yellow-600', 'text-gray-600'); // Remove all
+        if (isPositive === true) {
+            element.classList.add('text-green-600');
+        } else if (isPositive === false) {
+            element.classList.add('text-red-600');
+        } else {
+            element.classList.add('text-gray-600'); // Neutral/N/A
+        }
     };
 
     // Function to display an error message
@@ -209,6 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const daScore = domainAuthority.domain_authority_score !== undefined && domainAuthority.domain_authority_score !== null ? domainAuthority.domain_authority_score : 'N/A';
         if (domainAuthorityScoreSpan) domainAuthorityScoreSpan.textContent = daScore;
         updateProgressBar(domainAuthorityProgress, daScore);
+        applyStatusColor(domainAuthorityScoreSpan, parseFloat(daScore) >= 70 ? true : (parseFloat(daScore) < 40 ? false : null));
         // Updated message for Domain Authority Score
         if (domainAuthorityText) {
             if (daScore === 'N/A' || domainAuthority.domain_authority_text === "Requires external Domain Authority API") {
@@ -219,15 +242,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         if (domainAgeSpan) domainAgeSpan.textContent = domainAuthority.domain_age_years ? `${domainAuthority.domain_age_years} ${translations['yearsText'] || 'years'}` : (translations['domainAgeApiLimit'] || 'N/A (Data might be limited by WHOIS service or API quota).');
-        if (sslStatusSpan) sslStatusSpan.textContent = domainAuthority.ssl_status || 'N/A';
-        if (blacklistStatusSpan) blacklistStatusSpan.textContent = domainAuthority.blacklist_status || 'N/A';
-        if (dnsHealthSpan) dnsHealthSpan.textContent = domainAuthority.dns_health || 'N/A';
+        if (sslStatusSpan) {
+            const sslStatus = domainAuthority.ssl_status || 'N/A';
+            sslStatusSpan.textContent = sslStatus;
+            applyStatusColor(sslStatusSpan, sslStatus === 'Valid');
+        }
+        if (blacklistStatusSpan) {
+            const blacklistStatus = domainAuthority.blacklist_status || 'N/A';
+            blacklistStatusSpan.textContent = blacklistStatus;
+            applyStatusColor(blacklistStatusSpan, blacklistStatus === 'Clean');
+        }
+        if (dnsHealthSpan) {
+            const dnsHealth = domainAuthority.dns_health || 'N/A';
+            dnsHealthSpan.textContent = dnsHealth;
+            applyStatusColor(dnsHealthSpan, dnsHealth === 'Healthy');
+        }
 
         // Page Speed
         const pageSpeed = results.page_speed || {};
         const perfScore = pageSpeed.scores && pageSpeed.scores['Performance Score'] !== undefined && pageSpeed.scores['Performance Score'] !== null ? pageSpeed.scores['Performance Score'] : 'N/A';
         if (performanceScoreSpan) performanceScoreSpan.textContent = perfScore;
         updateProgressBar(performanceProgress, perfScore);
+        applyStatusColor(performanceScoreSpan, parseFloat(perfScore) >= 70 ? true : (parseFloat(perfScore) < 40 ? false : null));
         // Updated message for Page Speed Score
         if (performanceText) {
             if (perfScore === 'N/A' || pageSpeed.performance_text === "PAGESPEED_API_KEY environment variable not set.") {
@@ -279,15 +315,41 @@ document.addEventListener('DOMContentLoaded', () => {
         const seoScore = seoQuality.score !== undefined && seoQuality.score !== null ? seoQuality.score : 'N/A';
         if (seoOverallScoreSpan) seoOverallScoreSpan.textContent = seoScore;
         updateProgressBar(seoOverallProgress, seoScore);
+        applyStatusColor(seoOverallScoreSpan, parseFloat(seoScore) >= 70 ? true : (parseFloat(seoScore) < 40 ? false : null));
         if (seoOverallText) seoOverallText.textContent = seoQuality.seo_overall_text || translations['calculatingMessage']; 
 
         const seoElements = seoQuality.elements || {};
         if (seoTitleSpan) seoTitleSpan.textContent = seoElements.title || 'N/A';
         if (seoMetaDescriptionSpan) seoMetaDescriptionSpan.textContent = seoElements.meta_description || 'N/A';
-        if (seoBrokenLinksSpan) seoBrokenLinksSpan.textContent = seoElements.broken_links ? seoElements.broken_links.length : '0';
-        if (seoMissingAltSpan) seoMissingAltSpan.textContent = seoElements.image_alt_status ? seoElements.image_alt_status.filter(s => s.includes("Missing") || s.includes("Empty")).length : '0';
+        
+        if (seoBrokenLinksSpan) {
+            const brokenLinksCount = seoElements.broken_links ? seoElements.broken_links.length : '0';
+            seoBrokenLinksSpan.textContent = brokenLinksCount;
+            applyStatusColor(seoBrokenLinksSpan, brokenLinksCount == 0);
+        }
+        if (seoMissingAltSpan) {
+            const missingAltCount = seoElements.image_alt_status ? seoElements.image_alt_status.filter(s => s.includes("Missing") || s.includes("Empty")).length : '0';
+            seoMissingAltSpan.textContent = missingAltCount;
+            applyStatusColor(seoMissingAltSpan, missingAltCount == 0);
+        }
         if (seoInternalLinksSpan) seoInternalLinksSpan.textContent = seoElements.internal_links_count !== undefined && seoElements.internal_links_count !== null ? seoElements.internal_links_count : 'N/A';
         if (seoExternalLinksSpan) seoExternalLinksSpan.textContent = seoElements.external_links_count !== undefined && seoElements.external_links_count !== null ? seoElements.external_links_count : 'N/A';
+
+        // New: Content Length
+        if (contentWordCountSpan) contentWordCountSpan.textContent = seoElements.content_length ? seoElements.content_length.word_count : 'N/A';
+        if (contentCharCountSpan) contentCharCountSpan.textContent = seoElements.content_length ? seoElements.content_length.character_count : 'N/A';
+
+        // New: Robots.txt & Sitemap.xml
+        if (robotsTxtPresentSpan) {
+            const robotsPresent = seoElements.robots_txt_present;
+            robotsTxtPresentSpan.textContent = robotsPresent ? translations['yesText'] || 'Yes' : translations['noText'] || 'No';
+            applyStatusColor(robotsTxtPresentSpan, robotsPresent);
+        }
+        if (sitemapXmlPresentSpan) {
+            const sitemapPresent = seoElements.sitemap_xml_present;
+            sitemapXmlPresentSpan.textContent = sitemapPresent ? translations['yesText'] || 'Yes' : translations['noText'] || 'No';
+            applyStatusColor(sitemapXmlPresentSpan, sitemapPresent);
+        }
 
         // H-Tags
         if (hTagsList) {
@@ -365,7 +427,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 brokenLinksList.innerHTML = '';
                 brokenLinks.forEach(link => {
                     const li = document.createElement('li');
-                    li.textContent = link;
+                    li.textContent = link; // Display the actual broken link URL
                     brokenLinksList.appendChild(li);
                 });
                 showElement(brokenLinksDetailsSection);
@@ -385,6 +447,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // User Experience (UX)
         const userExperience = results.user_experience || {};
+
+        // New: Viewport Meta
+        if (viewportMetaPresentSpan) {
+            const viewportPresent = userExperience.viewport_meta_present;
+            viewportMetaPresentSpan.textContent = viewportPresent ? translations['yesText'] || 'Yes' : translations['noText'] || 'No';
+            applyStatusColor(viewportMetaPresentSpan, viewportPresent);
+        }
 
         // UX Issues
         if (uxIssuesList) {
@@ -673,13 +742,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!aiRewrites.titles.length && !aiRewrites.meta_descriptions.length) { 
                 outputHtml += `<p>${translations['noAiRewritesAvailable'] || 'No AI rewrites available.'}</p>`;
             }
-            if (rewriteSeoOutput) rewriteSeoOutput.innerHTML = outputHtml; // Null check
+            if (rewriteSeoOutput) rewriteSeoOutput.innerHTML = outputHtml; 
 
         } catch (error) {
             console.error('AI Rewrite failed:', error);
             if (rewriteSeoOutput) rewriteSeoOutput.innerHTML = `<p class="text-red-600">${error.message}</p>`; 
         } finally {
-            if (rewriteSeoButton) rewriteSeoButton.disabled = false; // Null check
+            if (rewriteSeoButton) rewriteSeoButton.disabled = false; 
         }
     });
 
@@ -692,11 +761,11 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        if (refineContentOutput) { // Null check
+        if (refineContentOutput) { 
             showElement(refineContentOutput);
             refineContentOutput.innerHTML = `<p>${translations['loadingAiRefinement']}</p>`;
         }
-        if (refineContentButton) refineContentButton.disabled = true; // Null check
+        if (refineContentButton) refineContentButton.disabled = true; 
 
         try {
             const response = await fetch('/ai_refine_content', {
@@ -734,13 +803,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!aiRefinement.refined_text && (!aiRefinement.suggestions || aiRefinement.suggestions.length === 0)) { 
                 outputHtml += `<p>${translations['noAiRefinementAvailable'] || 'No AI refinement available.'}</p>`;
             }
-            if (refineContentOutput) refineContentOutput.innerHTML = outputHtml; // Null check
+            if (refineContentOutput) refineContentOutput.innerHTML = outputHtml; 
 
         } catch (error) {
             console.error('AI Content Refinement failed:', error);
             if (refineContentOutput) refineContentOutput.innerHTML = `<p class="text-red-600">${error.message}</p>`; 
         } finally {
-            if (refineContentButton) refineContentButton.disabled = false; // Null check
+            if (refineContentButton) refineContentButton.disabled = false; 
         }
     });
 
