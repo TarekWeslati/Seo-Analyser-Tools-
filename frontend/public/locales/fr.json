@@ -116,5 +116,6 @@
     "articleAnalysisFailed": "Échec de l'analyse de l'article",
     "failedToRewriteArticle": "Échec de la réécriture de l'article.",
     "noSuggestionsAvailable": "Aucune suggestion disponible.",
-    "noAssessmentAvailable": "Aucune évaluation disponible."
+    "noAssessmentAvailable": "Aucune évaluation disponible.",
+    "articleAnalyzerLink": "Analyseur d'Articles"
 }
