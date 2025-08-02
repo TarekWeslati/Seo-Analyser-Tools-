@@ -135,5 +135,12 @@
     "emailPasswordRequired": "L'e-mail et le mot de passe sont requis.",
     "authFailed": "Échec de l'authentification. Veuillez vérifier vos identifiants.",
     "networkErrorAuth": "Erreur réseau. Impossible de se connecter au serveur d'authentification. Veuillez réessayer.",
-    "registrationSuccess": "Inscription réussie ! Veuillez vous connecter."
+    "registrationSuccess": "Inscription réussie ! Veuillez vous connecter.",
+    "orSignInWith": "Ou connectez-vous avec :",
+    "signInWithGoogle": "Connectez-vous avec Google",
+    "signInWithFacebook": "Connectez-vous avec Facebook",
+    "popupClosed": "Fenêtre de connexion fermée. Veuillez réessayer.",
+    "popupCancelled": "Connexion annulée. Veuillez réessayer.",
+    "accountExistsDifferentCredential": "Un compte avec cet e-mail existe déjà avec une méthode de connexion différente. Veuillez utiliser cette méthode ou réinitialiser votre mot de passe.",
+    "logoutFailed": "Échec de la déconnexion. Veuillez réessayer."
 }
