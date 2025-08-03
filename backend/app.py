@@ -23,8 +23,12 @@ app = Flask(__name__,
             template_folder=template_dir,
             static_folder=static_dir,
             static_url_path='/')
-CORS(app)
-
+app = Flask(__name__,
+            template_folder=template_dir,
+            static_folder=static_dir,
+            static_url_path='/')
+# تهيئة CORS لتسمح بالطلبات من نطاق تطبيقك على Render
+CORS(app, resources={r"/*": {"origins": ["https://analyzer.oxabite.com", "http://localhost:5000"]}}, supports_credentials=True, allow_headers=["Authorization", "Content-Type"])
 # Initialize Firebase Admin SDK
 try:
     if not firebase_admin._apps:
