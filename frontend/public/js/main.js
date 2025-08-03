@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const auth = firebase.auth();
     const googleProvider = new firebase.auth.GoogleAuthProvider();
-    const facebookProvider = new firebase.auth.FacebookAuthProvider();
+    // const facebookProvider = new firebase.auth.FacebookAuthProvider(); // Removed Facebook as requested
 
     const websiteUrlInput = document.getElementById('website-url');
     const analyzeButton = document.getElementById('analyze-button');
@@ -30,28 +30,36 @@ document.addEventListener('DOMContentLoaded', () => {
     const analyzeAnotherButton = document.getElementById('analyze-another-button');
     const exportPdfButton = document.getElementById('export-pdf-button');
 
-    // Auth UI elements
-    const authSection = document.getElementById('auth-section');
-    const authEmailInput = document.getElementById('auth-email');
-    const authPasswordInput = document.getElementById('auth-password');
-    const authSubmitButton = document.getElementById('auth-submit-button');
-    const authFormTitle = document.getElementById('auth-form-title');
-    const authErrorMessage = document.getElementById('auth-error-message');
-    const authLoadingSpinner = document.getElementById('auth-loading-spinner');
-    const switchAuthButton = document.getElementById('switch-auth-button');
-    const switchAuthText = document.getElementById('switch-auth-text');
+    // Main buttons
+    const analyzeWebsiteMainButton = document.getElementById('analyze-website-main-button');
+    const articleAnalyzerLink = document.querySelector('a[href="/article_analyzer.html"]');
+
+
+    // Auth Status Display elements
     const userEmailDisplay = document.getElementById('user-email-display');
     const notLoggedInMessage = document.getElementById('not-logged-in-message');
     const logoutButton = document.getElementById('logout-button');
     const authButtonsContainer = document.getElementById('auth-buttons-container');
-    const showLoginButton = document.getElementById('show-login-button');
-    const showRegisterButton = document.getElementById('show-register-button');
-    const googleLoginButton = document.getElementById('google-login-button');
-    const facebookLoginButton = document.getElementById('facebook-login-button');
+    const showAuthModalButton = document.getElementById('show-auth-modal-button');
 
+    // Auth Modal elements
+    const authModal = document.getElementById('auth-modal');
+    const closeAuthModalButton = document.getElementById('close-auth-modal');
+    const modalAuthFormTitle = document.getElementById('modal-auth-form-title');
+    const modalAuthPrompt = document.getElementById('modal-auth-prompt');
+    const modalAuthEmailInput = document.getElementById('modal-auth-email');
+    const modalAuthPasswordInput = document.getElementById('modal-auth-password');
+    const modalAuthSubmitButton = document.getElementById('modal-auth-submit-button');
+    const modalAuthErrorMessage = document.getElementById('modal-auth-error-message');
+    const modalAuthLoadingSpinner = document.getElementById('modal-auth-loading-spinner');
+    const modalSwitchAuthButton = document.getElementById('modal-switch-auth-button');
+    const modalSwitchAuthText = document.getElementById('modal-switch-auth-text');
+    const modalGoogleLoginButton = document.getElementById('modal-google-login-button');
+    // const modalFacebookLoginButton = document.getElementById('modal-facebook-login-button'); // Removed Facebook as requested
 
-    let currentAuthMode = 'login'; // 'login' or 'register'
+    let currentAuthMode = 'login'; // 'login' or 'register' for the modal
     let currentAnalysisResults = null; // To store results for PDF export
+    let actionAfterAuth = null; // Stores the function to call after successful authentication
 
     // Language and Theme elements
     const languageSelect = document.getElementById('language-select');
@@ -88,17 +96,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 element.textContent = translations[key];
             }
         });
-        // Update specific button texts that change based on auth mode
+        // Update specific button texts that change based on auth mode in modal
         if (currentAuthMode === 'login') {
-            authSubmitButton.textContent = translations['loginButton'];
-            switchAuthButton.textContent = translations['registerHereButton'];
-            switchAuthText.textContent = translations['noAccountText'];
-            authFormTitle.textContent = translations['loginTitle'];
+            modalAuthSubmitButton.textContent = translations['loginButton'];
+            modalSwitchAuthButton.textContent = translations['registerHereButton'];
+            modalSwitchAuthText.textContent = translations['noAccountText'];
+            modalAuthFormTitle.textContent = translations['loginTitle'];
         } else {
-            authSubmitButton.textContent = translations['registerButton'];
-            switchAuthButton.textContent = translations['loginHereButton'];
-            switchAuthText.textContent = translations['haveAccountText'];
-            authFormTitle.textContent = translations['registerTitle'];
+            modalAuthSubmitButton.textContent = translations['registerButton'];
+            modalSwitchAuthButton.textContent = translations['loginHereButton'];
+            modalSwitchAuthText.textContent = translations['haveAccountText'];
+            modalAuthFormTitle.textContent = translations['registerTitle'];
         }
     }
 
@@ -132,67 +140,44 @@ document.addEventListener('DOMContentLoaded', () => {
     languageSelect.value = currentLang;
     loadTranslations(currentLang);
 
-    // Auth UI Logic
-    function updateAuthUI() {
-        const token = localStorage.getItem('authToken');
-        const email = localStorage.getItem('userEmail');
-
-        if (token && email) {
-            userEmailDisplay.textContent = email;
-            userEmailDisplay.classList.remove('hidden');
-            notLoggedInMessage.classList.add('hidden');
-            logoutButton.classList.remove('hidden');
-            authButtonsContainer.classList.add('hidden');
-            authSection.classList.add('hidden'); // Hide auth form
-            inputSection.classList.remove('hidden'); // Show analysis form
-        } else {
-            userEmailDisplay.textContent = '';
-            userEmailDisplay.classList.add('hidden');
-            notLoggedInMessage.classList.remove('hidden');
-            logoutButton.classList.add('hidden');
-            authButtonsContainer.classList.remove('hidden');
-            authSection.classList.remove('hidden'); // Show auth form by default if not logged in
-            inputSection.classList.add('hidden'); // Hide analysis form
-            resultsDashboard.classList.add('hidden'); // Hide results if not logged in
-        }
+    // Auth Modal Logic
+    function showAuthModal(mode = 'login', callback = null) {
+        currentAuthMode = mode;
+        actionAfterAuth = callback; // Store the action to perform after successful auth
+        modalAuthEmailInput.value = '';
+        modalAuthPasswordInput.value = '';
+        modalAuthErrorMessage.classList.add('hidden');
+        modalAuthLoadingSpinner.classList.add('hidden');
+        applyTranslations(); // Update modal texts based on mode
+        authModal.classList.remove('hidden');
     }
 
-    showLoginButton.addEventListener('click', () => {
-        currentAuthMode = 'login';
-        authFormTitle.textContent = translations['loginTitle'];
-        authSubmitButton.textContent = translations['loginButton'];
-        switchAuthButton.textContent = translations['registerHereButton'];
-        switchAuthText.textContent = translations['noAccountText'];
-        authErrorMessage.classList.add('hidden');
-    });
+    function hideAuthModal() {
+        authModal.classList.add('hidden');
+        actionAfterAuth = null; // Clear the stored action
+    }
 
-    showRegisterButton.addEventListener('click', () => {
-        currentAuthMode = 'register';
-        authFormTitle.textContent = translations['registerTitle'];
-        authSubmitButton.textContent = translations['registerButton'];
-        switchAuthButton.textContent = translations['loginHereButton'];
-        switchAuthText.textContent = translations['haveAccountText'];
-        authErrorMessage.classList.add('hidden');
-    });
+    showAuthModalButton.addEventListener('click', () => showAuthModal('login'));
+    closeAuthModalButton.addEventListener('click', hideAuthModal);
 
-    switchAuthButton.addEventListener('click', () => {
+    modalSwitchAuthButton.addEventListener('click', () => {
         currentAuthMode = currentAuthMode === 'login' ? 'register' : 'login';
-        applyTranslations(); // Re-apply translations to update button texts
-        authErrorMessage.classList.add('hidden');
+        applyTranslations(); // Re-apply translations to update modal texts
+        modalAuthErrorMessage.classList.add('hidden');
     });
 
-    authSubmitButton.addEventListener('click', async () => {
-        const email = authEmailInput.value;
-        const password = authPasswordInput.value;
+    modalAuthSubmitButton.addEventListener('click', async () => {
+        const email = modalAuthEmailInput.value;
+        const password = modalAuthPasswordInput.value;
 
         if (!email || !password) {
-            authErrorMessage.textContent = translations['emailPasswordRequired'];
-            authErrorMessage.classList.remove('hidden');
+            modalAuthErrorMessage.textContent = translations['emailPasswordRequired'];
+            modalAuthErrorMessage.classList.remove('hidden');
             return;
         }
 
-        authLoadingSpinner.classList.remove('hidden');
-        authErrorMessage.classList.add('hidden');
+        modalAuthLoadingSpinner.classList.remove('hidden');
+        modalAuthErrorMessage.classList.add('hidden');
 
         try {
             let response;
@@ -203,10 +188,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify({ email, password })
                 });
             } else { // login (email/password)
-                // This part is for direct backend login, which is less secure.
-                // The recommended Firebase flow is for client-side SDK to handle login
-                // and then send the ID token to the backend.
-                // For now, we'll keep it as a simple backend call.
                 response = await fetch(`${authBaseUrl}/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -217,45 +198,42 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             if (response.ok) {
                 if (currentAuthMode === 'login') {
-                    // For email/password login, the backend returns a custom token.
-                    // We need to sign in with this custom token on the client-side
-                    // to get an ID token for subsequent requests.
                     const userCredential = await auth.signInWithCustomToken(data.token);
                     const idToken = await userCredential.user.getIdToken();
                     localStorage.setItem('authToken', idToken);
                     localStorage.setItem('userEmail', data.email);
                     updateAuthUI();
-                    authSection.classList.add('hidden');
-                    inputSection.classList.remove('hidden');
+                    hideAuthModal();
+                    if (actionAfterAuth) {
+                        actionAfterAuth(); // Execute the stored action
+                    }
                 } else { // registered
-                    authErrorMessage.textContent = translations['registrationSuccess'];
-                    authErrorMessage.classList.remove('hidden');
+                    modalAuthErrorMessage.textContent = translations['registrationSuccess'];
+                    modalAuthErrorMessage.classList.remove('hidden');
                     currentAuthMode = 'login'; // Switch to login after successful registration
                     applyTranslations();
                 }
             } else {
-                authErrorMessage.textContent = data.error || translations['authFailed'];
-                authErrorMessage.classList.remove('hidden');
+                modalAuthErrorMessage.textContent = data.error || translations['authFailed'];
+                modalAuthErrorMessage.classList.remove('hidden');
             }
         } catch (error) {
             console.error('Auth error:', error);
-            authErrorMessage.textContent = translations['networkErrorAuth'];
-            authErrorMessage.classList.remove('hidden');
+            modalAuthErrorMessage.textContent = translations['networkErrorAuth'];
+            modalAuthErrorMessage.classList.remove('hidden');
         } finally {
-            authLoadingSpinner.classList.add('hidden');
+            modalAuthLoadingSpinner.classList.add('hidden');
         }
     });
 
-    // Social Login Handlers
+    // Social Login Handlers (Google only, Facebook removed)
     async function handleSocialLogin(provider) {
-        authLoadingSpinner.classList.remove('hidden');
-        authErrorMessage.classList.add('hidden');
+        modalAuthLoadingSpinner.classList.remove('hidden');
+        modalAuthErrorMessage.classList.add('hidden');
         try {
             const result = await auth.signInWithPopup(provider);
             const idToken = await result.user.getIdToken();
 
-            // Send ID token to backend for verification and Firestore update
-            // This is crucial for Firebase Admin SDK to recognize the user
             const response = await fetch(`${authBaseUrl}/verify_id_token`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -267,11 +245,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem('authToken', idToken);
                 localStorage.setItem('userEmail', result.user.email);
                 updateAuthUI();
-                authSection.classList.add('hidden');
-                inputSection.classList.remove('hidden');
+                hideAuthModal();
+                if (actionAfterAuth) {
+                    actionAfterAuth(); // Execute the stored action
+                }
             } else {
-                authErrorMessage.textContent = data.error || translations['authFailed'];
-                authErrorMessage.classList.remove('hidden');
+                modalAuthErrorMessage.textContent = data.error || translations['authFailed'];
+                modalAuthErrorMessage.classList.remove('hidden');
             }
         } catch (error) {
             console.error('Social login error:', error);
@@ -283,16 +263,15 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (error.code === 'auth/account-exists-with-different-credential') {
                 displayError = translations['accountExistsDifferentCredential'];
             }
-            authErrorMessage.textContent = displayError;
-            authErrorMessage.classList.remove('hidden');
+            modalAuthErrorMessage.textContent = displayError;
+            modalAuthErrorMessage.classList.remove('hidden');
         } finally {
-            authLoadingSpinner.classList.add('hidden');
+            modalAuthLoadingSpinner.classList.add('hidden');
         }
     }
 
-    googleLoginButton.addEventListener('click', () => handleSocialLogin(googleProvider));
-    facebookLoginButton.addEventListener('click', () => handleSocialLogin(facebookProvider));
-
+    modalGoogleLoginButton.addEventListener('click', () => handleSocialLogin(googleProvider));
+    // modalFacebookLoginButton.addEventListener('click', () => handleSocialLogin(facebookProvider)); // Removed
 
     logoutButton.addEventListener('click', async () => {
         try {
@@ -301,9 +280,8 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.removeItem('userEmail');
             currentAnalysisResults = null; // Clear previous analysis
             updateAuthUI();
-            inputSection.classList.add('hidden'); // Ensure analysis section is hidden until logged in
-            resultsDashboard.classList.add('hidden'); // Hide results
             websiteUrlInput.value = ''; // Clear URL input
+            resultsDashboard.classList.add('hidden'); // Hide results
         } catch (error) {
             console.error('Logout error:', error);
             alert(translations['logoutFailed']);
@@ -311,33 +289,58 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Initial auth UI update on page load
-    // Listen for Firebase auth state changes to keep UI in sync
     auth.onAuthStateChanged(async (user) => {
         if (user) {
-            // User is signed in. Get ID token and update UI.
             const idToken = await user.getIdToken();
             localStorage.setItem('authToken', idToken);
             localStorage.setItem('userEmail', user.email || user.displayName || translations['unknownUser']);
         } else {
-            // User is signed out. Clear local storage.
             localStorage.removeItem('authToken');
             localStorage.removeItem('userEmail');
         }
         updateAuthUI();
     });
 
+    function updateAuthUI() {
+        const token = localStorage.getItem('authToken');
+        const email = localStorage.getItem('userEmail');
+
+        if (token && email) {
+            userEmailDisplay.textContent = email;
+            userEmailDisplay.classList.remove('hidden');
+            notLoggedInMessage.classList.add('hidden');
+            logoutButton.classList.remove('hidden');
+            authButtonsContainer.classList.add('hidden');
+        } else {
+            userEmailDisplay.textContent = '';
+            userEmailDisplay.classList.add('hidden');
+            notLoggedInMessage.classList.remove('hidden');
+            logoutButton.classList.add('hidden');
+            authButtonsContainer.classList.remove('hidden');
+        }
+    }
+
 
     // Analysis Logic
     analyzeButton.addEventListener('click', analyzeWebsite);
     analyzeAnotherButton.addEventListener('click', () => {
         resultsDashboard.classList.add('hidden');
-        inputSection.classList.remove('hidden');
         websiteUrlInput.value = '';
         errorMessage.classList.add('hidden');
         currentAnalysisResults = null;
     });
 
-    exportPdfButton.addEventListener('click', async () => {
+    // Trigger auth modal if not logged in for PDF export
+    exportPdfButton.addEventListener('click', () => {
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+            showAuthModal('login', () => exportPdfReport()); // Pass function to execute after login
+        } else {
+            exportPdfReport();
+        }
+    });
+
+    async function exportPdfReport() {
         if (!currentAnalysisResults) {
             alert(translations['noAnalysisResults']);
             return;
@@ -347,8 +350,8 @@ document.addEventListener('DOMContentLoaded', () => {
         exportPdfButton.disabled = true;
 
         const token = localStorage.getItem('authToken');
-        if (!token) {
-            alert(translations['runAnalysisFirst']); // Should not happen if UI is correct
+        if (!token) { // Should be logged in by now if modal was shown
+            alert(translations['runAnalysisFirst']);
             exportPdfButton.textContent = translations['exportPdfButton'];
             exportPdfButton.disabled = false;
             return;
@@ -386,15 +389,15 @@ document.addEventListener('DOMContentLoaded', () => {
             exportPdfButton.textContent = translations['exportPdfButton'];
             exportPdfButton.disabled = false;
         }
-    });
+    }
 
     async function analyzeWebsite() {
         const url = websiteUrlInput.value;
         const token = localStorage.getItem('authToken');
 
         if (!token) {
-            errorMessage.textContent = translations['runAnalysisFirst']; // Or "Please log in to analyze"
-            errorMessage.classList.remove('hidden');
+            // If not logged in, show modal and prompt for login
+            showAuthModal('login', () => analyzeWebsite()); // After login, re-run analyzeWebsite
             return;
         }
 
@@ -425,7 +428,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentAnalysisResults = data;
                 displayResults(data, url);
                 resultsDashboard.classList.remove('hidden');
-                inputSection.classList.add('hidden');
             } else {
                 const errorData = await response.json();
                 errorMessage.textContent = `${translations['analysisFailed']}: ${errorData.error || translations['pleaseTryAgain']}`;
@@ -755,9 +757,28 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // AI Tools Functionality
-    rewriteSeoButton.addEventListener('click', async () => {
+    // Trigger auth modal if not logged in for AI tools
+    rewriteSeoButton.addEventListener('click', () => {
         const token = localStorage.getItem('authToken');
         if (!token) {
+            showAuthModal('login', () => aiRewriteSeo()); // Pass function to execute after login
+        } else {
+            aiRewriteSeo();
+        }
+    });
+
+    refineContentButton.addEventListener('click', () => {
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+            showAuthModal('login', () => aiRefineContent()); // Pass function to execute after login
+        } else {
+            aiRefineContent();
+        }
+    });
+
+    async function aiRewriteSeo() {
+        const token = localStorage.getItem('authToken');
+        if (!token) { // Should be logged in by now if modal was shown
             alert(translations['runAnalysisFirst']);
             return;
         }
@@ -808,11 +829,11 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('AI Rewrite SEO error:', error);
             rewriteSeoOutput.innerHTML = `<p class="text-red-600">${translations['aiRewriteFailed']}: ${translations['networkError']}</p>`;
         }
-    });
+    }
 
-    refineContentButton.addEventListener('click', async () => {
+    async function aiRefineContent() {
         const token = localStorage.getItem('authToken');
-        if (!token) {
+        if (!token) { // Should be logged in by now if modal was shown
             alert(translations['runAnalysisFirst']);
             return;
         }
@@ -859,5 +880,5 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('AI Refine Content error:', error);
             refineContentOutput.innerHTML = `<p class="text-red-600">${translations['aiRefinementFailed']}: ${translations['networkError']}</p>`;
         }
-    });
+    }
 });
