@@ -138,9 +138,10 @@
     "registrationSuccess": "Registration successful! Please log in.",
     "orSignInWith": "Or sign in with:",
     "signInWithGoogle": "Sign in with Google",
-    "signInWithFacebook": "Sign in with Facebook",
     "popupClosed": "Login popup closed. Please try again.",
     "popupCancelled": "Login cancelled. Please try again.",
     "accountExistsDifferentCredential": "An account with this email already exists using a different sign-in method. Please use that method or reset your password.",
-    "logoutFailed": "Logout failed. Please try again."
+    "logoutFailed": "Logout failed. Please try again.",
+    "loginRegisterButton": "Login / Register",
+    "loginToContinue": "Please login or register to continue."
 }
