@@ -7,12 +7,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Firebase configuration - IMPORTANT: Replace with your actual Firebase project config
     // You can find this in your Firebase project settings -> Project settings -> General -> Your apps -> Web app -> Firebase SDK snippet -> Config
     const firebaseConfig = {
-        apiKey: "YOUR_FIREBASE_API_KEY", // Replace with your Web API Key (e.g., "AIzaSyC...")
-        authDomain: "YOUR_PROJECT_ID.firebaseapp.com", // Replace with your Project ID (e.g., "your-project-id.firebaseapp.com")
-        projectId: "YOUR_PROJECT_ID", // Replace with your Project ID (e.g., "your-project-id")
-        storageBucket: "YOUR_PROJECT_ID.appspot.com", // Replace with your Project ID (e.g., "your-project-id.appspot.com")
-        messagingSenderId: "YOUR_MESSAGING_SENDER_ID", // Replace with your Messaging Sender ID (e.g., "123456789012")
-        appId: "YOUR_APP_ID" // Replace with your App ID (e.g., "1:123456789012:web:abcdef1234567890abcdef")
+        apiKey: "AIzaSyBn0rlzoqgvZhasfHpnkfpEzV2X1kYKDBs", // مفتاح API الخاص بك
+        authDomain: "message-oxabite.firebaseapp.com", // نطاق المصادقة الخاص بك
+        projectId: "message-oxabite", // معرف المشروع الخاص بك
+        storageBucket: "message-oxabite.firebasestorage.app", // سلة التخزين الخاصة بك
+        messagingSenderId: "283151112955", // معرف مرسل الرسائل الخاص بك
+        appId: "1:283151112955:web:4f715cd8fc188ebfb8ee5e" // معرف التطبيق الخاص بك
+        // measurementId: "G-K8BLEDEXFC" // هذا اختياري وغير ضروري لتهيئة SDK الأساسية
     };
 
     // Initialize Firebase if it hasn't been initialized already
