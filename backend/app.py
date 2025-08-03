@@ -4,8 +4,6 @@ from flask_cors import CORS
 import json
 import firebase_admin
 from firebase_admin import credentials, auth, firestore
-# لم نعد نستورد من firebase_admin_config.py مباشرة
-# from backend.firebase_admin_config import FIREBASE_SERVICE_ACCOUNT_KEY
 from datetime import datetime
 
 # Import services and utilities with full relative paths from the project root.
