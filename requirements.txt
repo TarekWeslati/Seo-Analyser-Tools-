@@ -10,4 +10,6 @@ google-api-python-client==2.177.0
 google-auth-httplib2==0.2.0
 google-auth==2.40.3
 gunicorn==21.2.0
-Flask-Cors==4.0.0 # تم إضافة هذا السطر
+Flask-Cors==4.0.0
+python-whois==0.8.0 # تم إضافة هذا السطر
+    
