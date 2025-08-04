@@ -1,9 +1,7 @@
-# This file serves as the entry point for the Gunicorn WSGI server.
-# It imports the Flask application instance from backend.app.
+import sys
+import os
 
-from backend.app import app
+# Add the backend directory to the Python path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-# This block ensures the Flask app runs directly when the script is executed,
-# which is useful for local development but Gunicorn handles it in production.
-if __name__ == '__main__':
-    app.run()
+from backend.app import app as application # Renamed app to application as per WSGI convention
