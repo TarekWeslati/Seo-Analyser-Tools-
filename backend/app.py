@@ -22,9 +22,12 @@ if firebase_service_account_key_json:
 else:
     print("FIREBASE_SERVICE_ACCOUNT_KEY_JSON environment variable not set. Firebase Admin SDK will not be initialized.")
 
+# Define the path to the frontend/public directory
+frontend_public_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../frontend/public'))
+
 app = Flask(__name__,
-            template_folder='../../frontend/public', # HTML files like index.html, article_analyzer.html
-            static_folder='../../frontend/public/static', # Other static assets like CSS, JS, locales
+            template_folder=frontend_public_path, # HTML files like index.html, article_analyzer.html
+            static_folder=os.path.join(frontend_public_path, 'static'), # Other static assets like CSS, JS, locales
             static_url_path='/static') # URL prefix for static assets
 
 # Configure CORS to allow requests from your Render domain and localhost
@@ -96,7 +99,9 @@ def verify_id_token():
 @app.before_request
 def verify_token_middleware():
     # Allow static files (now under /static) and auth routes without token verification
-    if request.path.startswith(('/static', '/register', '/login', '/verify_id_token', '/')) or request.path.endswith(('.html', '/')):
+    # Also allow the root path and specific HTML files to be accessed
+    if request.path.startswith('/static/') or \
+       request.path in ['/', '/index.html', '/article_analyzer.html', '/register', '/login', '/verify_id_token']:
         return # Allow access
 
     auth_header = request.headers.get('Authorization')
