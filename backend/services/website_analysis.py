@@ -900,8 +900,8 @@ def generate_pdf_report(url, lang="en"):
             "failedToGetUxInsights": "Failed to get UX insights from AI.",
             "failedToParseUxInsights": "Failed to parse UX insights from AI.",
             "noUxSuggestions": "No UX suggestions available.",
-            "failedToGetAdsenseInsights": "Failed to get AdSense readiness insights from AI.",
-            "failedToParseAdsenseInsights": "Failed to parse AdSense readiness insights from AI.",
+            "failedToGetAdsenseInsights": "Failed to get AdSense readiness insights.",
+            "failedToParseAdsenseInsights": "Failed to parse AdSense readiness insights.",
             "failedToGetAiInsights": "Failed to get overall AI insights.",
             "failedToParseAiInsights": "Failed to parse overall AI insights.",
             "failedToGenerateRewrites": "Failed to generate AI SEO rewrites.",
@@ -1101,3 +1101,58 @@ def generate_pdf_report(url, lang="en"):
         </div>
     </body>
     </html>
+    """
+    
+    # WeasyPrint requires a file-like object or a filename
+    # Use a temporary file to save the HTML content
+    with tempfile.NamedTemporaryFile(delete=True, suffix=".html") as tmp_html_file:
+        tmp_html_file.write(html_content.encode('utf-8'))
+        tmp_html_file.flush() # Ensure all data is written to the file
+        
+        # Generate PDF from the temporary HTML file
+        pdf_bytes = HTML(filename=tmp_html_file.name).write_pdf()
+    
+    return pdf_bytes
+
+def lang_specific_message(lang, key):
+    """Returns a language-specific message for placeholders."""
+    messages = {
+        "en": {
+            "noSeoTips": "No specific SEO improvement tips generated.",
+            "websiteUnreachable": "Website could not be reached or connection error.",
+            "seoAnalysisFailed": "Failed to perform SEO quality analysis.",
+            "failedToGetUxInsights": "Failed to get UX insights from AI.",
+            "failedToParseUxInsights": "Failed to parse UX insights from AI.",
+            "noUxSuggestions": "No UX suggestions available.",
+            "failedToGetAdsenseInsights": "Failed to get AdSense readiness insights.",
+            "failedToParseAdsenseInsights": "Failed to parse AdSense readiness insights.",
+            "failedToGetAiInsights": "Failed to get overall AI insights.",
+            "failedToParseAiInsights": "Failed to parse overall AI insights.",
+            "failedToGenerateRewrites": "Failed to generate AI SEO rewrites.",
+            "failedToParseRewrites": "Failed to parse AI SEO rewrites.",
+            "failedToRefineContent": "Failed to refine content.",
+            "failedToParseRefinement": "Failed to parse content refinement.",
+            "noBrokenLinksToSuggestFixes": "No broken links were found to suggest fixes for.",
+            "failedToGetBrokenLinkSuggestions": "Failed to get broken link suggestions from AI."
+        },
+        "ar": {
+            "noSeoTips": "لم يتم إنشاء نصائح محددة لتحسين محركات البحث.",
+            "websiteUnreachable": "لا يمكن الوصول إلى الموقع أو خطأ في الاتصال.",
+            "seoAnalysisFailed": "فشل في إجراء تحليل جودة تحسين محركات البحث.",
+            "failedToGetUxInsights": "فشل في الحصول على رؤى تجربة المستخدم من الذكاء الاصطناعي.",
+            "failedToParseUxInsights": "فشل في تحليل رؤى تجربة المستخدم من الذكاء الاصطناعي.",
+            "noUxSuggestions": "لا توجد اقتراحات لتجربة المستخدم متوفرة.",
+            "failedToGetAdsenseInsights": "فشل في الحصول على رؤى جاهزية AdSense من الذكاء الاصطناعي.",
+            "failedToParseAdsenseInsights": "فشل في تحليل رؤى جاهزية AdSense من الذكاء الاصطناعي.",
+            "failedToGetAiInsights": "فشل في الحصول على رؤى الذكاء الاصطناعي الشاملة.",
+            "failedToParseAiInsights": "فشل في تحليل رؤى الذكاء الاصطناعي الشاملة.",
+            "failedToGenerateRewrites": "فشل في إنشاء إعادة صياغة SEO بواسطة الذكاء الاصطناعي.",
+            "failedToParseRewrites": "فشل في تحليل إعادة صياغة SEO.",
+            "failedToRefineContent": "فشل في تحسين المحتوى.",
+            "failedToParseRefinement": "فشل في تحليل تحسين المحتوى.",
+            "noBrokenLinksToSuggestFixes": "لم يتم العثور على روابط معطلة لاقتراح إصلاحات لها.",
+            "failedToGetBrokenLinkSuggestions": "فشل في الحصول على اقتراحات إصلاح الروابط المعطلة من الذكاء الاصطناعي."
+        }
+    }
+    return messages.get(lang, messages["en"]).get(key, f"Translation missing for {key}")
+
