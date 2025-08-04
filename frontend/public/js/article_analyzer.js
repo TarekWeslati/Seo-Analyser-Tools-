@@ -68,7 +68,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadTranslations(lang) {
         try {
-            const response = await fetch(`/locales/${lang}.json`);
+            // Updated path for locales
+            const response = await fetch(`/static/locales/${lang}.json`);
             translations = await response.json();
             applyTranslations();
         } catch (error) {
