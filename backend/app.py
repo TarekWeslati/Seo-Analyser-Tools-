@@ -25,6 +25,7 @@ else:
 # Define the path to the frontend/public directory
 frontend_public_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../frontend/public'))
 
+# Renamed 'app' back to 'app' for simplicity and common Flask usage
 app = Flask(__name__,
             template_folder=frontend_public_path, # HTML files like index.html, article_analyzer.html
             static_folder=os.path.join(frontend_public_path, 'static'), # Other static assets like CSS, JS, locales
