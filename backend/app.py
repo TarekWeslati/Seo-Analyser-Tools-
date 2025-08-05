@@ -22,37 +22,36 @@ if firebase_service_account_key_json:
 else:
     print("FIREBASE_SERVICE_ACCOUNT_KEY_JSON environment variable not set. Firebase Admin SDK will not be initialized.")
 
-# Define the absolute path to the project root
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
-frontend_public_path = os.path.join(project_root, 'frontend', 'public')
+# Define the path to the frontend/public directory relative to the current file (app.py)
+# This assumes app.py is in backend/ and frontend/public is at ../frontend/public
+frontend_public_path = os.path.join(os.path.dirname(__file__), '..', 'frontend', 'public')
 
 app = Flask(__name__,
-            template_folder=frontend_public_path, # HTML files like index.html, article_analyzer.html
-            static_folder=os.path.join(frontend_public_path, 'static'), # Other static assets like CSS, JS, locales
-            static_url_path='/static') # URL prefix for static assets
+            static_folder=frontend_public_path, # Serve all frontend files from here
+            static_url_path='/') # Serve them from the root URL
 
 # Configure CORS to allow requests from your Render domain and localhost
 CORS(app, resources={r"/*": {"origins": ["https://analyzer.oxabite.com", "http://localhost:5000"]}}, supports_credentials=True, allow_headers=["Authorization", "Content-Type"])
 
 @app.route('/')
 def index():
-    # Serve index.html directly from the template folder for the root path
-    return send_from_directory(app.template_folder, 'index.html')
+    # Serve index.html directly from the static folder for the root path
+    return send_from_directory(app.static_folder, 'index.html')
 
 @app.route('/article_analyzer.html')
 def article_analyzer_page():
-    # Serve article_analyzer.html directly from the template folder
-    return send_from_directory(app.template_folder, 'article_analyzer.html')
+    # Serve article_analyzer.html directly from the static folder
+    return send_from_directory(app.static_folder, 'article_analyzer.html')
 
 @app.route('/favicon.ico')
 def favicon():
     # Serve favicon.ico directly from the static folder
     return send_from_directory(app.static_folder, 'favicon.ico')
 
-# Static routes are now handled by static_url_path='/static'
-# No need for explicit routes for /css, /js, /locales if they are within static_folder
-# Flask will automatically serve files from static_folder when requested with /static/
-# For example, /static/css/style.css will serve frontend/public/static/css/style.css
+# All other static files like CSS, JS, locales will now be served automatically
+# For example, a request to /static/css/style.css will look for
+# frontend/public/static/css/style.css because static_folder is frontend_public_path
+# and static_url_path is '/'.
 
 @app.route('/register', methods=['POST'])
 def register():
@@ -105,6 +104,8 @@ def verify_id_token():
 @app.before_request
 def verify_token_middleware():
     # Allow static files (now under /static), auth routes, root path, HTML files, and favicon.ico without token verification
+    # Note: With static_url_path='/', all files in frontend_public_path are served as static.
+    # So /static/css/style.css maps to frontend_public_path/static/css/style.css
     if request.path.startswith('/static/') or \
        request.path in ['/', '/index.html', '/article_analyzer.html', '/register', '/login', '/verify_id_token', '/favicon.ico']:
         return # Allow access
