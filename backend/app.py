@@ -22,10 +22,10 @@ if firebase_service_account_key_json:
 else:
     print("FIREBASE_SERVICE_ACCOUNT_KEY_JSON environment variable not set. Firebase Admin SDK will not be initialized.")
 
-# Define the path to the frontend/public directory
-frontend_public_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../frontend/public'))
+# Define the absolute path to the project root
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
+frontend_public_path = os.path.join(project_root, 'frontend', 'public')
 
-# Renamed 'app' back to 'app' for simplicity and common Flask usage
 app = Flask(__name__,
             template_folder=frontend_public_path, # HTML files like index.html, article_analyzer.html
             static_folder=os.path.join(frontend_public_path, 'static'), # Other static assets like CSS, JS, locales
@@ -43,6 +43,11 @@ def index():
 def article_analyzer_page():
     # Serve article_analyzer.html directly from the template folder
     return send_from_directory(app.template_folder, 'article_analyzer.html')
+
+@app.route('/favicon.ico')
+def favicon():
+    # Serve favicon.ico directly from the static folder
+    return send_from_directory(app.static_folder, 'favicon.ico')
 
 # Static routes are now handled by static_url_path='/static'
 # No need for explicit routes for /css, /js, /locales if they are within static_folder
@@ -99,10 +104,9 @@ def verify_id_token():
 
 @app.before_request
 def verify_token_middleware():
-    # Allow static files (now under /static) and auth routes without token verification
-    # Also allow the root path and specific HTML files to be accessed
+    # Allow static files (now under /static), auth routes, root path, HTML files, and favicon.ico without token verification
     if request.path.startswith('/static/') or \
-       request.path in ['/', '/index.html', '/article_analyzer.html', '/register', '/login', '/verify_id_token']:
+       request.path in ['/', '/index.html', '/article_analyzer.html', '/register', '/login', '/verify_id_token', '/favicon.ico']:
         return # Allow access
 
     auth_header = request.headers.get('Authorization')
