@@ -1,189 +1,150 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title data-translate="articleAnalyzerTitle">Article Analyzer</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <title>تحليل المقالات - أدوات تحليل SEO</title>
+    <link href="/static/css/style.css" rel="stylesheet">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="/static/css/style.css">
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .card {
+            background-color: #fff;
+            border-radius: 0.75rem; /* rounded-lg */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* shadow-md */
+            padding: 2rem;
+        }
+        .btn-primary {
+            background-color: #4f46e5; /* indigo-600 */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem; /* rounded-md */
+            transition: background-color 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: #4338ca; /* indigo-700 */
+        }
+        .input-field {
+            border: 1px solid #d1d5db; /* gray-300 */
+            border-radius: 0.5rem; /* rounded-md */
+            padding: 0.75rem;
+            width: 100%;
+        }
+        .header-bg {
+            background: linear-gradient(to right, #6366f1, #8b5cf6); /* indigo-500 to violet-500 */
+            color: white;
+            padding: 1.5rem 0;
+            border-bottom-left-radius: 1.5rem;
+            border-bottom-right-radius: 1.5rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        .nav-link {
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.3s ease;
+        }
+        .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+    </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col items-center justify-center p-4 transition-colors duration-300">
-    <div class="container bg-white dark:bg-gray-800 shadow-lg rounded-xl p-8 max-w-4xl w-full transition-colors duration-300">
-        <header class="flex flex-col sm:flex-row items-center justify-between mb-8">
-            <h1 class="text-4xl font-bold text-blue-700 dark:text-blue-400 mb-4 sm:mb-0 flex items-center">
-                <i class="fas fa-file-alt mr-3"></i>
-                <span data-translate="articleAnalyzerTitle">Article Analyzer</span>
-            </h1>
-            <div class="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4">
-                <a href="/" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 flex items-center justify-center text-sm whitespace-nowrap">
-                    <i class="fas fa-globe mr-2"></i>
-                    <span data-translate="analyzeWebsiteButton">Analyze Website</span>
-                </a>
-                <select id="language-select" class="p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200">
-                    <option value="en">English</option>
-                    <option value="ar">العربية</option>
-                    <option value="fr">Français</option>
-                </select>
-                <button id="theme-toggle" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <i class="fas fa-moon dark:hidden"></i>
-                    <i class="fas fa-sun hidden dark:inline-block"></i>
-                </button>
-            </div>
-        </header>
-
-        <!-- Auth Status Display (similar to index.html) -->
-        <div id="auth-status" class="text-center mb-6">
-            <p class="text-lg mb-2">
-                <span data-translate="welcomeMessage">Welcome,</span>
-                <span id="user-email-display" class="font-semibold text-blue-600 dark:text-blue-300"></span>
-                <span id="not-logged-in-message" class="text-gray-600 dark:text-gray-400 hidden" data-translate="notLoggedInMessage">Not logged in.</span>
-            </p>
-            <button id="logout-button" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 hidden" data-translate="logoutButton">Logout</button>
-            <div id="auth-buttons-container" class="mt-2">
-                <button id="show-auth-modal-button" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300" data-translate="loginRegisterButton">Login / Register</button>
-            </div>
+<body class="bg-gray-100">
+    <header class="header-bg shadow-lg">
+        <div class="container flex justify-between items-center">
+            <h1 class="text-3xl font-bold">أدوات تحليل SEO</h1>
+            <nav>
+                <ul class="flex space-x-4">
+                    <li><a href="/" class="nav-link">تحليل المواقع</a></li>
+                    <li><a href="/article_analyzer.html" class="nav-link">تحليل المقالات</a></li>
+                    <li><button id="logoutButton" class="nav-link bg-red-500 hover:bg-red-600">تسجيل الخروج</button></li>
+                </ul>
+            </nav>
         </div>
+    </header>
 
-        <section id="article-input-section" class="mb-8 text-center">
-            <h2 class="text-2xl font-semibold mb-4" data-translate="pasteArticleTitle">Paste Your Article Here</h2>
-            <textarea id="article-text-input" placeholder="Paste your article content here..." class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 h-64 resize-y bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100"></textarea>
-            <button id="analyze-article-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 mt-4 flex items-center justify-center mx-auto">
-                <i class="fas fa-search mr-2"></i>
-                <span data-translate="analyzeArticleButton">Analyze Article</span>
-            </button>
-            <p id="article-error-message" class="text-red-600 mt-4 hidden" role="alert"></p>
-            <div id="article-loading-spinner" class="hidden mt-4">
-                <i class="fas fa-spinner fa-spin text-blue-500 text-3xl"></i>
-                <p class="text-blue-500 mt-2" data-translate="analyzingArticleMessage">Analyzing article, please wait...</p>
-            </div>
-        </section>
-
-        <section id="article-results-dashboard" class="hidden mt-8">
-            <h2 class="text-2xl font-semibold mb-4" data-translate="articleAnalysisResults">Article Analysis Results</h2>
-            
-            <!-- Global Toggle Buttons -->
-            <div class="flex justify-end gap-2 mb-4">
-                <button id="article-expand-all-button" class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 py-2 px-4 rounded-lg text-sm transition duration-300">
-                    <i class="fas fa-expand-alt mr-1"></i> <span data-translate="expandAll">Expand All</span>
-                </button>
-                <button id="article-collapse-all-button" class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 py-2 px-4 rounded-lg text-sm transition duration-300">
-                    <i class="fas fa-compress-alt mr-1"></i> <span data-translate="collapseAll">Collapse All</span>
-                </button>
-            </div>
-
-            <!-- Article Structure Section -->
-            <div id="article-structure-section" class="section-container bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow-md mb-6">
-                <h3 class="text-xl font-semibold mb-3 flex justify-between items-center cursor-pointer toggle-section" data-target="article-structure-content">
-                    <span data-translate="articleStructureTitle">Suggested Article Structure</span>
-                    <i class="fas fa-chevron-down toggle-icon"></i>
-                </h3>
-                <div id="article-structure-content" class="section-content">
-                    <p id="article-structure-text" data-translate="loadingMessage">Loading...</p>
-                </div>
-            </div>
-
-            <!-- Keyword Suggestions Section -->
-            <div id="keyword-suggestions-section" class="section-container bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow-md mb-6">
-                <h3 class="text-xl font-semibold mb-3 flex justify-between items-center cursor-pointer toggle-section" data-target="keyword-suggestions-content">
-                    <span data-translate="keywordSuggestionsTitle">Keyword Suggestions</span>
-                    <i class="fas fa-chevron-down toggle-icon"></i>
-                </h3>
-                <div id="keyword-suggestions-content" class="section-content">
-                    <p id="keyword-suggestions-text" data-translate="loadingMessage">Loading...</p>
-                </div>
-            </div>
-
-            <!-- Content Health Section -->
-            <div id="content-health-section" class="section-container bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow-md mb-6">
-                <h3 class="text-xl font-semibold mb-3 flex justify-between items-center cursor-pointer toggle-section" data-target="content-health-content">
-                    <span data-translate="contentHealthTitle">Content Health Assessment</span>
-                    <i class="fas fa-chevron-down toggle-icon"></i>
-                </h3>
-                <div id="content-health-content" class="section-content">
-                    <p id="content-health-text" data-translate="loadingMessage">Loading...</p>
-                </div>
-            </div>
-
-            <!-- Originality Assessment Section -->
-            <div id="originality-assessment-section" class="section-container bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow-md mb-6">
-                <h3 class="text-xl font-semibold mb-3 flex justify-between items-center cursor-pointer toggle-section" data-target="originality-assessment-content">
-                    <span data-translate="originalityAssessmentTitle">Originality Assessment</span>
-                    <i class="fas fa-chevron-down toggle-icon"></i>
-                </h3>
-                <div id="originality-assessment-content" class="section-content">
-                    <p id="originality-assessment-text" data-translate="loadingMessage">Loading...</p>
-                </div>
-            </div>
-
-            <!-- AI Article Rewriter Section -->
-            <div id="article-rewriter-section" class="section-container bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow-md mb-6">
-                <h3 class="text-xl font-semibold mb-3 flex justify-between items-center cursor-pointer toggle-section" data-target="article-rewriter-content">
-                    <span data-translate="articleRewriterTitle">AI Article Rewriter (100% Original)</span>
-                    <i class="fas fa-chevron-down toggle-icon"></i>
-                </h3>
-                <div id="article-rewriter-content" class="section-content">
-                    <button id="rewrite-article-button" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-magic mr-2"></i>
-                        <span data-translate="rewriteArticleButton">Rewrite Article</span>
-                    </button>
-                    <div id="rewritten-article-output" class="ai-section p-4 rounded-lg mt-4 hidden">
-                        <h4 class="text-lg font-medium mb-2" data-translate="rewrittenArticle">Rewritten Article:</h4>
-                        <p id="rewritten-article-text" data-translate="loadingArticleRewrites">Loading rewritten article...</p>
+    <main class="container py-8">
+        <section id="appSection">
+            <h2 class="text-2xl font-bold mb-6 text-center text-indigo-700">تحليل المقالات</h2>
+            <div class="card mb-8">
+                <form id="articleAnalysisForm" class="space-y-4">
+                    <div>
+                        <label for="articleText" class="block text-gray-700 text-sm font-bold mb-2">نص المقال:</label>
+                        <textarea id="articleText" class="input-field h-48" placeholder="الصق نص المقال هنا..." required></textarea>
                     </div>
+                    <div class="flex justify-center">
+                        <button type="submit" id="analyzeArticleButton" class="btn-primary">تحليل المقال</button>
+                    </div>
+                </form>
+                <div id="articleAnalysisLoading" class="mt-4 hidden text-center text-blue-600"></div>
+                <div id="articleAnalysisError" class="mt-4 hidden"></div>
+                <div id="articleAnalysisResults" class="mt-8 p-4 bg-white rounded-lg shadow-md">
+                    <!-- ستظهر نتائج تحليل المقالات هنا -->
                 </div>
-            </div>
-
-            <div class="flex justify-center space-x-4 mt-8">
-                <button id="analyze-another-article-button" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-6 rounded-lg shadow-md transition duration-300">
-                    <span data-translate="analyzeAnotherArticleButton">Analyze Another Article</span>
-                </button>
             </div>
         </section>
-    </div>
+    </main>
 
-    <!-- Auth Modal Structure (same as index.html) -->
-    <div id="auth-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 hidden">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 max-w-md w-full relative">
-            <button id="close-auth-modal" class="absolute top-4 right-4 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white text-2xl">&times;</button>
-            <h2 id="modal-auth-form-title" class="text-2xl font-semibold mb-6 text-center text-blue-700 dark:text-blue-400" data-translate="loginTitle">Login to Your Account</h2>
-            <p id="modal-auth-prompt" class="text-center text-gray-700 dark:text-gray-200 mb-4" data-translate="loginToContinue">Please login or register to continue.</p>
-            
-            <div class="mb-4">
-                <label for="modal-auth-email" class="block text-gray-700 dark:text-gray-200 text-sm font-bold mb-2" data-translate="emailLabel">Email:</label>
-                <input type="email" id="modal-auth-email" placeholder="your@example.com" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 dark:bg-gray-600 text-gray-900 dark:text-gray-100">
-            </div>
-            <div class="mb-6">
-                <label for="modal-auth-password" class="block text-gray-700 dark:text-gray-200 text-sm font-bold mb-2" data-translate="passwordLabel">Password:</label>
-                <input type="password" id="modal-auth-password" placeholder="********" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 dark:bg-gray-600 text-gray-900 dark:text-gray-100">
-            </div>
-            <p id="modal-auth-error-message" class="text-red-600 text-center mb-4 hidden" role="alert"></p>
-            <div id="modal-auth-loading-spinner" class="hidden text-center mb-4">
-                <i class="fas fa-spinner fa-spin text-blue-500 text-3xl"></i>
-                <p class="text-blue-500 mt-2" data-translate="processingMessage">Processing...</p>
-            </div>
-            <button id="modal-auth-submit-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md w-full transition duration-300" data-translate="loginButton">Login</button>
-            
-            <div class="mt-6 text-center">
-                <p class="text-gray-700 dark:text-gray-200 mb-4" data-translate="orSignInWith">Or sign in with:</p>
-                <div class="flex flex-col sm:flex-row justify-center space-y-3 sm:space-y-0 sm:space-x-4">
-                    <button id="modal-google-login-button" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg shadow-md flex items-center justify-center transition duration-300">
-                        <i class="fab fa-google mr-2"></i>
-                        <span data-translate="signInWithGoogle">Sign in with Google</span>
-                    </button>
-                </div>
-            </div>
+    <script src="/static/js/main.js"></script>
+    <script type="module">
+        // Firebase setup and authentication logic (simplified for article_analyzer.html as auth is handled on index.html)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-            <p class="text-center text-gray-600 dark:text-gray-400 mt-4">
-                <span id="modal-switch-auth-text" data-translate="noAccountText">Don't have an account?</span>
-                <button id="modal-switch-auth-button" class="text-blue-600 dark:text-blue-400 hover:underline font-semibold ml-1" data-translate="registerHereButton">Register here</button>
-            </p>
-        </div>
-    </div>
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-    <script src="/static/js/article_analyzer.js" defer></script>
+        let app;
+        let auth;
+
+        if (Object.keys(firebaseConfig).length > 0) {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            console.log("Firebase initialized.");
+        } else {
+            console.warn("Firebase config not found. Firebase will not be initialized.");
+        }
+
+        const logoutButton = document.getElementById('logoutButton');
+
+        if (auth) {
+            // Ensure user is authenticated, redirect if not
+            onAuthStateChanged(auth, async (user) => {
+                if (!user) {
+                    // If no user, redirect to login page
+                    window.location.href = '/';
+                } else {
+                    // User is signed in, ensure ID token is stored
+                    const idToken = await user.getIdToken();
+                    localStorage.setItem('idToken', idToken);
+                }
+            });
+
+            logoutButton.addEventListener('click', async () => {
+                try {
+                    await signOut(auth);
+                    window.location.href = '/'; // Redirect to home/login after logout
+                } catch (error) {
+                    console.error("Error logging out:", error);
+                    alert(`فشل تسجيل الخروج: ${error.message}`); // Using alert for simplicity, consider custom modal
+                }
+            });
+        } else {
+            console.error("Firebase Auth not initialized. Cannot handle logout.");
+            // If Firebase is not initialized, allow access for testing purposes
+        }
+    </script>
 </body>
 </html>
