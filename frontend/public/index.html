@@ -1,266 +1,261 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>أدوات تحليل SEO</title>
-    <link href="/static/css/style.css" rel="stylesheet">
-    <link rel="icon" href="/favicon.ico" type="image/x-icon">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
-            color: #333;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-        .card {
-            background-color: #fff;
-            border-radius: 0.75rem; /* rounded-lg */
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* shadow-md */
-            padding: 2rem;
-        }
-        .btn-primary {
-            background-color: #4f46e5; /* indigo-600 */
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem; /* rounded-md */
-            transition: background-color 0.3s ease;
-        }
-        .btn-primary:hover {
-            background-color: #4338ca; /* indigo-700 */
-        }
-        .input-field {
-            border: 1px solid #d1d5db; /* gray-300 */
-            border-radius: 0.5rem; /* rounded-md */
-            padding: 0.75rem;
-            width: 100%;
-        }
-        .header-bg {
-            background: linear-gradient(to right, #6366f1, #8b5cf6); /* indigo-500 to violet-500 */
-            color: white;
-            padding: 1.5rem 0;
-            border-bottom-left-radius: 1.5rem;
-            border-bottom-right-radius: 1.5rem;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-        }
-        .nav-link {
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            transition: background-color 0.3s ease;
-        }
-        .nav-link:hover {
-            background-color: rgba(255, 255, 255, 0.2);
-        }
-    </style>
-</head>
-<body class="bg-gray-100">
-    <header class="header-bg shadow-lg">
-        <div class="container flex justify-between items-center">
-            <h1 class="text-3xl font-bold">أدوات تحليل SEO</h1>
-            <nav>
-                <ul class="flex space-x-4">
-                    <li><a href="/" class="nav-link">تحليل المواقع</a></li>
-                    <li><a href="/article_analyzer.html" class="nav-link">تحليل المقالات</a></li>
-                    <li><button id="logoutButton" class="nav-link bg-red-500 hover:bg-red-600">تسجيل الخروج</button></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
+document.addEventListener('DOMContentLoaded', () => {
+    const websiteAnalysisForm = document.getElementById('websiteAnalysisForm');
+    const analyzeButton = document.getElementById('analyzeButton');
+    const websiteAnalysisResults = document.getElementById('websiteAnalysisResults');
+    const websiteAnalysisError = document.getElementById('websiteAnalysisError');
+    const websiteAnalysisLoading = document.getElementById('websiteAnalysisLoading');
 
-    <main class="container py-8">
-        <section id="authSection" class="card mb-8">
-            <h2 class="text-2xl font-bold mb-4 text-center text-indigo-700">تسجيل الدخول / التسجيل</h2>
-            <div class="max-w-md mx-auto space-y-4">
-                <div>
-                    <label for="email" class="block text-gray-700 text-sm font-bold mb-2">البريد الإلكتروني:</label>
-                    <input type="email" id="email" class="input-field" required>
-                </div>
-                <div>
-                    <label for="password" class="block text-gray-700 text-sm font-bold mb-2">كلمة المرور:</label>
-                    <input type="password" id="password" class="input-field" required>
-                </div>
-                <div class="flex justify-center space-x-4">
-                    <button id="registerButton" class="btn-primary">تسجيل</button>
-                    <button id="loginButton" class="btn-primary">تسجيل الدخول</button>
-                </div>
-                <div id="authMessage" class="mt-4 text-center text-red-600"></div>
-            </div>
-        </section>
+    const articleAnalysisForm = document.getElementById('articleAnalysisForm');
+    const analyzeArticleButton = document.getElementById('analyzeArticleButton');
+    const articleAnalysisResults = document.getElementById('articleAnalysisResults');
+    const articleAnalysisError = document.getElementById('articleAnalysisError');
+    const articleAnalysisLoading = document.getElementById('articleAnalysisLoading');
 
-        <section id="appSection" class="hidden">
-            <h2 class="text-2xl font-bold mb-6 text-center text-indigo-700">تحليل المواقع</h2>
-            <div class="card mb-8">
-                <form id="websiteAnalysisForm" class="space-y-4">
-                    <div>
-                        <label for="websiteUrl" class="block text-gray-700 text-sm font-bold mb-2">رابط الموقع:</label>
-                        <input type="url" id="websiteUrl" class="input-field" placeholder="https://example.com" required>
-                    </div>
-                    <div class="flex justify-center">
-                        <button type="submit" id="analyzeButton" class="btn-primary">تحليل الموقع</button>
-                    </div>
-                </form>
-                <div id="websiteAnalysisLoading" class="mt-4 hidden text-center text-blue-600"></div>
-                <div id="websiteAnalysisError" class="mt-4 hidden"></div>
-                <div id="websiteAnalysisResults" class="mt-8 p-4 bg-white rounded-lg shadow-md">
-                    <!-- ستظهر نتائج تحليل الموقع هنا -->
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <script src="/static/js/main.js"></script>
-    <script type="module">
-        // Firebase setup and authentication logic
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        // No Firestore needed for this part, but keeping imports for completeness if it were used
-        // import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // Global variables provided by the Canvas environment
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        let app;
-        let auth;
-
-        // Initialize Firebase
-        if (Object.keys(firebaseConfig).length > 0) {
-            app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            console.log("Firebase initialized.");
-        } else {
-            console.warn("Firebase config not found. Firebase will not be initialized.");
+    // Function to show loading state
+    const showLoading = (element, message) => {
+        if (element) {
+            element.innerHTML = `<div class="flex items-center justify-center space-x-2">
+                                    <svg class="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <span>${message}</span>
+                                </div>`;
+            element.classList.remove('hidden');
         }
+    };
 
-        const authSection = document.getElementById('authSection');
-        const appSection = document.getElementById('appSection');
-        const authMessage = document.getElementById('authMessage');
-        const emailInput = document.getElementById('email');
-        const passwordInput = document.getElementById('password');
-        const registerButton = document.getElementById('registerButton');
-        const loginButton = document.getElementById('loginButton');
-        const logoutButton = document.getElementById('logoutButton');
+    // Function to hide loading state
+    const hideLoading = (element) => {
+        if (element) {
+            element.classList.add('hidden');
+            element.innerHTML = '';
+        }
+    };
 
-        // Function to update UI based on authentication state
-        const updateUI = (user) => {
-            if (user) {
-                authSection.classList.add('hidden');
-                appSection.classList.remove('hidden');
-                console.log("User logged in:", user.uid);
-            } else {
-                authSection.classList.remove('hidden');
-                appSection.classList.add('hidden');
-                console.log("User logged out.");
+    // Function to show error message
+    const showError = (element, message) => {
+        if (element) {
+            element.innerHTML = `<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                                    <strong class="font-bold">خطأ!</strong>
+                                    <span class="block sm:inline">${message}</span>
+                                </div>`;
+            element.classList.remove('hidden');
+        }
+    };
+
+    // Function to hide error message
+    const hideError = (element) => {
+        if (element) {
+            element.classList.add('hidden');
+            element.innerHTML = '';
+        }
+    };
+
+    // Website Analysis Form Submission
+    if (websiteAnalysisForm) {
+        websiteAnalysisForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const url = document.getElementById('websiteUrl').value;
+            const idToken = localStorage.getItem('idToken'); // Get token from localStorage
+
+            hideError(websiteAnalysisError);
+            hideLoading(websiteAnalysisLoading);
+            websiteAnalysisResults.innerHTML = ''; // Clear previous results
+
+            if (!url) {
+                showError(websiteAnalysisError, 'الرجاء إدخال رابط الموقع.');
+                return;
             }
-        };
 
-        // Auth state listener
-        if (auth) {
-            onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    // User is signed in, get ID token
-                    const idToken = await user.getIdToken();
-                    localStorage.setItem('idToken', idToken);
-                    updateUI(user);
-                } else {
-                    // User is signed out
-                    localStorage.removeItem('idToken');
-                    updateUI(null);
-                    // Attempt anonymous sign-in if not already signed in
-                    if (initialAuthToken) {
-                        try {
-                            await signInWithCustomToken(auth, initialAuthToken);
-                            console.log("Signed in with custom token.");
-                        } catch (error) {
-                            console.error("Error signing in with custom token:", error);
-                            // Fallback to anonymous if custom token fails
-                            try {
-                                await signInAnonymously(auth);
-                                console.log("Signed in anonymously.");
-                            } catch (anonError) {
-                                console.error("Error signing in anonymously:", anonError);
-                                authMessage.textContent = "فشل تسجيل الدخول التلقائي. يرجى التسجيل أو تسجيل الدخول يدوياً.";
-                            }
-                        }
-                    } else {
-                        try {
-                            await signInAnonymously(auth);
-                            console.log("Signed in anonymously (no initial token).");
-                        } catch (anonError) {
-                            console.error("Error signing in anonymously:", anonError);
-                            authMessage.textContent = "فشل تسجيل الدخول التلقائي. يرجى التسجيل أو تسجيل الدخول يدوياً.";
-                        }
-                    }
-                }
-            });
+            if (!idToken) {
+                showError(websiteAnalysisError, 'رمز المصادقة مفقود. يرجى تسجيل الدخول أولاً.');
+                console.error('ID Token is missing from localStorage. Please log in.');
+                return;
+            }
 
-            // Register button handler
-            registerButton.addEventListener('click', async () => {
-                const email = emailInput.value;
-                const password = passwordInput.value;
-                authMessage.textContent = '';
-                if (!email || !password) {
-                    authMessage.textContent = 'الرجاء إدخال البريد الإلكتروني وكلمة المرور.';
-                    return;
-                }
-                try {
-                    await createUserWithEmailAndPassword(auth, email, password);
-                    authMessage.textContent = 'تم التسجيل بنجاح! يمكنك الآن تسجيل الدخول.';
-                    authMessage.style.color = 'green';
-                } catch (error) {
-                    console.error("Error registering:", error);
-                    authMessage.textContent = `فشل التسجيل: ${error.message}`;
-                    authMessage.style.color = 'red';
-                }
-            });
+            console.log('Attempting website analysis with ID Token:', idToken ? idToken.substring(0, 30) + '...' : 'None'); // Log token (truncated)
 
-            // Login button handler
-            loginButton.addEventListener('click', async () => {
-                const email = emailInput.value;
-                const password = passwordInput.value;
-                authMessage.textContent = '';
-                if (!email || !password) {
-                    authMessage.textContent = 'الرجاء إدخال البريد الإلكتروني وكلمة المرور.';
-                    return;
-                }
-                try {
-                    await signInWithEmailAndPassword(auth, email, password);
-                    authMessage.textContent = 'تم تسجيل الدخول بنجاح!';
-                    authMessage.style.color = 'green';
-                } catch (error) {
-                    console.error("Error logging in:", error);
-                    authMessage.textContent = `فشل تسجيل الدخول: ${error.message}`;
-                    authMessage.style.color = 'red';
-                }
-            });
+            analyzeButton.disabled = true;
+            showLoading(websiteAnalysisLoading, 'جاري تحليل الموقع، قد يستغرق هذا بعض الوقت...');
 
-            // Logout button handler
-            logoutButton.addEventListener('click', async () => {
-                try {
-                    await signOut(auth);
-                    authMessage.textContent = 'تم تسجيل الخروج بنجاح.';
-                    authMessage.style.color = 'green';
-                } catch (error) {
-                    console.error("Error logging out:", error);
-                    authMessage.textContent = `فشل تسجيل الخروج: ${error.message}`;
-                    authMessage.style.color = 'red';
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept-Language': 'ar',
+                        'Authorization': `Bearer ${idToken}` // Send token in Authorization header
+                    },
+                    body: JSON.stringify({ url })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'فشل تحليل الموقع. يرجى المحاولة لاحقاً.');
                 }
-            });
-        } else {
-            authMessage.textContent = "خطأ في تهيئة Firebase. يرجى التحقق من إعدادات الخادم.";
-            authMessage.style.color = 'red';
-            // If Firebase is not initialized, hide auth section and show app section (for testing purposes without auth)
-            authSection.classList.add('hidden');
-            appSection.classList.remove('hidden');
+
+                const data = await response.json();
+                displayWebsiteAnalysisResults(data);
+
+            } catch (error) {
+                console.error('Error during website analysis:', error);
+                showError(websiteAnalysisError, `خطأ في تحليل الموقع: ${error.message}. يرجى المحاولة مرة أخرى لاحقاً.`);
+            } finally {
+                analyzeButton.disabled = false;
+                hideLoading(websiteAnalysisLoading);
+            }
+        });
+    }
+
+    // Function to display website analysis results (basic structure)
+    function displayWebsiteAnalysisResults(data) {
+        let html = '<div class="space-y-4">';
+
+        if (data.title) {
+            html += `<p class="text-lg font-semibold">العنوان: <span class="font-normal">${data.title}</span></p>`;
         }
-    </script>
-</body>
-</html>
+        if (data.description) {
+            html += `<p class="text-lg font-semibold">الوصف: <span class="font-normal">${data.description}</span></p>`;
+        }
+        if (data.keywords && data.keywords.length > 0) {
+            html += `<p class="text-lg font-semibold">الكلمات المفتاحية: <span class="font-normal">${data.keywords.join(', ')}</span></p>`;
+        }
+        if (data.headings && Object.keys(data.headings).length > 0) {
+            html += `<div><h3 class="text-xl font-bold mb-2">العناوين:</h3><ul class="list-disc list-inside space-y-1">`;
+            for (const tag in data.headings) {
+                html += `<li><strong>${tag.toUpperCase()}:</strong> ${data.headings[tag].join('; ')}</li>`;
+            }
+            html += `</ul></div>`;
+        }
+        if (data.broken_links && data.broken_links.length > 0) {
+            html += `<div><h3 class="text-xl font-bold mb-2">الروابط المعطلة:</h3><ul class="list-disc list-inside space-y-1">`;
+            data.broken_links.forEach(link => {
+                html += `<li>${link}</li>`;
+            });
+            html += `</ul></div>`;
+        }
+        if (data.ai_broken_link_suggestions && data.ai_broken_link_suggestions.length > 0) {
+            html += `<div><h3 class="text-xl font-bold mb-2">اقتراحات الروابط المعطلة (AI):</h3><ul class="list-disc list-inside space-y-1">`;
+            data.ai_broken_link_suggestions.forEach(suggestion => {
+                html += `<li>${suggestion}</li>`;
+            });
+            html += `</ul></div>`;
+        }
+        if (data.ai_seo_rewrite_suggestions) {
+            html += `<div><h3 class="text-xl font-bold mb-2">اقتراحات إعادة صياغة SEO (AI):</h3><div class="space-y-2">`;
+            for (const key in data.ai_seo_rewrite_suggestions) {
+                html += `<p><strong>${key}:</strong> ${data.ai_seo_rewrite_suggestions[key]}</p>`;
+            }
+            html += `</div></div>`;
+        }
+        if (data.ai_content_refinement) {
+            html += `<div><h3 class="text-xl font-bold mb-2">تحسين المحتوى (AI):</h3><p>${data.ai_content_refinement}</p></div>`;
+        }
+
+        html += '</div>';
+        websiteAnalysisResults.innerHTML = html;
+    }
+
+
+    // Article Analysis Form Submission
+    if (articleAnalysisForm) {
+        articleAnalysisForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const articleText = document.getElementById('articleText').value;
+            const idToken = localStorage.getItem('idToken'); // Get token from localStorage
+
+            hideError(articleAnalysisError);
+            hideLoading(articleAnalysisLoading);
+            articleAnalysisResults.innerHTML = ''; // Clear previous results
+
+            if (!articleText) {
+                showError(articleAnalysisError, 'الرجاء إدخال نص المقال لتحليله.');
+                return;
+            }
+
+            if (!idToken) {
+                showError(articleAnalysisError, 'رمز المصادقة مفقود. يرجى تسجيل الدخول أولاً.');
+                console.error('ID Token is missing from localStorage. Please log in.');
+                return;
+            }
+
+            console.log('Attempting article analysis with ID Token:', idToken ? idToken.substring(0, 30) + '...' : 'None'); // Log token (truncated)
+
+            analyzeArticleButton.disabled = true;
+            showLoading(articleAnalysisLoading, 'جاري تحليل المقال، قد يستغرق هذا بعض الوقت...');
+
+            try {
+                const response = await fetch('/analyze_article_content', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept-Language': 'ar',
+                        'Authorization': `Bearer ${idToken}` // Send token in Authorization header
+                    },
+                    body: JSON.stringify({ article_text: articleText })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'فشل تحليل المقال. يرجى المحاولة لاحقاً.');
+                }
+
+                const data = await response.json();
+                displayArticleAnalysisResults(data);
+
+            } catch (error) {
+                console.error('Error during article analysis:', error);
+                showError(articleAnalysisError, `خطأ في تحليل المقال: ${error.message}. يرجى المحاولة مرة أخرى لاحقاً.`);
+            } finally {
+                analyzeArticleButton.disabled = false;
+                hideLoading(articleAnalysisLoading);
+            }
+        });
+    }
+
+    // Function to display article analysis results (improved structure)
+    function displayArticleAnalysisResults(data) {
+        let html = '<div class="space-y-4">';
+
+        if (data.word_count) {
+            html += `<p class="text-lg font-semibold">عدد الكلمات: <span class="font-normal">${data.word_count}</span></p>`;
+        }
+        if (data.readability_score) {
+            html += `<p class="text-lg font-semibold">درجة المقروئية: <span class="font-normal">${data.readability_score}</span></p>`;
+        }
+        if (data.keywords && data.keywords.length > 0) {
+            html += `<div><h3 class="text-xl font-bold mb-2">الكلمات المفتاحية المستخرجة:</h3><ul class="list-disc list-inside space-y-1">`;
+            data.keywords.forEach(keyword => {
+                html += `<li>${keyword}</li>`;
+            });
+            html += `</ul></div>`;
+        }
+        if (data.sentiment) {
+            html += `<p class="text-lg font-semibold">المشاعر: <span class="font-normal">${data.sentiment}</span></p>`;
+        }
+        if (data.summary) {
+            html += `<div><h3 class="text-xl font-bold mb-2">الملخص:</h3><p>${data.summary}</p></div>`;
+        }
+        if (data.readability_suggestions && data.readability_suggestions.length > 0) {
+            html += `<div><h3 class="text-xl font-bold mb-2">اقتراحات المقروئية:</h3><ul class="list-disc list-inside space-y-1">`;
+            data.readability_suggestions.forEach(suggestion => {
+                html += `<li>${suggestion}</li>`;
+            });
+            html += `</ul></div>`;
+        }
+        if (data.seo_suggestions && data.seo_suggestions.length > 0) {
+            html += `<div><h3 class="text-xl font-bold mb-2">اقتراحات SEO:</h3><ul class="list-disc list-inside space-y-1">`;
+            data.seo_suggestions.forEach(suggestion => {
+                html += `<li>${suggestion}</li>`;
+            });
+            html += `</ul></div>`;
+        }
+        if (data.rewritten_content) {
+            html += `<div><h3 class="text-xl font-bold mb-2">المحتوى المعاد صياغته:</h3><p>${data.rewritten_content}</p></div>`;
+        }
+
+        html += '</div>';
+        articleAnalysisResults.innerHTML = html;
+    }
+});
