@@ -67,6 +67,7 @@ def register():
         custom_token = auth.create_custom_token(user.uid)
         return jsonify({"message": "User registered successfully", "email": email, "token": custom_token.decode('utf-8')}), 201
     except Exception as e:
+        print(f"Error during user registration: {e}") # Added logging
         return jsonify({"error": str(e)}), 400
 
 @app.route('/login', methods=['POST'])
@@ -83,6 +84,7 @@ def login():
         custom_token = auth.create_custom_token(user.uid)
         return jsonify({"message": "Logged in successfully", "email": email, "token": custom_token.decode('utf-8')}), 200
     except Exception as e:
+        print(f"Error during user login: {e}") # Added logging
         return jsonify({"error": "Invalid credentials or user not found."}), 401
 
 @app.route('/verify_id_token', methods=['POST'])
@@ -91,34 +93,41 @@ def verify_id_token():
     id_token = data.get('idToken')
 
     if not id_token:
+        print("Verify ID Token: ID token is missing from request.") # Added logging
         return jsonify({"error": "ID token is required"}), 400
 
     try:
         decoded_token = auth.verify_id_token(id_token)
         uid = decoded_token['uid']
         email = decoded_token.get('email')
+        print(f"Verify ID Token: Token verified successfully for UID: {uid}, Email: {email}") # Added logging
         return jsonify({"message": "Token verified successfully", "uid": uid, "email": email}), 200
     except Exception as e:
+        print(f"Verify ID Token: Error verifying ID token: {e}") # Added logging
         return jsonify({"error": "Invalid ID token."}), 401
 
 @app.before_request
 def verify_token_middleware():
     # Allow static files (now under /static), auth routes, root path, HTML files, and favicon.ico without token verification
-    # Note: With static_url_path='/', all files in frontend_public_path are served as static.
-    # So /static/css/style.css maps to frontend_public_path/static/css/style.css
     if request.path.startswith('/static/') or \
        request.path in ['/', '/index.html', '/article_analyzer.html', '/register', '/login', '/verify_id_token', '/favicon.ico']:
+        print(f"Skipping authentication for path: {request.path}") # Added logging
         return # Allow access
 
     auth_header = request.headers.get('Authorization')
+    print(f"Received Authorization header: {auth_header}") # Added logging
+
     if not auth_header:
+        print("Authentication required: Authorization header missing.") # Added logging
         return jsonify({"error": "Authorization header missing."}), 401
 
     try:
         id_token = auth_header.split(' ')[1]
         decoded_token = auth.verify_id_token(id_token)
         request.user_id = decoded_token['uid']
+        print(f"Token successfully verified by middleware for UID: {request.user_id}") # Added logging
     except Exception as e:
+        print(f"Authentication failed in middleware: {e}") # Added logging
         return jsonify({"error": "Authentication required. Please log in."}), 401
 
 @app.route('/analyze', methods=['POST'])
