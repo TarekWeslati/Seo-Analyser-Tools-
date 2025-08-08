@@ -97,7 +97,9 @@
                     const data = await response.json();
                     
                     if (response.ok) {
-                        resultText.textContent = JSON.stringify(data, null, 2);
+                        // The backend now returns a JSON object with a key 'analysis'
+                        // (الواجهة الخلفية الآن تعيد كائن JSON بمفتاح 'analysis')
+                        resultText.textContent = data.analysis;
                         resultContainer.classList.remove('hidden');
                         showMessage('تم تحليل الرابط بنجاح!', 'success');
                     } else {
