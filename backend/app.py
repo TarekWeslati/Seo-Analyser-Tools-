@@ -14,7 +14,9 @@ CORS(app)
 
 # 1. Get Firebase credentials from environment variable
 # (الحصول على مفاتيح Firebase من متغيرات البيئة)
-firebase_credentials_json = os.environ.get('FIREBASE_CREDENTIALS')
+# The variable name has been updated to match the user's configuration
+# (تم تحديث اسم المتغير ليتطابق مع إعدادات المستخدم)
+firebase_credentials_json = os.environ.get('FIREBASE_SERVICE_ACCOUNT_KEY_JSON')
 
 # A variable to track if Firebase was initialized
 # (متغير لتتبع ما إذا كانت Firebase قد تم تهيئتها)
