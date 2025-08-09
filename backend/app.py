@@ -11,11 +11,15 @@ from flask_cors import CORS
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 
-# Initialize Flask app and CORS
-# (تهيئة تطبيق Flask وتفعيل CORS)
-# The static_folder is now set to the 'public' folder inside 'frontend'
-# (مجلد static أصبح الآن هو مجلد 'public' داخل 'frontend')
-app = Flask(__name__, static_folder='frontend/public', static_url_path='/static')
+# Initialize Flask app and CORS.
+# We are now telling Flask that the static folder is 'frontend/public'
+# and the URL path to access it is '/'. This will correctly serve all
+# files inside 'public', including 'index.html' and everything in 'static'.
+# (تهيئة تطبيق Flask وتفعيل CORS.
+# نحن الآن نخبر Flask أن المجلد الثابت هو 'frontend/public'
+# ومسار URL للوصول إليه هو '/'. هذا سيخدم بشكل صحيح جميع
+# الملفات داخل 'public'، بما في ذلك 'index.html' وكل شيء في 'static'.)
+app = Flask(__name__, static_folder='frontend/public')
 CORS(app)
 
 # 1. Get Firebase credentials from environment variable
@@ -95,8 +99,10 @@ def extract_text_from_url(url):
 # (المسار الرئيسي لعرض الواجهة الأمامية (index.html))
 @app.route('/')
 def serve_index():
-    # We now send index.html directly from the 'public' folder
-    # (نقوم الآن بإرسال index.html مباشرة من مجلد 'public')
+    # Since we set the static folder to 'frontend/public',
+    # we can just serve 'index.html' directly from the root.
+    # (بما أننا قمنا بتعيين المجلد الثابت إلى 'frontend/public'،
+    # يمكننا تقديم 'index.html' مباشرة من المسار الرئيسي.)
     return send_from_directory('frontend/public', 'index.html')
 
 # The main route to analyze a URL's content
