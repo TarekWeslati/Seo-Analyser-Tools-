@@ -1,153 +1,182 @@
 import os
-import json
-import firebase_admin
-import google.generativeai as genai
-import requests
-
-from firebase_admin import credentials
-from firebase_admin import firestore
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, request, jsonify, send_file, send_from_directory
 from flask_cors import CORS
-from bs4 import BeautifulSoup
-from urllib.parse import urljoin
+import json 
 
-# Initialize Flask app and CORS.
-# We are now telling Flask that the static folder is 'frontend/public'
-# and the URL path to access it is '/'. This will correctly serve all
-# files inside 'public', including 'index.html' and everything in 'static'.
-# (تهيئة تطبيق Flask وتفعيل CORS.
-# نحن الآن نخبر Flask أن المجلد الثابت هو 'frontend/public'
-# ومسار URL للوصول إليه هو '/'. هذا سيخدم بشكل صحيح جميع
-# الملفات داخل 'public'، بما في ذلك 'index.html' وكل شيء في 'static'.)
-app = Flask(__name__, static_folder='frontend/public')
+# Import services and utilities with full relative paths from the project root.
+from backend.services.domain_analysis import get_domain_analysis
+from backend.services.pagespeed_analysis import get_pagespeed_insights
+from backend.services.seo_analysis import perform_seo_analysis
+from backend.services.ux_analysis import perform_ux_analysis
+# Updated imports for AI services
+from backend.services.ai_suggestions import get_ai_suggestions, generate_seo_rewrites, refine_content, get_adsense_readiness_assessment, get_broken_link_fix_suggestions 
+from backend.utils.url_validator import is_valid_url
+from backend.utils.pdf_generator import generate_pdf_report
+
+# Define the correct paths for static files and templates.
+template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'frontend', 'public'))
+static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'frontend', 'public'))
+
+app = Flask(__name__,
+            template_folder=template_dir,
+            static_folder=static_dir,
+            static_url_path='/') 
 CORS(app)
 
-# 1. Get Firebase credentials from environment variable
-# (الحصول على مفاتيح Firebase من متغيرات البيئة)
-firebase_credentials_json = os.environ.get('FIREBASE_SERVICE_ACCOUNT_KEY_JSON')
-firebase_initialized = False
+# Ensure API keys are loaded from environment variables
+app.config['PAGESPEED_API_KEY'] = os.getenv('PAGESPEED_API_KEY')
+app.config['GEMINI_API_KEY'] = os.getenv('GEMINI_API_KEY') 
 
-if firebase_credentials_json:
-    try:
-        # Convert JSON string to a Python dictionary
-        # (تحويل سلسلة JSON إلى قاموس Python)
-        cred = credentials.Certificate(json.loads(firebase_credentials_json))
-        firebase_admin.initialize_app(cred)
-        firebase_initialized = True
-        print("Firebase initialized successfully.")
-    except Exception as e:
-        print(f"Error initializing Firebase with credentials: {e}")
-else:
-    print("Firebase credentials environment variable not found. Skipping initialization.")
+last_analysis_results = {} 
 
-# Initialize Firestore client ONLY if Firebase was initialized
-# (تهيئة عميل Firestore فقط إذا تم تهيئة Firebase بنجاح)
-if firebase_initialized:
-    db = firestore.client()
-    print("Firestore client initialized successfully.")
-else:
-    db = None
-    print("Firestore client not initialized because Firebase credentials were not found.")
-
-
-# 2. Get Gemini API key from environment variable
-# (الحصول على مفتاح Gemini API من متغيرات البيئة)
-gemini_api_key = os.environ.get('GEMINI_API_KEY')
-
-if gemini_api_key:
-    genai.configure(api_key=gemini_api_key)
-    print("Gemini API key configured successfully.")
-else:
-    print("Gemini API key environment variable not found. Skipping configuration.")
-
-# Initialize Gemini model
-# (تهيئة نموذج Gemini)
-try:
-    if gemini_api_key:
-        model = genai.GenerativeModel('gemini-1.5-pro-latest')
-except Exception as e:
-    print(f"Error initializing Gemini model: {e}")
-    model = None
-
-# A helper function to extract text content from a URL
-# (دالة مساعدة لاستخراج المحتوى النصي من رابط URL)
-def extract_text_from_url(url):
-    try:
-        response = requests.get(url, timeout=10)
-        response.raise_for_status() # Raise an exception for bad status codes
-        soup = BeautifulSoup(response.content, 'html.parser')
-
-        # Remove scripts and style tags
-        for script_or_style in soup(['script', 'style']):
-            script_or_style.extract()
-
-        # Get the main text content, focusing on body or article tags
-        text = soup.body.get_text()
-
-        # Clean up whitespace
-        lines = (line.strip() for line in text.splitlines())
-        chunks = (phrase.strip() for phrase in ' '.join(lines).split("  "))
-        text = '\n'.join(chunk for chunk in chunks if chunk)
-        
-        return text
-
-    except requests.RequestException as e:
-        print(f"Error fetching URL: {e}")
-        return None
-
-# The root route to serve the frontend (index.html)
-# (المسار الرئيسي لعرض الواجهة الأمامية (index.html))
+# Route to serve the main frontend HTML file
 @app.route('/')
-def serve_index():
-    # Since we set the static folder to 'frontend/public',
-    # we can just serve 'index.html' directly from the root.
-    # (بما أننا قمنا بتعيين المجلد الثابت إلى 'frontend/public'،
-    # يمكننا تقديم 'index.html' مباشرة من المسار الرئيسي.)
-    return send_from_directory('frontend/public', 'index.html')
+def index():
+    print("Serving index.html") 
+    return send_from_directory(app.static_folder, 'index.html')
 
-# The main route to analyze a URL's content
-# (المسار الرئيسي لتحليل محتوى رابط URL)
-@app.route('/analyze_url', methods=['POST'])
-def analyze_url():
-    if not gemini_api_key or not model:
-        return jsonify({"error": "Gemini API key not configured."}), 500
-    
-    if not request.json or 'url' not in request.json:
-        return jsonify({"error": "URL not provided."}), 400
+# Route to serve other static files (like CSS and JS)
+@app.route('/<path:filename>')
+def serve_static(filename):
+    print(f"Serving static file: {filename}") 
+    return send_from_directory(app.static_folder, filename)
 
-    url = request.json['url']
-    print(f"Analyzing URL: {url}")
+@app.route('/analyze', methods=['POST'])
+def analyze_website(): 
+    global last_analysis_results 
+    print("Received /analyze POST request.") 
+    data = request.get_json()
+    url = data.get('url')
+    # Get preferred language from header, default to 'en'
+    lang = request.headers.get('Accept-Language', 'en').split(',')[0].split('-')[0]
 
-    # Extract text from the URL
-    # (استخراج النص من رابط URL)
-    text_content = extract_text_from_url(url)
-    if not text_content:
-        return jsonify({"error": "Failed to extract content from URL."}), 500
+    if not url or not is_valid_url(url): 
+        print(f"Invalid URL provided: {url}") 
+        return jsonify({"error": "Invalid URL provided."}), 400
 
-    # Create the prompt for Gemini API
-    # (إنشاء المطالبة لـ Gemini API)
-    prompt = f"""
-    أنت محلل محتوى خبير. قم بتحليل هذا المقال أو المحتوى الموجود على الرابط التالي: {url}
-    
-    المحتوى النصي:
-    {text_content[:8000]}
-    
-    قم بتلخيص المحتوى في 5 نقاط رئيسية.
-    ثم قدم تحليلاً مختصراً للموضوع ووجهة نظر الكاتب.
-    واخيرا، حدد ما إذا كان المحتوى مقالاً إخبارياً، أو مقال رأي، أو محتوى علمياً، أو غير ذلك.
-    
-    قم بتقديم الرد باللغة العربية.
-    """
-    
+    results = {}
     try:
-        # Generate the content using Gemini API
-        # (توليد المحتوى باستخدام Gemini API)
-        response = model.generate_content(prompt)
-        return jsonify({"analysis": response.text})
+        print(f"Starting analysis for URL: {url}") 
+        
+        print("Getting domain analysis...")
+        domain_data = get_domain_analysis(url)
+        results['domain_authority'] = domain_data
+        print("Domain analysis complete.")
+
+        print("Getting PageSpeed Insights...")
+        # Pass API key to pagespeed_analysis
+        pagespeed_data = get_pagespeed_insights(url, app.config['PAGESPEED_API_KEY'])
+        results['page_speed'] = pagespeed_data
+        print("PageSpeed Insights complete.")
+
+        print("Performing SEO analysis...")
+        seo_data = perform_seo_analysis(url)
+        results['seo_quality'] = seo_data
+        print("SEO analysis complete.")
+
+        print("Performing UX analysis...")
+        ux_data = perform_ux_analysis(url)
+        results['user_experience'] = ux_data
+        print("UX analysis complete.")
+        
+        # Extract text sample for AI analysis
+        results['extracted_text_sample'] = "No content extracted for AI analysis."
+        if results['seo_quality'] and results['seo_quality'].get('elements') and results['seo_quality']['elements'].get('page_text'):
+            results['extracted_text_sample'] = results['seo_quality']['elements']['page_text'][:2000] # Increased sample size
+
+        print("Getting AI suggestions...")
+        # Pass language to AI suggestions, API key is handled internally by ai_suggestions
+        ai_data = get_ai_suggestions(url, results, lang)
+        results['ai_insights'] = ai_data
+        print("AI suggestions complete.")
+
+        print("Getting AdSense readiness assessment...")
+        # Pass language to AdSense assessment, API key is handled internally
+        adsense_assessment = get_adsense_readiness_assessment(results, lang)
+        results['adsense_readiness'] = adsense_assessment
+        print("AdSense readiness assessment complete.")
+
+        print("Getting broken link fix suggestions...")
+        broken_links = results.get('seo_quality', {}).get('elements', {}).get('broken_links', [])
+        if broken_links:
+            broken_link_suggestions = get_broken_link_fix_suggestions(broken_links, lang)
+            results['broken_link_suggestions'] = broken_link_suggestions
+        else:
+            results['broken_link_suggestions'] = {"suggestions": "No broken links found to suggest fixes for."}
+        print("Broken link fix suggestions complete.")
+
+
+        last_analysis_results = results 
+        print("Analysis complete. Returning results.") 
+        return jsonify(results), 200
+
     except Exception as e:
-        print(f"Error calling Gemini API: {e}")
-        return jsonify({"error": str(e)}), 500
+        print(f"Critical Error during analysis: {e}") 
+        return jsonify({"error": "An unexpected error occurred during analysis.", "details": str(e)}), 500
+
+@app.route('/generate_report', methods=['POST'])
+def generate_report():
+    global last_analysis_results 
+    print("Received /generate_report POST request.") 
+    url = request.get_json().get('url') 
+
+    analysis_results = last_analysis_results 
+
+    if not analysis_results or not url:
+        print("Missing analysis results or URL for report generation.") 
+        return jsonify({"error": "Missing analysis results or URL for report generation."}), 400
+
+    try:
+        print(f"Generating PDF report for URL: {url}") 
+        pdf_path = generate_pdf_report(url, analysis_results)
+        print("PDF report generated. Sending file.") 
+        return send_file(pdf_path, as_attachment=True, download_name=f"{url.replace('https://', '').replace('http://', '')}_analysis_report.pdf", mimetype='application/pdf')
+    except Exception as e:
+        print(f"Error generating PDF report: {e}") 
+        return jsonify({"error": "Failed to generate PDF report.", "details": str(e)}), 500
+
+# AI endpoint for SEO rewrites
+@app.route('/ai_rewrite_seo', methods=['POST'])
+def ai_rewrite_seo():
+    data = request.get_json()
+    title = data.get('title')
+    meta_description = data.get('meta_description')
+    keywords = data.get('keywords')
+    lang = request.headers.get('Accept-Language', 'en').split(',')[0].split('-')[0]
+
+    if not title and not meta_description:
+        return jsonify({"error": "No title or meta description provided for rewrite."}), 400
+
+    try:
+        print(f"Generating AI SEO rewrites for title: {title}, meta: {meta_description}")
+        # Removed api_key argument here as it's fetched internally by generate_seo_rewrites
+        rewrites = generate_seo_rewrites(title, meta_description, keywords, lang) 
+        print("AI SEO rewrites complete.")
+        return jsonify(rewrites), 200
+    except Exception as e:
+        print(f"Error generating AI SEO rewrites: {e}")
+        return jsonify({"error": "Failed to generate AI SEO rewrites.", "details": str(e)}), 500
+
+# AI endpoint for content refinement
+@app.route('/ai_refine_content', methods=['POST'])
+def ai_refine_content():
+    data = request.get_json()
+    text_sample = data.get('text_sample')
+    lang = request.headers.get('Accept-Language', 'en').split(',')[0].split('-')[0]
+
+    if not text_sample:
+        return jsonify({"error": "No text sample provided for refinement."}), 400
+
+    try:
+        print(f"Generating AI content refinement for text sample: {text_sample[:50]}...")
+        # Removed api_key argument here as it's fetched internally by refine_content
+        refinement = refine_content(text_sample, lang) 
+        print("AI content refinement complete.")
+        return jsonify(refinement), 200
+    except Exception as e:
+        print(f"Error generating AI content refinement: {e}")
+        return jsonify({"error": "Failed to generate AI content refinement.", "details": str(e)}), 500
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+    app.run(debug=True, host='0.0.0.0', port=5000)
