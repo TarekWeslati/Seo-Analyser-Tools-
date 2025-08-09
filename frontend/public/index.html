@@ -3,46 +3,127 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>محلل الروابط</title>
-    <!-- تحديث مسار ملف CSS ليتطابق مع هيكل المجلدات -->
-    <link rel="stylesheet" href="/static/css/style.css">
+    <title>أدوات تحليل SEO</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <script type="module">
+        // استيراد Firebase SDKs
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+        
+        // هنا يجب عليك وضع تهيئة Firebase الخاصة بك
+        // (ستحصل عليها من لوحة تحكم Firebase)
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        
+        // تهيئة Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+        
+        // دالة لتسجيل الدخول باستخدام Google
+        async function signInWithGoogle() {
+            try {
+                await signInWithPopup(auth, provider);
+            } catch (error) {
+                console.error("Error during Google sign-in:", error);
+                alert("حدث خطأ أثناء تسجيل الدخول.");
+            }
+        }
+        
+        // دالة لتسجيل الخروج
+        async function handleSignOut() {
+            try {
+                await signOut(auth);
+            } catch (error) {
+                console.error("Error during sign-out:", error);
+                alert("حدث خطأ أثناء تسجيل الخروج.");
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const signInButton = document.getElementById('signInButton');
+            const signOutButton = document.getElementById('signOutButton');
+            const authStatus = document.getElementById('authStatus');
+            const contentContainer = document.getElementById('contentContainer');
+
+            // تتبع حالة المصادقة
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    // المستخدم مسجل دخوله
+                    authStatus.textContent = `مرحباً، ${user.displayName}!`;
+                    signInButton.classList.add('hidden');
+                    signOutButton.classList.remove('hidden');
+                    contentContainer.classList.remove('hidden');
+                } else {
+                    // المستخدم غير مسجل دخوله
+                    authStatus.textContent = `الرجاء تسجيل الدخول.`;
+                    signInButton.classList.remove('hidden');
+                    signOutButton.classList.add('hidden');
+                    contentContainer.classList.add('hidden');
+                }
+            });
+
+            // ربط الأزرار بالدوال
+            signInButton.addEventListener('click', signInWithGoogle);
+            signOutButton.addEventListener('click', handleSignOut);
+        });
+    </script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f3f4f6;
         }
+        .purple-button {
+            background-color: #8b5cf6;
+            color: white;
+        }
+        .purple-button:hover {
+            background-color: #7c3aed;
+        }
+        .gray-button {
+            background-color: #e5e7eb;
+            color: #4b5563;
+        }
+        .gray-button:hover {
+            background-color: #d1d5db;
+        }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen p-4">
-    <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-2xl">
-        <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">محلل الروابط 🔗</h1>
-        
-        <div class="mb-6">
-            <label for="url-input" class="block text-gray-700 text-sm font-bold mb-2">أدخل رابط URL هنا:</label>
-            <input type="text" id="url-input" placeholder="https://example.com" class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200">
-        </div>
-        
-        <div class="flex flex-col sm:flex-row gap-4 mb-6">
-            <button id="analyze-button" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200">تحليل الرابط</button>
-            <button id="clear-button" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition duration-200">مسح</button>
-        </div>
-        
-        <div id="loading-spinner" class="hidden flex justify-center items-center mb-6">
-            <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-            <span class="mr-3 text-gray-600">جاري التحليل...</span>
+<body class="p-4 sm:p-8 bg-gray-100 flex flex-col items-center">
+    <div class="w-full max-w-2xl bg-white rounded-2xl shadow-xl p-6 sm:p-8 space-y-8">
+        <h1 class="text-3xl font-bold text-center text-gray-800">أدوات تحليل SEO</h1>
+
+        <!-- قسم المصادقة -->
+        <div class="flex flex-col items-center space-y-4">
+            <p id="authStatus" class="text-gray-600"></p>
+            <button id="signInButton" class="w-full sm:w-auto purple-button font-bold py-3 px-6 rounded-lg transition duration-200 hidden">
+                تسجيل الدخول بواسطة Google
+            </button>
+            <button id="signOutButton" class="w-full sm:w-auto gray-button font-bold py-3 px-6 rounded-lg transition duration-200 hidden">
+                تسجيل الخروج
+            </button>
         </div>
 
-        <div id="result-container" class="bg-gray-100 p-4 rounded-lg shadow-inner hidden">
-            <h2 class="text-xl font-bold mb-2 text-gray-800">النتائج:</h2>
-            <pre id="result-text" class="text-gray-700 whitespace-pre-wrap font-mono text-sm"></pre>
+        <!-- محتوى التطبيق - يظهر فقط للمستخدمين المسجلين -->
+        <div id="contentContainer" class="hidden">
+            <!-- قسم أدوات الذكاء الاصطناعي -->
+            <div class="bg-gray-50 rounded-xl p-6 border border-gray-200">
+                <div class="bg-purple-100 text-purple-700 rounded-lg p-3 mb-4 flex items-center justify-center">
+                    <span class="font-semibold text-lg">أدوات الذكاء الاصطناعي ✨</span>
+                </div>
+                <!-- ... هنا ستضع باقي محتوى الواجهة الأمامية مثل أقسام تحليل الروابط ... -->
+                <p class="text-center text-gray-500">محتوى أدوات الذكاء الاصطناعي سيظهر هنا بعد تسجيل الدخول.</p>
+            </div>
+            <!-- ... هنا ستضيف أقسام سلطة النطاق وسرعة الصفحة ... -->
         </div>
 
-        <div id="message-box" class="mt-4 p-4 rounded-lg hidden"></div>
     </div>
-
-    <!-- تحديث مسار ملف JavaScript ليتطابق مع هيكل المجلدات -->
-    <script src="/static/js/main.js"></script>
 </body>
 </html>
