@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>محلل الروابط</title>
+    <!-- تحديث مسار ملف CSS ليتطابق مع هيكل المجلدات -->
+    <link rel="stylesheet" href="/static/static/css/style.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
@@ -40,80 +42,7 @@
         <div id="message-box" class="mt-4 p-4 rounded-lg hidden"></div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const urlInput = document.getElementById('url-input');
-            const analyzeButton = document.getElementById('analyze-button');
-            const clearButton = document.getElementById('clear-button');
-            const loadingSpinner = document.getElementById('loading-spinner');
-            const resultContainer = document.getElementById('result-container');
-            const resultText = document.getElementById('result-text');
-            const messageBox = document.getElementById('message-box');
-
-            // Set the backend URL to your live Render service
-            // (تعيين عنوان URL للواجهة الخلفية إلى خدمة Render المباشرة الخاصة بك)
-            const BACKEND_URL = 'https://analyzer.oxabite.com';
-
-            function showMessage(message, type = 'info') {
-                messageBox.classList.remove('hidden', 'bg-red-200', 'text-red-800', 'bg-green-200', 'text-green-800');
-                if (type === 'error') {
-                    messageBox.classList.add('bg-red-200', 'text-red-800');
-                } else if (type === 'success') {
-                    messageBox.classList.add('bg-green-200', 'text-green-800');
-                } else {
-                    messageBox.classList.add('bg-blue-200', 'text-blue-800');
-                }
-                messageBox.textContent = message;
-            }
-
-            function clearResults() {
-                resultContainer.classList.add('hidden');
-                resultText.textContent = '';
-                messageBox.classList.add('hidden');
-                urlInput.value = '';
-            }
-
-            analyzeButton.addEventListener('click', async () => {
-                const url = urlInput.value.trim();
-                if (!url) {
-                    showMessage('الرجاء إدخال رابط صالح.', 'error');
-                    return;
-                }
-                
-                loadingSpinner.classList.remove('hidden');
-                resultContainer.classList.add('hidden');
-                messageBox.classList.add('hidden');
-                
-                try {
-                    const response = await fetch(`${BACKEND_URL}/analyze_url`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ url: url })
-                    });
-
-                    loadingSpinner.classList.add('hidden');
-                    const data = await response.json();
-                    
-                    if (response.ok) {
-                        // The backend now returns a JSON object with a key 'analysis'
-                        // (الواجهة الخلفية الآن تعيد كائن JSON بمفتاح 'analysis')
-                        resultText.textContent = data.analysis;
-                        resultContainer.classList.remove('hidden');
-                        showMessage('تم تحليل الرابط بنجاح!', 'success');
-                    } else {
-                        showMessage(`حدث خطأ: ${data.error || 'غير معروف'}`, 'error');
-                    }
-                } catch (error) {
-                    loadingSpinner.classList.add('hidden');
-                    showMessage(`فشل في الاتصال بالخادم. تأكد من أن الواجهة الخلفية تعمل. الخطأ: ${error.message}`, 'error');
-                    console.error('Error:', error);
-                }
-            });
-
-            clearButton.addEventListener('click', clearResults);
-        });
-    </script>
+    <!-- تحديث مسار ملف JavaScript ليتطابق مع هيكل المجلدات -->
+    <script src="/static/static/js/main.js"></script>
 </body>
 </html>
