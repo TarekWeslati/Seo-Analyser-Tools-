@@ -1,243 +1,624 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const websiteAnalysisForm = document.getElementById('websiteAnalysisForm');
-    const analyzeButton = document.getElementById('analyzeButton');
-    const websiteAnalysisResults = document.getElementById('websiteAnalysisResults');
-    const websiteAnalysisError = document.getElementById('websiteAnalysisError');
-    const websiteAnalysisLoading = document.getElementById('websiteAnalysisLoading');
+    const websiteUrlInput = document.getElementById('website-url');
+    const analyzeButton = document.getElementById('analyze-button');
+    const errorMessage = document.getElementById('error-message');
+    const loadingSpinner = document.getElementById('loading-spinner');
+    const resultsDashboard = document.getElementById('results-dashboard');
+    const analyzedUrlSpan = document.getElementById('analyzed-url');
+    const analyzeAnotherButton = document.getElementById('analyze-another-button');
+    const exportPdfButton = document.getElementById('export-pdf-button');
+    const themeToggle = document.getElementById('theme-toggle');
+    const languageSelect = document.getElementById('language-select');
 
-    const articleAnalysisForm = document.getElementById('articleAnalysisForm');
-    const analyzeArticleButton = document.getElementById('analyzeArticleButton');
-    const articleAnalysisResults = document.getElementById('articleAnalysisResults');
-    const articleAnalysisError = document.getElementById('articleAnalysisError');
-    const articleAnalysisLoading = document.getElementById('articleAnalysisLoading');
+    // New AI feature elements
+    const rewriteSeoButton = document.getElementById('rewrite-seo-button');
+    const rewriteSeoOutput = document.getElementById('rewrite-seo-output');
+    const refineContentButton = document.getElementById('refine-content-button');
+    const refineContentOutput = document.getElementById('refine-content-output');
 
-    // Function to show loading state
-    const showLoading = (element, message) => {
-        if (element) {
-            element.innerHTML = `<div class="flex items-center justify-center space-x-2">
-                                    <svg class="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    <span>${message}</span>
-                                </div>`;
-            element.classList.remove('hidden');
-        }
-    };
 
-    // Function to hide loading state
-    const hideLoading = (element) => {
-        if (element) {
-            element.classList.add('hidden');
-            element.innerHTML = '';
-        }
-    };
+    // Dashboard elements (as they are)
+    const domainNameSpan = document.getElementById('domain-name');
+    const domainAuthorityScoreSpan = document.getElementById('domain-authority-score');
+    const domainAuthorityProgress = document.getElementById('domain-authority-progress');
+    const domainAuthorityText = document.getElementById('domain-authority-text');
+    const domainAgeSpan = document.getElementById('domain-age');
+    const sslStatusSpan = document.getElementById('ssl-status');
+    const blacklistStatusSpan = document.getElementById('blacklist-status');
+    const dnsHealthSpan = document.getElementById('dns-health');
 
-    // Function to show error message
-    const showError = (element, message) => {
-        if (element) {
-            element.innerHTML = `<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                                    <strong class="font-bold">خطأ!</strong>
-                                    <span class="block sm:inline">${message}</span>
-                                </div>`;
-            element.classList.remove('hidden');
-        }
-    };
+    const performanceScoreSpan = document.getElementById('performance-score');
+    const performanceProgress = document.getElementById('performance-progress');
+    const performanceText = document.getElementById('performance-text');
+    const coreWebVitalsList = document.getElementById('core-web-vitals');
+    const performanceIssuesList = document.getElementById('performance-issues');
+    const pagespeedLink = document.getElementById('pagespeed-link');
 
-    // Function to hide error message
-    const hideError = (element) => {
-        if (element) {
-            element.classList.add('hidden');
-            element.innerHTML = '';
-        }
-    };
+    const seoOverallScoreSpan = document.getElementById('seo-overall-score');
+    const seoOverallProgress = document.getElementById('seo-overall-progress');
+    const seoOverallText = document.getElementById('seo-overall-text');
+    const seoTitleSpan = document.getElementById('seo-title');
+    const seoMetaDescriptionSpan = document.getElementById('seo-meta-description');
+    const seoBrokenLinksSpan = document.getElementById('seo-broken-links');
+    const seoMissingAltSpan = document.getElementById('seo-missing-alt');
+    const seoInternalLinksSpan = document.getElementById('seo-internal-links');
+    const seoExternalLinksSpan = document.getElementById('seo-external-links');
+    const hTagsList = document.getElementById('h-tags-list');
+    const keywordDensityList = document.getElementById('keyword-density-list');
+    const seoImprovementTipsList = document.getElementById('seo-improvement-tips');
+    const aiSeoSuggestionsSection = document.getElementById('ai-seo-suggestions-section');
+    const aiSeoSuggestionsText = document.getElementById('ai-seo-suggestions-text');
 
-    // Website Analysis Form Submission
-    if (websiteAnalysisForm) {
-        websiteAnalysisForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const url = document.getElementById('websiteUrl').value;
+    const uxIssuesList = document.getElementById('ux-issues-list');
+    const uxSuggestionsList = document.getElementById('ux-suggestions-list');
+    const aiContentInsightsSection = document.getElementById('ai-content-insights-section');
+    const aiContentInsightsText = document.getElementById('ai-content-insights-text');
 
-            hideError(websiteAnalysisError);
-            hideLoading(websiteAnalysisLoading);
-            websiteAnalysisResults.innerHTML = ''; // Clear previous results
+    const aiSummarySection = document.getElementById('ai-summary-section');
+    const aiSummaryText = document.getElementById('ai-summary-text');
 
-            if (!url) {
-                showError(websiteAnalysisError, 'الرجاء إدخال رابط الموقع.');
-                return;
+    let translations = {}; // Stores loaded translations
+    let currentLanguage = localStorage.getItem('lang') || 'en'; // Get saved language or default to English
+
+    // Function to fetch and load translations
+    async function loadTranslations(lang) {
+        try {
+            const response = await fetch(`/locales/${lang}.json`);
+            if (!response.ok) {
+                throw new Error(`Failed to load translations for ${lang}.`);
             }
+            translations = await response.json();
+            applyTranslations();
+            localStorage.setItem('lang', lang); // Save selected language
+        } catch (error) {
+            console.error('Error loading translations:', error);
+            // Fallback to default language if loading fails
+            if (lang !== 'en') {
+                loadTranslations('en');
+            }
+        }
+    }
 
-            analyzeButton.disabled = true;
-            showLoading(websiteAnalysisLoading, 'جاري تحليل الموقع، قد يستغرق هذا بعض الوقت...');
+    // Function to apply translations to elements with data-translate attribute
+    function applyTranslations() {
+        document.querySelectorAll('[data-translate]').forEach(element => {
+            const key = element.getAttribute('data-translate');
+            if (translations[key]) {
+                element.textContent = translations[key];
+            }
+        });
+        // Special handling for placeholder
+        websiteUrlInput.placeholder = translations['analyzeWebsitePlaceholder'] || "https://www.google.com";
+        // Update text for N/A or loading messages if they are not dynamically set by results
+        document.getElementById('domain-authority-text').textContent = translations['calculatingMessage'];
+        document.getElementById('performance-text').textContent = translations['calculatingMessage'];
+        document.getElementById('seo-overall-text').textContent = translations['calculatingMessage'];
+        
+        // Update specific list items if they are showing default loading messages
+        if (coreWebVitalsList.children.length === 1 && coreWebVitalsList.children[0].getAttribute('data-translate') === 'loadingMessage') {
+            coreWebVitalsList.children[0].textContent = translations['loadingMessage'];
+        }
+        if (performanceIssuesList.children.length === 1 && performanceIssuesList.children[0].getAttribute('data-translate') === 'loadingMessage') {
+            performanceIssuesList.children[0].textContent = translations['loadingMessage'];
+        }
+        if (hTagsList.children.length === 1 && hTagsList.children[0].getAttribute('data-translate') === 'loadingMessage') {
+            hTagsList.children[0].textContent = translations['loadingMessage'];
+        }
+        if (keywordDensityList.children.length === 1 && keywordDensityList.children[0].getAttribute('data-translate') === 'loadingMessage') {
+            keywordDensityList.children[0].textContent = translations['loadingMessage'];
+        }
+        if (seoImprovementTipsList.children.length === 1 && seoImprovementTipsList.children[0].getAttribute('data-translate') === 'loadingMessage') {
+            seoImprovementTipsList.children[0].textContent = translations['loadingMessage'];
+        }
+        if (uxIssuesList.children.length === 1 && uxIssuesList.children[0].getAttribute('data-translate') === 'loadingMessage') {
+            uxIssuesList.children[0].textContent = translations['loadingMessage'];
+        }
+        if (uxSuggestionsList.children.length === 1 && uxSuggestionsList.children[0].getAttribute('data-translate') === 'loadingMessage') {
+            uxSuggestionsList.children[0].textContent = translations['loadingMessage'];
+        }
+        aiSeoSuggestionsText.textContent = translations['loadingAiSuggestions'];
+        aiContentInsightsText.textContent = translations['loadingAiInsights'];
+        aiSummaryText.textContent = translations['loadingAiSummary'];
+        rewriteSeoOutput.querySelector('p').textContent = translations['loadingAiRewrites'];
+        refineContentOutput.querySelector('p').textContent = translations['loadingAiRefinement'];
 
-            try {
-                const response = await fetch('/analyze', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept-Language': 'ar', // Or dynamically get from user settings
-                        'Authorization': `Bearer ${localStorage.getItem('idToken')}`
-                    },
-                    body: JSON.stringify({ url })
-                });
 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'فشل تحليل الموقع. يرجى المحاولة لاحقاً.');
-                }
-
-                const data = await response.json();
-                displayWebsiteAnalysisResults(data);
-
-            } catch (error) {
-                console.error('Error during website analysis:', error);
-                showError(websiteAnalysisError, `خطأ في تحليل الموقع: ${error.message}. يرجى المحاولة مرة أخرى لاحقاً.`);
-            } finally {
-                analyzeButton.disabled = false;
-                hideLoading(websiteAnalysisLoading);
+        // Update N/A messages if they are currently set to N/A
+        // These will be overwritten by actual results if available
+        const naElements = [
+            domainNameSpan, domainAuthorityScoreSpan, domainAgeSpan, sslStatusSpan,
+            blacklistStatusSpan, dnsHealthSpan, performanceScoreSpan, seoOverallScoreSpan,
+            seoTitleSpan, seoMetaDescriptionSpan, seoBrokenLinksSpan, seoMissingAltSpan,
+            seoInternalLinksSpan, seoExternalLinksSpan
+        ];
+        naElements.forEach(el => {
+            if (el.textContent === 'N/A') {
+                el.textContent = 'N/A';
             }
         });
     }
 
-    // Function to display website analysis results (basic structure)
-    function displayWebsiteAnalysisResults(data) {
-        let html = '<div class="space-y-4">';
 
-        if (data.title) {
-            html += `<p class="text-lg font-semibold">العنوان: <span class="font-normal">${data.title}</span></p>`;
-        }
-        if (data.description) {
-            html += `<p class="text-lg font-semibold">الوصف: <span class="font-normal">${data.description}</span></p>`;
-        }
-        if (data.keywords && data.keywords.length > 0) {
-            html += `<p class="text-lg font-semibold">الكلمات المفتاحية: <span class="font-normal">${data.keywords.join(', ')}</span></p>`;
-        }
-        if (data.headings && Object.keys(data.headings).length > 0) {
-            html += `<div><h3 class="text-xl font-bold mb-2">العناوين:</h3><ul class="list-disc list-inside space-y-1">`;
-            for (const tag in data.headings) {
-                html += `<li><strong>${tag.toUpperCase()}:</strong> ${data.headings[tag].join('; ')}</li>`;
+    // Helper functions to show/hide elements
+    const showElement = (element) => element.classList.remove('hidden');
+    const hideElement = (element) => element.classList.add('hidden');
+
+    // Function to update progress bar width and color
+    const updateProgressBar = (progressBarElement, score) => {
+        let width = 0;
+        let colorClass = 'progress-bad'; 
+
+        if (score !== null && !isNaN(score)) {
+            width = Math.max(0, Math.min(100, score)); 
+            if (score >= 80) {
+                colorClass = 'progress-good';
+            } else if (score >= 50) {
+                colorClass = 'progress-medium';
+            } else {
+                colorClass = 'progress-bad';
             }
-            html += `</ul></div>`;
-        }
-        if (data.broken_links && data.broken_links.length > 0) {
-            html += `<div><h3 class="text-xl font-bold mb-2">الروابط المعطلة:</h3><ul class="list-disc list-inside space-y-1">`;
-            data.broken_links.forEach(link => {
-                html += `<li>${link}</li>`;
-            });
-            html += `</ul></div>`;
-        }
-        if (data.ai_broken_link_suggestions && data.ai_broken_link_suggestions.length > 0) {
-            html += `<div><h3 class="text-xl font-bold mb-2">اقتراحات الروابط المعطلة (AI):</h3><ul class="list-disc list-inside space-y-1">`;
-            data.ai_broken_link_suggestions.forEach(suggestion => {
-                html += `<li>${suggestion}</li>`;
-            });
-            html += `</ul></div>`;
-        }
-        if (data.ai_seo_rewrite_suggestions) {
-            html += `<div><h3 class="text-xl font-bold mb-2">اقتراحات إعادة صياغة SEO (AI):</h3><div class="space-y-2">`;
-            for (const key in data.ai_seo_rewrite_suggestions) {
-                html += `<p><strong>${key}:</strong> ${data.ai_seo_rewrite_suggestions[key]}</p>`;
-            }
-            html += `</div></div>`;
-        }
-        if (data.ai_content_refinement) {
-            html += `<div><h3 class="text-xl font-bold mb-2">تحسين المحتوى (AI):</h3><p>${data.ai_content_refinement}</p></div>`;
         }
 
-        html += '</div>';
-        websiteAnalysisResults.innerHTML = html;
+        progressBarElement.style.width = `${width}%`;
+        progressBarElement.className = `progress-bar ${colorClass}`;
+    };
+
+    // Function to display an error message
+    const displayError = (message) => {
+        errorMessage.textContent = message;
+        showElement(errorMessage);
+        hideElement(loadingSpinner);
+        hideElement(resultsDashboard); 
+        console.error("Displaying error message:", message); 
+    };
+
+    // Function to display results on the dashboard
+    function displayResults(url, results) {
+        console.log("Displaying results on dashboard:", results); 
+        if (analyzedUrlSpan) analyzedUrlSpan.textContent = url;
+        showElement(resultsDashboard); 
+        hideElement(loadingSpinner); 
+
+        // Domain Authority
+        const domainAuthority = results.domain_authority || {};
+        domainNameSpan.textContent = domainAuthority.domain || 'N/A';
+        const daScore = domainAuthority.domain_authority_score !== undefined && domainAuthority.domain_authority_score !== null ? domainAuthority.domain_authority_score : 'N/A';
+        domainAuthorityScoreSpan.textContent = daScore;
+        updateProgressBar(domainAuthorityProgress, daScore);
+        domainAuthorityText.textContent = domainAuthority.domain_authority_text || translations['calculatingMessage']; 
+        domainAgeSpan.textContent = domainAuthority.domain_age_years ? `${domainAuthority.domain_age_years} ${translations['yearsText'] || 'years'}` : 'N/A';
+        sslStatusSpan.textContent = domainAuthority.ssl_status || 'N/A';
+        blacklistStatusSpan.textContent = domainAuthority.blacklist_status || 'N/A';
+        dnsHealthSpan.textContent = domainAuthority.dns_health || 'N/A';
+
+        // Page Speed
+        const pageSpeed = results.page_speed || {};
+        const perfScore = pageSpeed.scores && pageSpeed.scores['Performance Score'] !== undefined && pageSpeed.scores['Performance Score'] !== null ? pageSpeed.scores['Performance Score'] : 'N/A';
+        performanceScoreSpan.textContent = perfScore;
+        updateProgressBar(performanceProgress, perfScore);
+        performanceText.textContent = pageSpeed.performance_text || translations['calculatingMessage']; 
+        pagespeedLink.href = pageSpeed.pagespeed_report_link || '#';
+
+        // Core Web Vitals
+        coreWebVitalsList.innerHTML = '';
+        const coreVitals = pageSpeed.core_web_vitals || {};
+        if (Object.keys(coreVitals).length > 0) {
+            for (const metric in coreVitals) {
+                const li = document.createElement('li');
+                li.innerHTML = `<strong>${metric}:</strong> ${coreVitals[metric] || 'N/A'}`;
+                coreWebVitalsList.appendChild(li);
+            }
+        } else {
+            const li = document.createElement('li');
+            li.textContent = translations['noCoreWebVitals']; 
+            coreWebVitalsList.appendChild(li);
+        }
+
+        // Performance Issues
+        performanceIssuesList.innerHTML = '';
+        const perfIssues = pageSpeed.issues || [];
+        if (perfIssues.length > 0) {
+        } else {
+            const li = document.createElement('li');
+            li.textContent = translations['noPerformanceIssues']; 
+            li.classList.add('text-green-600', 'dark:text-green-300'); 
+            performanceIssuesList.appendChild(li);
+        }
+
+
+        // SEO Quality
+        const seoQuality = results.seo_quality || {};
+        const seoScore = seoQuality.score !== undefined && seoQuality.score !== null ? seoQuality.score : 'N/A';
+        seoOverallScoreSpan.textContent = seoScore;
+        updateProgressBar(seoOverallProgress, seoScore);
+        seoOverallText.textContent = seoQuality.seo_overall_text || translations['calculatingMessage']; 
+
+        const seoElements = seoQuality.elements || {};
+        seoTitleSpan.textContent = seoElements.title || 'N/A';
+        seoMetaDescriptionSpan.textContent = seoElements.meta_description || 'N/A';
+        seoBrokenLinksSpan.textContent = seoElements.broken_links ? seoElements.broken_links.length : '0';
+        seoMissingAltSpan.textContent = seoElements.image_alt_status ? seoElements.image_alt_status.filter(s => s.includes("Missing") || s.includes("Empty")).length : '0';
+        seoInternalLinksSpan.textContent = seoElements.internal_links_count !== undefined && seoElements.internal_links_count !== null ? seoElements.internal_links_count : 'N/A';
+        seoExternalLinksSpan.textContent = seoElements.external_links_count !== undefined && seoElements.external_links_count !== null ? seoElements.external_links_count : 'N/A';
+
+        // H-Tags
+        hTagsList.innerHTML = '';
+        const hTags = seoElements.h_tags || {};
+        if (Object.keys(hTags).length > 0) {
+            for (const tag in hTags) {
+                const li = document.createElement('li');
+                li.textContent = `${tag}: ${hTags[tag].join(', ')}`;
+                hTagsList.appendChild(li);
+            }
+        } else {
+            const li = document.createElement('li');
+            li.textContent = translations['noHeadingTags']; 
+            hTagsList.appendChild(li);
+        }
+
+        // Keyword Density
+        keywordDensityList.innerHTML = '';
+        const keywordDensity = seoElements.keyword_density || {};
+        const topKeywords = Object.entries(keywordDensity)
+                                .sort(([, a], [, b]) => b - a)
+                                .slice(0, 10);
+        if (topKeywords.length > 0) {
+            topKeywords.forEach(([keyword, density]) => {
+                const li = document.createElement('li');
+                li.textContent = `${keyword}: ${density}%`;
+                keywordDensityList.appendChild(li);
+            });
+        } else {
+            const li = document.createElement('li');
+            li.textContent = translations['noKeywordsFound']; 
+            keywordDensityList.appendChild(li);
+        }
+
+        // SEO Improvement Tips
+        seoImprovementTipsList.innerHTML = '';
+        const seoTips = seoQuality.improvement_tips || [];
+        if (seoTips.length > 0) {
+            seoTips.forEach(tip => {
+                const li = document.createElement('li');
+                li.textContent = tip;
+                seoImprovementTipsList.appendChild(li);
+            });
+        } else {
+            const li = document.createElement('li');
+            li.textContent = translations['noSeoTips']; 
+            li.classList.add('text-green-600', 'dark:text-green-300');
+            seoImprovementTipsList.appendChild(li);
+        }
+
+        // AI SEO Suggestions
+        const aiInsights = results.ai_insights || {};
+        if (aiInsights.seo_improvement_suggestions && aiInsights.seo_improvement_suggestions !== 'N/A') {
+            aiSeoSuggestionsText.textContent = aiInsights.seo_improvement_suggestions;
+            showElement(aiSeoSuggestionsSection);
+        } else {
+            hideElement(aiSeoSuggestionsSection);
+        }
+
+
+        // User Experience (UX)
+        const userExperience = results.user_experience || {};
+
+        // UX Issues
+        uxIssuesList.innerHTML = '';
+        const uxIssues = userExperience.issues || [];
+        if (uxIssues.length > 0) {
+            uxIssues.forEach(issue => {
+                const li = document.createElement('li');
+                li.textContent = issue;
+                uxIssuesList.appendChild(li);
+            });
+        } else {
+            const li = document.createElement('li');
+            li.textContent = translations['noUxIssues']; 
+            li.classList.add('text-green-600', 'dark:text-green-300');
+            uxIssuesList.appendChild(li);
+        }
+
+        // UX Suggestions
+        uxSuggestionsList.innerHTML = '';
+        const uxSuggestions = userExperience.suggestions || [];
+        if (uxSuggestions.length > 0) {
+            uxSuggestions.forEach(suggestion => {
+                const li = document.createElement('li');
+                li.textContent = suggestion;
+                uxSuggestionsList.appendChild(li);
+            });
+        } else {
+            const li = document.createElement('li');
+            li.textContent = translations['noUxSuggestions']; 
+            li.classList.add('text-green-600', 'dark:text-green-300');
+            uxSuggestionsList.appendChild(li);
+        }
+
+        // AI Content Insights
+        if (aiInsights.content_originality_tone && aiInsights.content_originality_tone !== 'N/A') {
+            aiContentInsightsText.textContent = aiInsights.content_originality_tone;
+            showElement(aiContentInsightsSection);
+        } else {
+            hideElement(aiContentInsightsSection);
+        }
+
+        // AI Summary
+        if (aiInsights.summary && aiInsights.summary !== 'N/A') {
+            aiSummaryText.textContent = aiInsights.summary;
+            showElement(aiSummarySection);
+        } else {
+            hideElement(aiSummarySection);
+        }
     }
 
+    // Event handler for the Analyze button
+    analyzeButton.addEventListener('click', async () => {
+        const url = websiteUrlInput.value.trim();
+        hideElement(errorMessage);
+        hideElement(resultsDashboard); 
+        showElement(loadingSpinner); 
+        console.log("Analyze button clicked. URL:", url); 
 
-    // Article Analysis Form Submission
-    if (articleAnalysisForm) {
-        articleAnalysisForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const articleText = document.getElementById('articleText').value;
+        if (!url) {
+            displayError(translations['pleaseEnterUrl'] || 'Please enter a website URL.'); 
+            return;
+        }
 
-            hideError(articleAnalysisError);
-            hideLoading(articleAnalysisLoading);
-            articleAnalysisResults.innerHTML = ''; // Clear previous results
+        try {
+            const backendApiUrl = `/analyze`; 
+            console.log("Sending POST request to:", backendApiUrl); 
 
-            if (!articleText) {
-                showError(articleAnalysisError, 'الرجاء إدخال نص المقال لتحليله.');
-                return;
-            }
+            const controller = new AbortController(); 
+            const timeoutId = setTimeout(() => controller.abort(), 120000); 
 
-            analyzeArticleButton.disabled = true;
-            showLoading(articleAnalysisLoading, 'جاري تحليل المقال، قد يستغرق هذا بعض الوقت...');
+            const response = await fetch(backendApiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept-Language': currentLanguage 
+                },
+                body: JSON.stringify({ url }),
+                signal: controller.signal 
+            });
 
-            try {
-                const response = await fetch('/analyze_article_content', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept-Language': 'ar',
-                        'Authorization': `Bearer ${localStorage.getItem('idToken')}`
-                    },
-                    body: JSON.stringify({ article_text: articleText })
-                });
+            clearTimeout(timeoutId); 
 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'فشل تحليل المقال. يرجى المحاولة لاحقاً.');
+            console.log("Received response from backend. Status:", response.status); 
+
+            if (!response.ok) {
+                const errorText = await response.text(); 
+                console.error("Backend response not OK. Raw text:", errorText); 
+                try {
+                    const errorData = JSON.parse(errorText); 
+                    throw new Error(errorData.error || `${translations['serverError'] || 'Server error'}: ${response.status}`); 
+                } catch (jsonError) {
+                    throw new Error(`${translations['serverReturnedNonJson'] || 'Server returned non-JSON error'} (Status: ${response.status}): ${errorText.substring(0, 100)}...`); 
                 }
-
-                const data = await response.json();
-                displayArticleAnalysisResults(data);
-
-            } catch (error) {
-                console.error('Error during article analysis:', error);
-                showError(articleAnalysisError, `خطأ في تحليل المقال: ${error.message}. يرجى المحاولة مرة أخرى لاحقاً.`);
-            } finally {
-                analyzeArticleButton.disabled = false;
-                hideLoading(articleAnalysisLoading);
             }
-        });
+
+            const results = await response.json();
+            console.log("Received results from backend:", results); 
+
+            window.lastAnalysisResults = results; 
+
+            hideElement(loadingSpinner); 
+            displayResults(url, results); 
+
+        } catch (error) {
+            console.error('Analysis failed:', error);
+            if (error.name === 'AbortError') {
+                displayError(translations['analysisTimedOut'] || 'Analysis timed out. The server took too long to respond. Please try again later.'); 
+            } else if (error instanceof TypeError && error.message.includes('Network request failed')) {
+                displayError(translations['networkError'] || 'Network error. Could not connect to the server. Please check your internet connection and try again.'); 
+            } else {
+                displayError(`${translations['analysisFailed'] || 'Analysis failed'}: ${error.message}. ${translations['pleaseTryAgain'] || 'Please try again later.'}`); 
+            }
+            hideElement(loadingSpinner); 
+        }
+    });
+
+    // Event handler for "Analyze Another" button
+    analyzeAnotherButton.addEventListener('click', () => {
+        hideElement(resultsDashboard);
+        hideElement(errorMessage);
+        websiteUrlInput.value = ''; 
+        showElement(document.getElementById('input-section')); 
+        // Clear AI outputs
+        rewriteSeoOutput.innerHTML = `<p>${translations['loadingAiRewrites']}</p>`;
+        hideElement(rewriteSeoOutput);
+        refineContentOutput.innerHTML = `<p>${translations['loadingAiRefinement']}</p>`;
+        hideElement(refineContentOutput);
+    });
+
+    // Event handler for Export PDF button
+    exportPdfButton.addEventListener('click', async () => {
+        const currentUrl = analyzedUrlSpan.textContent;
+        if (!currentUrl || !window.lastAnalysisResults) {
+            displayError(translations['noAnalysisResults'] || 'No analysis results to export. Please run an analysis first.'); 
+            return;
+        }
+
+        exportPdfButton.textContent = translations['generatingPdf'] || 'Generating PDF...'; 
+        exportPdfButton.disabled = true;
+
+        try {
+            const backendReportUrl = `/generate_report`; 
+            const response = await fetch(backendReportUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept-Language': currentLanguage 
+                },
+                body: JSON.stringify({ url: currentUrl, results: window.lastAnalysisResults }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || translations['failedToGeneratePdf'] || 'Failed to generate PDF report.'); 
+            }
+
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = `${currentUrl.replace(/[^a-z0-9]/gi, '_')}_analysis_report.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(downloadUrl);
+
+        } catch (error) {
+            console.error('PDF export failed:', error);
+            displayError(`${translations['pdfExportFailed'] || 'PDF export failed'}: ${error.message}`); 
+        } finally {
+            exportPdfButton.textContent = translations['exportPdfButton'] || 'Export PDF Report'; 
+            exportPdfButton.disabled = false;
+        }
+    });
+
+    // New: Event handler for Rewrite SEO button
+    rewriteSeoButton.addEventListener('click', async () => {
+        const currentUrl = analyzedUrlSpan.textContent;
+        const currentTitle = seoTitleSpan.textContent;
+        const currentMetaDescription = seoMetaDescriptionSpan.textContent;
+        const currentKeywords = Object.keys(window.lastAnalysisResults.seo_quality.elements.keyword_density || {}).join(', ');
+
+        if (!currentUrl || !window.lastAnalysisResults) {
+            displayError(translations['runAnalysisFirst'] || 'Please run an analysis first to use AI tools.');
+            return;
+        }
+
+        showElement(rewriteSeoOutput);
+        rewriteSeoOutput.innerHTML = `<p>${translations['loadingAiRewrites']}</p>`;
+        rewriteSeoButton.disabled = true;
+
+        try {
+            const response = await fetch('/ai_rewrite_seo', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept-Language': currentLanguage
+                },
+                body: JSON.stringify({
+                    url: currentUrl,
+                    title: currentTitle,
+                    meta_description: currentMetaDescription,
+                    keywords: currentKeywords
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || translations['failedToGetAiRewrites'] || 'Failed to get AI rewrites.');
+            }
+
+            const aiRewrites = await response.json();
+            let outputHtml = `<h3>${translations['aiRewritesTitle'] || 'AI Rewrites:'}</h3>`;
+            if (aiRewrites.titles && aiRewrites.titles.length > 0) {
+                outputHtml += `<p><strong>${translations['newTitles'] || 'New Titles:'}</strong></p><ul>`;
+                aiRewrites.titles.forEach(title => {
+                    outputHtml += `<li>${title}</li>`;
+                });
+                outputHtml += `</ul>`;
+            }
+            if (aiRewrites.meta_descriptions && aiRewrites.meta_descriptions.length > 0) {
+                outputHtml += `<p><strong>${translations['newMetaDescriptions'] || 'New Meta Descriptions:'}</strong></p><ul>`;
+                aiRewrites.meta_descriptions.forEach(desc => {
+                    outputHtml += `<li>${desc}</li>`;
+                });
+                outputHtml += `</ul>`;
+            }
+            if (!aiRewrites.titles && !aiRewrites.meta_descriptions) {
+                outputHtml += `<p>${translations['noAiRewritesAvailable'] || 'No AI rewrites available.'}</p>`;
+            }
+            rewriteSeoOutput.innerHTML = outputHtml;
+
+        } catch (error) {
+            console.error('AI Rewrite failed:', error);
+            rewriteSeoOutput.innerHTML = `<p class="text-red-600">${translations['aiRewriteFailed'] || 'AI Rewrite failed'}: ${error.message}</p>`;
+        } finally {
+            rewriteSeoButton.disabled = false;
+        }
+    });
+
+    // New: Event handler for Refine Content button
+    refineContentButton.addEventListener('click', async () => {
+        const extractedText = window.lastAnalysisResults.extracted_text_sample;
+
+        if (!extractedText || !window.lastAnalysisResults) {
+            displayError(translations['noContentForRefinement'] || 'No content extracted for refinement. Please run an analysis first.');
+            return;
+        }
+
+        showElement(refineContentOutput);
+        refineContentOutput.innerHTML = `<p>${translations['loadingAiRefinement']}</p>`;
+        refineContentButton.disabled = true;
+
+        try {
+            const response = await fetch('/ai_refine_content', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept-Language': currentLanguage
+                },
+                body: JSON.stringify({ text_sample: extractedText })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || translations['failedToRefineContent'] || 'Failed to refine content.');
+            }
+
+            const aiRefinement = await response.json();
+            let outputHtml = `<h3>${translations['aiRefinementTitle'] || 'AI Content Refinement:'}</h3>`;
+            if (aiRefinement.refined_text) {
+                outputHtml += `<p><strong>${translations['refinedText'] || 'Refined Text:'}</strong></p><p>${aiRefinement.refined_text}</p>`;
+            }
+            if (aiRefinement.suggestions && aiRefinement.suggestions.length > 0) {
+                outputHtml += `<p><strong>${translations['refinementSuggestions'] || 'Suggestions:'}</strong></p><ul>`;
+                aiRefinement.suggestions.forEach(sugg => {
+                    outputHtml += `<li>${sugg}</li>`;
+                });
+                outputHtml += `</ul>`;
+            }
+            if (!aiRefinement.refined_text && !aiRefinement.suggestions) {
+                outputHtml += `<p>${translations['noAiRefinementAvailable'] || 'No AI refinement available.'}</p>`;
+            }
+            refineContentOutput.innerHTML = outputHtml;
+
+        } catch (error) {
+            console.error('AI Content Refinement failed:', error);
+            refineContentOutput.innerHTML = `<p class="text-red-600">${translations['aiRefinementFailed'] || 'AI Refinement failed'}: ${error.message}</p>`;
+        } finally {
+            refineContentButton.disabled = false;
+        }
+    });
+
+
+    // Dark/Light theme toggle
+    themeToggle.addEventListener('click', () => {
+        document.body.classList.toggle('dark');
+        if (document.body.classList.contains('dark')) {
+            localStorage.setItem('theme', 'dark');
+        } else {
+            localStorage.setItem('theme', 'light');
+        }
+    });
+
+    // Load theme preference on page load
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark');
     }
 
-    // Function to display article analysis results (improved structure)
-    function displayArticleAnalysisResults(data) {
-        let html = '<div class="space-y-4">';
+    // Language selection change event
+    languageSelect.addEventListener('change', (event) => {
+        currentLanguage = event.target.value;
+        loadTranslations(currentLanguage);
+    });
 
-        if (data.word_count) {
-            html += `<p class="text-lg font-semibold">عدد الكلمات: <span class="font-normal">${data.word_count}</span></p>`;
-        }
-        if (data.readability_score) {
-            html += `<p class="text-lg font-semibold">درجة المقروئية: <span class="font-normal">${data.readability_score}</span></p>`;
-        }
-        if (data.keywords && data.keywords.length > 0) {
-            html += `<div><h3 class="text-xl font-bold mb-2">الكلمات المفتاحية المستخرجة:</h3><ul class="list-disc list-inside space-y-1">`;
-            data.keywords.forEach(keyword => {
-                html += `<li>${keyword}</li>`;
-            });
-            html += `</ul></div>`;
-        }
-        if (data.sentiment) {
-            html += `<p class="text-lg font-semibold">المشاعر: <span class="font-normal">${data.sentiment}</span></p>`;
-        }
-        if (data.summary) {
-            html += `<div><h3 class="text-xl font-bold mb-2">الملخص:</h3><p>${data.summary}</p></div>`;
-        }
-        if (data.readability_suggestions && data.readability_suggestions.length > 0) {
-            html += `<div><h3 class="text-xl font-bold mb-2">اقتراحات المقروئية:</h3><ul class="list-disc list-inside space-y-1">`;
-            data.readability_suggestions.forEach(suggestion => {
-                html += `<li>${suggestion}</li>`;
-            });
-            html += `</ul></div>`;
-        }
-        if (data.seo_suggestions && data.seo_suggestions.length > 0) {
-            html += `<div><h3 class="text-xl font-bold mb-2">اقتراحات SEO:</h3><ul class="list-disc list-inside space-y-1">`;
-            data.seo_suggestions.forEach(suggestion => {
-                html += `<li>${suggestion}</li>`;
-            });
-            html += `</ul></div>`;
-        }
-        if (data.rewritten_content) {
-            html += `<div><h3 class="text-xl font-bold mb-2">المحتوى المعاد صياغته:</h3><p>${data.rewritten_content}</p></div>`;
-        }
-
-        html += '</div>';
-        articleAnalysisResults.innerHTML = html;
-    }
+    // Initialize translations and theme on page load
+    loadTranslations(currentLanguage);
+    languageSelect.value = currentLanguage; // Set dropdown to current language
 });
