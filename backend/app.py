@@ -6,13 +6,16 @@ import requests
 
 from firebase_admin import credentials
 from firebase_admin import firestore
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 
 # Initialize Flask app and CORS
-app = Flask(__name__)
+# (تهيئة تطبيق Flask وتفعيل CORS)
+# The static_folder is now set to the 'public' folder inside 'frontend'
+# (مجلد static أصبح الآن هو مجلد 'public' داخل 'frontend')
+app = Flask(__name__, static_folder='frontend/public', static_url_path='/static')
 CORS(app)
 
 # 1. Get Firebase credentials from environment variable
@@ -88,28 +91,13 @@ def extract_text_from_url(url):
         print(f"Error fetching URL: {e}")
         return None
 
-# The root route to check if the backend is running
-# (المسار الرئيسي للتحقق من أن الواجهة الخلفية تعمل)
+# The root route to serve the frontend (index.html)
+# (المسار الرئيسي لعرض الواجهة الأمامية (index.html))
 @app.route('/')
-def home():
-    if firebase_initialized:
-        return 'Backend is running. Firebase and Firestore are active.'
-    else:
-        return 'Backend is running. Firebase is NOT active.'
-
-# A test route to check if the Gemini API is working.
-# (مسار اختبار للتحقق من عمل Gemini API)
-@app.route('/test-gemini', methods=['POST'])
-def test_gemini():
-    if not gemini_api_key or not model:
-        return jsonify({"error": "Gemini API key not configured."}), 500
-
-    try:
-        prompt = "Hello, what's your name?"
-        response = model.generate_content(prompt)
-        return jsonify({"response": response.text})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+def serve_index():
+    # We now send index.html directly from the 'public' folder
+    # (نقوم الآن بإرسال index.html مباشرة من مجلد 'public')
+    return send_from_directory('frontend/public', 'index.html')
 
 # The main route to analyze a URL's content
 # (المسار الرئيسي لتحليل محتوى رابط URL)
