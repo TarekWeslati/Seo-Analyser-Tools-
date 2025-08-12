@@ -1,57 +1,75 @@
 import os
 import json
 import firebase_admin
-from firebase_admin import credentials, auth
+import google.generativeai as genai
+from firebase_admin import credentials, auth, firestore
 from flask import Flask, request, jsonify, send_from_directory, make_response
 from flask_cors import CORS
 from backend.services.website_analysis import get_website_analysis, generate_pdf_report, ai_rewrite_seo_content, ai_refine_content, ai_broken_link_suggestions
 from backend.services.article_analysis import analyze_article_content, rewrite_article
 
-# Get the Firebase service account key from environment variable
+# الحصول على مفتاح حساب الخدمة لـ Firebase ومتغيرات Gemini API من متغيرات البيئة
 firebase_service_account_key_json = os.getenv("FIREBASE_SERVICE_ACCOUNT_KEY_JSON")
+gemini_api_key = os.getenv("GEMINI_API_KEY")
 
 if firebase_service_account_key_json:
     try:
         cred_dict = json.loads(firebase_service_account_key_json)
         cred = credentials.Certificate(cred_dict)
         firebase_admin.initialize_app(cred)
-        print("Firebase Admin SDK initialized successfully.")
+        db = firestore.client() # تهيئة Firestore
+        print("Firebase Admin SDK and Firestore initialized successfully.")
     except Exception as e:
         print(f"Error initializing Firebase Admin SDK: {e}")
         print("Firebase Admin SDK will not be available.")
 else:
     print("FIREBASE_SERVICE_ACCOUNT_KEY_JSON environment variable not set. Firebase Admin SDK will not be initialized.")
 
-# Define the path to the frontend/public directory relative to the current file (app.py)
-# This assumes app.py is in backend/ and frontend/public is at ../frontend/public
+# تهيئة Gemini API
+if gemini_api_key:
+    try:
+        genai.configure(api_key=gemini_api_key)
+        print("Gemini API key configured successfully.")
+    except Exception as e:
+        print(f"Error configuring Gemini API: {e}")
+else:
+    print("GEMINI_API_KEY environment variable not set. Gemini AI services will not be available.")
+
+# تحديد المسار إلى مجلد frontend/public
 frontend_public_path = os.path.join(os.path.dirname(__file__), '..', 'frontend', 'public')
 
 app = Flask(__name__,
-            static_folder=frontend_public_path, # Serve all frontend files from here
-            static_url_path='/') # Serve them from the root URL
+            static_folder=frontend_public_path, # خدمة جميع ملفات الواجهة الأمامية من هنا
+            static_url_path='/') # خدمتها من مسار الجذر
 
-# Configure CORS to allow requests from your Render domain and localhost
+# تهيئة CORS للسماح بالطلبات من نطاق Render و localhost
 CORS(app, resources={r"/*": {"origins": ["https://analyzer.oxabite.com", "http://localhost:5000"]}}, supports_credentials=True, allow_headers=["Authorization", "Content-Type"])
 
 @app.route('/')
 def index():
-    # Serve index.html directly from the static folder for the root path
+    """
+    خدمة index.html مباشرة من المجلد الثابت للمسار الجذر.
+    """
     return send_from_directory(app.static_folder, 'index.html')
 
 @app.route('/article_analyzer.html')
 def article_analyzer_page():
-    # Serve article_analyzer.html directly from the static folder
+    """
+    خدمة article_analyzer.html مباشرة من المجلد الثابت.
+    """
     return send_from_directory(app.static_folder, 'article_analyzer.html')
 
 @app.route('/favicon.ico')
 def favicon():
-    # Serve favicon.ico directly from the static folder
+    """
+    خدمة favicon.ico مباشرة من المجلد الثابت.
+    """
     return send_from_directory(app.static_folder, 'favicon.ico')
 
-# All other static files like CSS, JS, locales will now be served automatically
-# For example, a request to /static/css/style.css will look for
-# frontend/public/static/css/style.css because static_folder is frontend_public_path
-# and static_url_path is '/'.
+# جميع الملفات الثابتة الأخرى مثل CSS و JS واللغات سيتم خدمتها تلقائيًا
+# على سبيل المثال، طلب إلى /static/css/style.css سيبحث في
+# frontend/public/static/css/style.css لأن static_folder هو frontend_public_path
+# و static_url_path هو '/'.
 
 @app.route('/register', methods=['POST'])
 def register():
@@ -103,12 +121,10 @@ def verify_id_token():
 
 @app.before_request
 def verify_token_middleware():
-    # Allow static files (now under /static), auth routes, root path, HTML files, and favicon.ico without token verification
-    # Note: With static_url_path='/', all files in frontend_public_path are served as static.
-    # So /static/css/style.css maps to frontend_public_path/static/css/style.css
+    # السماح بالملفات الثابتة ومسارات التوثيق بدون التحقق من الرمز المميز
     if request.path.startswith('/static/') or \
        request.path in ['/', '/index.html', '/article_analyzer.html', '/register', '/login', '/verify_id_token', '/favicon.ico']:
-        return # Allow access
+        return # السماح بالوصول
 
     auth_header = request.headers.get('Authorization')
     if not auth_header:
@@ -235,3 +251,6 @@ def rewrite_article_route():
     except Exception as e:
         print(f"Error during article rewrite: {e}")
         return jsonify({"error": "Failed to rewrite article. Please try again later."}), 500
+    
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)
