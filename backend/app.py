@@ -2,16 +2,18 @@ import os
 import json
 import firebase_admin
 from firebase_admin import credentials, auth
-from flask import Flask, request, jsonify, send_from_directory, make_response
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from backend.services.website_analysis import get_website_analysis, generate_pdf_report, ai_rewrite_seo_content, ai_refine_content, ai_broken_link_suggestions
-from backend.services.article_analysis import analyze_article_content, rewrite_article
+from backend.services.article_analysis import analyze_article_content, rewrite_article # Import new functions
 
 # Get the Firebase service account key from environment variable
+# This key is sensitive and should be stored securely in Render environment variables
 firebase_service_account_key_json = os.getenv("FIREBASE_SERVICE_ACCOUNT_KEY_JSON")
 
 if firebase_service_account_key_json:
     try:
+        # Parse the JSON string into a Python dictionary
         cred_dict = json.loads(firebase_service_account_key_json)
         cred = credentials.Certificate(cred_dict)
         firebase_admin.initialize_app(cred)
@@ -22,36 +24,34 @@ if firebase_service_account_key_json:
 else:
     print("FIREBASE_SERVICE_ACCOUNT_KEY_JSON environment variable not set. Firebase Admin SDK will not be initialized.")
 
-# Define the path to the frontend/public directory relative to the current file (app.py)
-# This assumes app.py is in backend/ and frontend/public is at ../frontend/public
-frontend_public_path = os.path.join(os.path.dirname(__file__), '..', 'frontend', 'public')
-
 app = Flask(__name__,
-            static_folder=frontend_public_path, # Serve all frontend files from here
-            static_url_path='/') # Serve them from the root URL
+            template_folder='../../frontend/public',
+            static_folder='../../frontend/public',
+            static_url_path='/')
 
 # Configure CORS to allow requests from your Render domain and localhost
+# Ensure https://analyzer.oxabite.com is replaced with your actual Render domain
 CORS(app, resources={r"/*": {"origins": ["https://analyzer.oxabite.com", "http://localhost:5000"]}}, supports_credentials=True, allow_headers=["Authorization", "Content-Type"])
 
 @app.route('/')
 def index():
-    # Serve index.html directly from the static folder for the root path
-    return send_from_directory(app.static_folder, 'index.html')
+    return send_from_directory(app.template_folder, 'index.html')
 
 @app.route('/article_analyzer.html')
 def article_analyzer_page():
-    # Serve article_analyzer.html directly from the static folder
-    return send_from_directory(app.static_folder, 'article_analyzer.html')
+    return send_from_directory(app.template_folder, 'article_analyzer.html')
 
-@app.route('/favicon.ico')
-def favicon():
-    # Serve favicon.ico directly from the static folder
-    return send_from_directory(app.static_folder, 'favicon.ico')
+@app.route('/css/<path:filename>')
+def serve_css(filename):
+    return send_from_directory(os.path.join(app.static_folder, 'css'), filename)
 
-# All other static files like CSS, JS, locales will now be served automatically
-# For example, a request to /static/css/style.css will look for
-# frontend/public/static/css/style.css because static_folder is frontend_public_path
-# and static_url_path is '/'.
+@app.route('/js/<path:filename>')
+def serve_js(filename):
+    return send_from_directory(os.path.join(app.static_folder, 'js'), filename)
+
+@app.route('/locales/<path:filename>')
+def serve_locales(filename):
+    return send_from_directory(os.path.join(app.static_folder, 'locales'), filename)
 
 @app.route('/register', methods=['POST'])
 def register():
@@ -64,6 +64,7 @@ def register():
 
     try:
         user = auth.create_user(email=email, password=password)
+        # Generate a custom token for the newly registered user
         custom_token = auth.create_custom_token(user.uid)
         return jsonify({"message": "User registered successfully", "email": email, "token": custom_token.decode('utf-8')}), 201
     except Exception as e:
@@ -79,6 +80,8 @@ def login():
         return jsonify({"error": "Email and password are required"}), 400
 
     try:
+        # Authenticate user with Firebase client-side SDK (handled by frontend)
+        # Backend only creates custom token for existing users
         user = auth.get_user_by_email(email)
         custom_token = auth.create_custom_token(user.uid)
         return jsonify({"message": "Logged in successfully", "email": email, "token": custom_token.decode('utf-8')}), 200
@@ -94,6 +97,7 @@ def verify_id_token():
         return jsonify({"error": "ID token is required"}), 400
 
     try:
+        # Verify the ID token and get the user's UID
         decoded_token = auth.verify_id_token(id_token)
         uid = decoded_token['uid']
         email = decoded_token.get('email')
@@ -101,13 +105,11 @@ def verify_id_token():
     except Exception as e:
         return jsonify({"error": "Invalid ID token."}), 401
 
+# Middleware to verify Firebase ID Token for protected routes
 @app.before_request
 def verify_token_middleware():
-    # Allow static files (now under /static), auth routes, root path, HTML files, and favicon.ico without token verification
-    # Note: With static_url_path='/', all files in frontend_public_path are served as static.
-    # So /static/css/style.css maps to frontend_public_path/static/css/style.css
-    if request.path.startswith('/static/') or \
-       request.path in ['/', '/index.html', '/article_analyzer.html', '/register', '/login', '/verify_id_token', '/favicon.ico']:
+    # Allow static files and auth routes without token verification
+    if request.path.startswith(('/css', '/js', '/locales', '/register', '/login', '/verify_id_token', '/')) or request.path.endswith(('.html', '/')):
         return # Allow access
 
     auth_header = request.headers.get('Authorization')
@@ -117,7 +119,7 @@ def verify_token_middleware():
     try:
         id_token = auth_header.split(' ')[1]
         decoded_token = auth.verify_id_token(id_token)
-        request.user_id = decoded_token['uid']
+        request.user_id = decoded_token['uid'] # Attach user ID to request object
     except Exception as e:
         return jsonify({"error": "Authentication required. Please log in."}), 401
 
@@ -125,7 +127,7 @@ def verify_token_middleware():
 def analyze():
     data = request.get_json()
     url = data.get('url')
-    lang = request.headers.get('Accept-Language', 'en')
+    lang = request.headers.get('Accept-Language', 'en') # Get language from header
 
     if not url:
         return jsonify({"error": "URL is required"}), 400
@@ -141,7 +143,7 @@ def analyze():
 def generate_report():
     data = request.get_json()
     url = data.get('url')
-    lang = request.headers.get('Accept-Language', 'en')
+    lang = request.headers.get('Accept-Language', 'en') # Get language from header
 
     if not url:
         return jsonify({"error": "URL is required"}), 400
@@ -204,7 +206,7 @@ def ai_broken_link_suggestions_route():
 def analyze_article():
     data = request.get_json()
     article_text = data.get('article_text', '')
-    lang = request.headers.get('Accept-Language', 'en')
+    lang = request.headers.get('Accept-Language', 'en') # Get language from header
 
     if not article_text:
         return jsonify({"error": "Article text is required"}), 400
@@ -222,7 +224,7 @@ def analyze_article():
 def rewrite_article_route():
     data = request.get_json()
     article_text = data.get('article_text', '')
-    lang = request.headers.get('Accept-Language', 'en')
+    lang = request.headers.get('Accept-Language', 'en') # Get language from header
 
     if not article_text:
         return jsonify({"error": "Article text is required"}), 400
@@ -235,3 +237,4 @@ def rewrite_article_route():
     except Exception as e:
         print(f"Error during article rewrite: {e}")
         return jsonify({"error": "Failed to rewrite article. Please try again later."}), 500
+
