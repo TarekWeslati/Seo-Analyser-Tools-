@@ -1,5 +1,6 @@
-أ// main.js: The final, complete, and fully functional front-end logic for the application.
+// main.js: The final, complete, and fully functional front-end logic for the application.
 
+// Wait for the DOM to be fully loaded before running the script
 document.addEventListener('DOMContentLoaded', () => {
 
     // =========================================================================
@@ -8,9 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Dynamically get the backend base URL from the current window's origin
     const backendBaseUrl = window.location.origin;
-    const authBaseUrl = backendBaseUrl;
 
     // Firebase configuration - IMPORTANT: Replace with your actual Firebase project config
+    // هذه هي بيانات مشروعك في Firebase. قم بتغييرها ببياناتك الخاصة
     const firebaseConfig = {
         apiKey: "YOUR_API_KEY",
         authDomain: "YOUR_AUTH_DOMAIN",
@@ -20,11 +21,11 @@ document.addEventListener('DOMContentLoaded', () => {
         appId: "YOUR_APP_ID"
     };
 
+    // قم بتهيئة Firebase إذا لم يتم تهيئتها بالفعل
     if (!firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
     }
     const auth = firebase.auth();
-    const db = firebase.firestore();
     const googleProvider = new firebase.auth.GoogleAuthProvider();
 
     // =========================================================================
@@ -40,6 +41,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const userDisplayName = document.getElementById('user-display-name');
 
     // Main forms and buttons
+    const tabWebsite = document.getElementById('tab-website');
+    const tabArticle = document.getElementById('tab-article');
+    const sectionWebsite = document.getElementById('section-website');
+    const sectionArticle = document.getElementById('section-article');
     const websiteAnalyzerForm = document.getElementById('website-analyzer-form');
     const articleAnalyzerForm = document.getElementById('article-analyzer-form');
     const urlInput = document.getElementById('url-input');
@@ -56,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const languageToggle = document.getElementById('language-toggle');
     const themeToggle = document.getElementById('theme-toggle');
 
-    let currentLanguage = 'en';
+    let currentLanguage = 'ar'; // Set initial language to Arabic
     let translations = {};
 
     // =========================================================================
@@ -89,17 +94,17 @@ document.addEventListener('DOMContentLoaded', () => {
         loadTranslations(newLang);
     });
 
-    // Initial load of English translations
-    loadTranslations('en');
+    // Initial load of Arabic translations
+    loadTranslations('ar');
 
     // =========================================================================
     // Theme Switcher Logic
     // =========================================================================
 
     themeToggle.addEventListener('click', () => {
-        document.body.classList.toggle('dark');
-        document.body.classList.toggle('light');
-        const isDarkMode = document.body.classList.contains('dark');
+        const isDarkMode = document.body.classList.toggle('dark');
+        document.body.classList.toggle('light', !isDarkMode);
+        localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
         themeToggle.innerHTML = isDarkMode
             ? '<i class="fas fa-sun"></i>'
             : '<i class="fas fa-moon"></i>';
@@ -111,6 +116,31 @@ document.addEventListener('DOMContentLoaded', () => {
     themeToggle.innerHTML = savedTheme === 'dark'
         ? '<i class="fas fa-sun"></i>'
         : '<i class="fas fa-moon"></i>';
+
+    // =========================================================================
+    // Tabs Logic
+    // =========================================================================
+    
+    const showTab = (tabName) => {
+        const tabs = [
+            { button: tabWebsite, section: sectionWebsite },
+            { button: tabArticle, section: sectionArticle }
+        ];
+        
+        tabs.forEach(tab => {
+            if (tab.section.id === `section-${tabName}`) {
+                tab.button.classList.add('text-blue-500', 'border-blue-500');
+                tab.section.classList.remove('hidden');
+            } else {
+                tab.button.classList.remove('text-blue-500', 'border-blue-500');
+                tab.section.classList.add('hidden');
+            }
+        });
+    };
+
+    tabWebsite.addEventListener('click', () => showTab('website'));
+    tabArticle.addEventListener('click', () => showTab('article'));
+    showTab('website'); // Show website tab by default
 
     // =========================================================================
     // Authentication & Firebase
@@ -129,7 +159,6 @@ document.addEventListener('DOMContentLoaded', () => {
             loginButton.style.display = 'block';
             logoutButton.style.display = 'none';
             userDisplayName.style.display = 'none';
-            // Disable analysis buttons if not logged in
             analyzeWebsiteBtn.disabled = true;
             analyzeArticleBtn.disabled = true;
         }
@@ -144,9 +173,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     modalGoogleLoginButton.addEventListener('click', async () => {
-        const provider = new firebase.auth.GoogleAuthProvider();
         try {
-            await auth.signInWithPopup(provider);
+            await auth.signInWithPopup(googleProvider);
         } catch (error) {
             console.error('Google Sign-in error:', error);
             alert(`Error during sign-in: ${error.message}`);
@@ -169,7 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const callApi = async (endpoint, payload) => {
         const user = auth.currentUser;
         if (!user) {
-            alert('Please log in to use this feature.');
+            alert(translations.loginRequiredMessage || 'Please log in to use this feature.');
             return null;
         }
 
@@ -188,7 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.error || 'Server error');
+                throw new Error(errorData.error || translations.serverError || 'Server error');
             }
 
             const data = await response.json();
@@ -265,7 +293,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="result-section p-4 bg-gray-100 dark:bg-gray-700 rounded-lg shadow mt-4">
                     <h3 class="text-xl font-bold">${translations.brokenLinksTitle}</h3>
                     <p><strong>${translations.brokenLinksCount}:</strong> ${data.brokenLinks.count || 'N/A'}</p>
-                    ${data.brokenLinks.list && data.brokenLinks.list.length > 0 ? `<ul class="list-disc ml-5 mt-2">${data.brokenLinks.list.map(link => `<li>${link}</li>`).join('')}</ul>` : `<p>${translations.noBrokenLinks}</p>`}
+                    ${data.brokenLinks.list && data.brokenLinks.list.length > 0 ? `<ul class="list-disc mr-5 mt-2">${data.brokenLinks.list.map(link => `<li>${link}</li>`).join('')}</ul>` : `<p>${translations.noBrokenLinks}</p>`}
                 </div>
 
                 <div class="ai-section p-4 bg-gray-100 dark:bg-gray-700 rounded-lg shadow mt-4">
@@ -308,4 +336,3 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
-
