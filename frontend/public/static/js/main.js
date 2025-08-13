@@ -1,4 +1,4 @@
-// main.js: The final and complete front-end logic for the application.
+أ// main.js: The final, complete, and fully functional front-end logic for the application.
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Dynamically get the backend base URL from the current window's origin
     const backendBaseUrl = window.location.origin;
+    const authBaseUrl = backendBaseUrl;
 
     // Firebase configuration - IMPORTANT: Replace with your actual Firebase project config
     const firebaseConfig = {
@@ -24,34 +25,41 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const auth = firebase.auth();
     const db = firebase.firestore();
+    const googleProvider = new firebase.auth.GoogleAuthProvider();
 
     // =========================================================================
     // DOM Elements & State
     // =========================================================================
 
+    // Authentication elements
+    const loginButton = document.getElementById('login-btn');
+    const logoutButton = document.getElementById('logout-btn');
+    const authModal = document.getElementById('auth-modal');
+    const modalGoogleLoginButton = document.getElementById('modal-google-login-button');
+    const closeAuthModalButton = document.getElementById('modal-close-button');
+    const userDisplayName = document.getElementById('user-display-name');
+
+    // Main forms and buttons
     const websiteAnalyzerForm = document.getElementById('website-analyzer-form');
     const articleAnalyzerForm = document.getElementById('article-analyzer-form');
     const urlInput = document.getElementById('url-input');
     const articleInput = document.getElementById('article-input');
     const analyzeWebsiteBtn = document.getElementById('analyze-website-btn');
     const analyzeArticleBtn = document.getElementById('analyze-article-btn');
+
+    // Results containers
     const websiteResultContainer = document.getElementById('website-result-container');
     const articleResultContainer = document.getElementById('article-result-container');
     const loadingSpinner = document.getElementById('loading-spinner');
-    const authModal = document.getElementById('auth-modal');
-    const loginButton = document.getElementById('login-btn');
-    const logoutButton = document.getElementById('logout-btn');
-    const userDisplayName = document.getElementById('user-display-name');
-    const authForm = document.getElementById('auth-form');
-    const googleLoginButton = document.getElementById('modal-google-login-button');
-    const themeToggle = document.getElementById('theme-toggle');
+
+    // Language and Theme
     const languageToggle = document.getElementById('language-toggle');
-    const closeAuthModalButton = document.getElementById('modal-close-button');
+    const themeToggle = document.getElementById('theme-toggle');
 
     let currentLanguage = 'en';
     let translations = {};
 
-    // =atus=
+    // =========================================================================
     // Localization (Translation) Logic
     // =========================================================================
 
@@ -59,8 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch(`${backendBaseUrl}/static/locales/${lang}.json`);
             if (!response.ok) {
-                console.error(`Translation file not found for language: ${lang}`);
-                throw new Error('Translation file not found');
+                throw new Error(`Translation file not found for language: ${lang}`);
             }
             translations = await response.json();
             document.querySelectorAll('[data-translate]').forEach(element => {
@@ -97,11 +104,18 @@ document.addEventListener('DOMContentLoaded', () => {
             ? '<i class="fas fa-sun"></i>'
             : '<i class="fas fa-moon"></i>';
     });
+    
+    // Initial theme load
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.body.classList.add(savedTheme);
+    themeToggle.innerHTML = savedTheme === 'dark'
+        ? '<i class="fas fa-sun"></i>'
+        : '<i class="fas fa-moon"></i>';
 
     // =========================================================================
     // Authentication & Firebase
     // =========================================================================
-
+    
     auth.onAuthStateChanged(user => {
         if (user) {
             loginButton.style.display = 'none';
@@ -115,6 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
             loginButton.style.display = 'block';
             logoutButton.style.display = 'none';
             userDisplayName.style.display = 'none';
+            // Disable analysis buttons if not logged in
             analyzeWebsiteBtn.disabled = true;
             analyzeArticleBtn.disabled = true;
         }
@@ -128,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
         authModal.classList.add('hidden');
     });
 
-    googleLoginButton.addEventListener('click', async () => {
+    modalGoogleLoginButton.addEventListener('click', async () => {
         const provider = new firebase.auth.GoogleAuthProvider();
         try {
             await auth.signInWithPopup(provider);
@@ -158,10 +173,9 @@ document.addEventListener('DOMContentLoaded', () => {
             return null;
         }
 
-        const idToken = await user.getIdToken();
-        
         showLoading(true);
         try {
+            const idToken = await user.getIdToken();
             const response = await fetch(`${backendBaseUrl}/api/${endpoint}`, {
                 method: 'POST',
                 headers: {
@@ -197,7 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const url = urlInput.value.trim();
         if (!url) return;
 
-        const results = await callApi('website-analyze', { input: url });
+        const results = await callApi('website-analyze', { website_url: url });
         if (results) {
             displayWebsiteResults(results);
         }
@@ -208,7 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const articleText = articleInput.value.trim();
         if (!articleText) return;
 
-        const results = await callApi('article-analyze', { input: articleText });
+        const results = await callApi('article-analyze', { article_text: articleText });
         if (results) {
             displayArticleResults(results);
         }
@@ -233,33 +247,33 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="space-y-4">
                 <div class="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg shadow">
                     <h3 class="text-xl font-bold mb-2">${translations.websiteAnalysisTitle}</h3>
-                    <p><strong>URL:</strong> ${data.source_url}</p>
+                    <p><strong>${translations.analyzedUrl}:</strong> ${data.source_url}</p>
                 </div>
                 
-                <div class="result-section">
+                <div class="result-section p-4 bg-gray-100 dark:bg-gray-700 rounded-lg shadow mt-4">
                     <h3 class="text-xl font-bold">${translations.pageSpeedTitle}</h3>
-                    <p><strong>${translations.performanceScore}:</strong> ${data.pageSpeed.performanceScore}%</p>
+                    <p><strong>${translations.performanceScore}:</strong> ${data.pageSpeed.performanceScore || 'N/A'}%</p>
                 </div>
 
-                <div class="result-section">
+                <div class="result-section p-4 bg-gray-100 dark:bg-gray-700 rounded-lg shadow mt-4">
                     <h3 class="text-xl font-bold">${translations.seoQualityTitle}</h3>
                     <p><strong>${translations.title}:</strong> ${data.seoQuality.title || 'N/A'}</p>
                     <p><strong>${translations.metaDescription}:</strong> ${data.seoQuality.metaDescription || 'N/A'}</p>
                     <p><strong>${translations.wordCount}:</strong> ${data.seoQuality.wordCount || 'N/A'}</p>
                 </div>
 
-                <div class="result-section">
+                <div class="result-section p-4 bg-gray-100 dark:bg-gray-700 rounded-lg shadow mt-4">
                     <h3 class="text-xl font-bold">${translations.brokenLinksTitle}</h3>
-                    <p><strong>${translations.brokenLinksCount}:</strong> ${data.brokenLinks.count}</p>
-                    ${data.brokenLinks.list.length > 0 ? `<ul class="list-disc ml-5 mt-2">${data.brokenLinks.list.map(link => `<li>${link}</li>`).join('')}</ul>` : `<p>${translations.noBrokenLinks}</p>`}
+                    <p><strong>${translations.brokenLinksCount}:</strong> ${data.brokenLinks.count || 'N/A'}</p>
+                    ${data.brokenLinks.list && data.brokenLinks.list.length > 0 ? `<ul class="list-disc ml-5 mt-2">${data.brokenLinks.list.map(link => `<li>${link}</li>`).join('')}</ul>` : `<p>${translations.noBrokenLinks}</p>`}
                 </div>
 
-                <div class="ai-section p-4 rounded-lg">
+                <div class="ai-section p-4 bg-gray-100 dark:bg-gray-700 rounded-lg shadow mt-4">
                     <h3 class="text-xl font-bold mb-2">${translations.aiInsightsTitle}</h3>
                     <h4 class="font-semibold">${translations.aiSeoSuggestions}:</h4>
-                    <p>${data.aiInsights.seoSuggestions}</p>
+                    <p>${data.aiInsights.seoSuggestions || 'N/A'}</p>
                     <h4 class="font-semibold mt-4">${translations.aiContentRefinement}:</h4>
-                    <p>${data.aiInsights.contentRefinement}</p>
+                    <p>${data.aiInsights.contentRefinement || 'N/A'}</p>
                 </div>
             </div>
         `;
@@ -268,9 +282,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const displayArticleResults = (data) => {
         let html = `
-            <div class="ai-section p-4 rounded-lg">
+            <div class="ai-section p-4 bg-gray-100 dark:bg-gray-700 rounded-lg shadow">
                 <h3 class="text-xl font-bold mb-2">${translations.articleAnalysisTitle}</h3>
-                <p>${data.ai_analysis}</p>
+                <p>${data.ai_analysis || 'N/A'}</p>
             </div>
         `;
         articleResultContainer.innerHTML = html;
@@ -293,5 +307,5 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
-
 });
+
