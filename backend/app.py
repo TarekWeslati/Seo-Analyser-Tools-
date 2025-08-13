@@ -5,8 +5,6 @@ import google.generativeai as genai
 from firebase_admin import credentials, auth, firestore
 from flask import Flask, request, jsonify, send_from_directory, make_response
 from flask_cors import CORS
-from backend.services.website_analysis import get_website_analysis, generate_pdf_report, ai_rewrite_seo_content, ai_refine_content, ai_broken_link_suggestions
-from backend.services.article_analysis import analyze_article_content, rewrite_article
 
 # Get Firebase service account key and Gemini API key from environment variables
 firebase_service_account_key_json = os.getenv("FIREBASE_SERVICE_ACCOUNT_KEY_JSON")
@@ -34,23 +32,36 @@ if gemini_api_key:
         print(f"Error configuring Gemini API: {e}")
         print("Gemini API will not be available.")
 
-# Initialize Flask app
-app = Flask(__name__, static_folder='../static')
+# Define the absolute paths for the project root and static folder
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+STATIC_FOLDER = os.path.join(PROJECT_ROOT, 'static')
+TEMPLATE_FOLDER = os.path.join(PROJECT_ROOT) # Assumes index.html is in the project root
+
+# Initialize Flask app with corrected paths
+app = Flask(__name__,
+            static_folder=STATIC_FOLDER,
+            static_url_path='/static',
+            template_folder=TEMPLATE_FOLDER)
 CORS(app)
 
 @app.route('/')
 def serve_index():
-    # This route will serve your main HTML file
-    return send_from_directory('../', 'index.html')
+    # This route now serves the index.html file from the project root
+    # It will look for 'index.html' in the directory defined by TEMPLATE_FOLDER
+    return send_from_directory(app.template_folder, 'index.html')
 
+# The static route is now handled automatically by Flask due to the static_folder parameter,
+# but we'll keep a route for non-static files like favicon.ico if needed.
 @app.route('/<path:path>')
-def serve_static(path):
-    # This route will serve all other static files (like JS and CSS)
-    # The path to 'static' is now defined in the Flask app initialization
-    # It's assumed your static files are in a directory named 'static' at the project root
-    if path.startswith('static/'):
-        return send_from_directory('../', path)
-    return send_from_directory('../', path)
+def serve_other_files(path):
+    return send_from_directory(app.template_folder, path)
+
+# =================================================================================================
+# The rest of your API routes remain unchanged
+# =================================================================================================
+
+from backend.services.website_analysis import get_website_analysis, generate_pdf_report, ai_rewrite_seo_content, ai_refine_content, ai_broken_link_suggestions
+from backend.services.article_analysis import analyze_article_content, rewrite_article
 
 @app.route('/api/analyze_website', methods=['POST'])
 def analyze_website():
