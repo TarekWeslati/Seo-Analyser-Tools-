@@ -3,127 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title data-translate="websiteAnalyzerTitle">Website & Article Analyzer</title>
-    <!-- Link to Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- Link to Tailwind CSS (loaded from CDN for simplicity) -->
+    <title>SEO Analyser - تحليل المواقع والمقالات</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
-            font-family: 'Inter', sans-serif;
             transition: background-color 0.3s, color 0.3s;
-            direction: rtl; /* Set default direction for Arabic */
-        }
-        body.dark {
-            background-color: #1a202c;
-            color: #e2e8f0;
-        }
-        body.light {
-            background-color: #f7fafc;
-            color: #2d3748;
-        }
-        .container {
-            transition: background-color 0.3s, box-shadow 0.3s;
-        }
-        .container.dark-mode-container {
-            background-color: #2d3748;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        }
-        .container.light-mode-container {
-            background-color: #fff;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        }
-        .btn-primary {
-            background-color: #4c51bf;
-        }
-        .btn-primary:hover {
-            background-color: #434190;
-        }
-        .loading-spinner {
-            border-top-color: #4c51bf;
         }
     </style>
 </head>
-<body class="light">
-    <!-- Main Container -->
-    <div class="container bg-white dark-mode-container shadow-lg rounded-xl p-8 max-w-4xl w-full mx-auto my-10 transition-colors duration-300">
-        
-        <!-- Header -->
-        <header class="flex flex-col sm:flex-row justify-between items-center mb-8">
-            <h1 class="text-3xl font-bold mb-4 sm:mb-0" data-translate="websiteAnalyzerTitle">Website & Article Analyzer</h1>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans">
+
+    <header class="bg-white dark:bg-gray-800 shadow-md p-6 sticky top-0 z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-3xl font-extrabold text-blue-600">SEO Analyser</h1>
             <div class="flex items-center space-x-4">
-                <!-- User Info & Auth Buttons -->
-                <span id="user-display-name" class="text-blue-500 font-semibold hidden"></span>
-                <button id="login-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md" data-translate="loginButton">Login</button>
-                <button id="logout-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg shadow-md hidden" data-translate="logoutButton">Logout</button>
-                <!-- Theme Toggle -->
-                <button id="theme-toggle" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white">
-                    <i class="fas fa-moon"></i>
-                </button>
-                <!-- Language Toggle -->
-                <button id="language-toggle" class="py-2 px-4 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white font-bold">
-                    <span data-translate="toggleLanguage">AR</span>
+                <button id="themeToggle" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                    <svg id="moonIcon" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                    <svg id="sunIcon" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
                 </button>
             </div>
-        </header>
-
-        <!-- Main Content Tabs -->
-        <div class="flex border-b border-gray-200 dark:border-gray-700 mb-6">
-            <button id="tab-website" class="tab-button px-4 py-2 text-lg font-medium border-b-2 border-transparent hover:border-blue-500 text-blue-500" data-translate="websiteAnalyzerTab">Website Analyzer</button>
-            <button id="tab-article" class="tab-button px-4 py-2 text-lg font-medium border-b-2 border-transparent hover:border-blue-500" data-translate="articleAnalyzerTab">Article Analyzer</button>
         </div>
+    </header>
 
-        <!-- Website Analyzer Section -->
-        <div id="section-website" class="tab-content">
-            <form id="website-analyzer-form" class="space-y-4">
-                <label for="url-input" class="block text-sm font-medium" data-translate="websiteUrlLabel">Enter website URL:</label>
-                <input type="url" id="url-input" name="url" placeholder="https://example.com" class="w-full p-3 border rounded-lg bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <button type="submit" id="analyze-website-btn" class="btn-primary text-white font-bold py-3 px-6 rounded-lg w-full" data-translate="analyzeButton">Analyze</button>
-            </form>
-            <div id="website-result-container" class="mt-8"></div>
-        </div>
+    <main class="container mx-auto p-6 lg:p-12">
+        <p class="text-xl text-center text-gray-700 dark:text-gray-300 mb-8">
+            بوابة متكاملة لتحليل المواقع والمقالات بمساعدة الذكاء الاصطناعي
+        </p>
 
-        <!-- Article Analyzer Section -->
-        <div id="section-article" class="tab-content hidden">
-            <form id="article-analyzer-form" class="space-y-4">
-                <label for="article-input" class="block text-sm font-medium" data-translate="articleTextLabel">Enter article text:</label>
-                <textarea id="article-input" rows="10" placeholder="Paste your article text here..." class="w-full p-3 border rounded-lg bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
-                <button type="submit" id="analyze-article-btn" class="btn-primary text-white font-bold py-3 px-6 rounded-lg w-full" data-translate="analyzeButton">Analyze</button>
-            </form>
-            <div id="article-result-container" class="mt-8"></div>
-        </div>
-
-        <!-- Loading Spinner -->
-        <div id="loading-spinner" class="hidden flex justify-center items-center mt-8">
-            <div class="animate-spin rounded-full h-12 w-12 border-4 border-t-4 border-gray-200 loading-spinner"></div>
-            <p class="ml-4 text-lg" data-translate="processingMessage">Processing...</p>
-        </div>
-
-        <!-- Auth Modal -->
-        <div id="auth-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center hidden">
-            <div class="modal-content bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg w-full max-w-md">
-                <div class="flex justify-end">
-                    <button id="modal-close-button" class="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 text-2xl">
-                        &times;
-                    </button>
-                </div>
-                <h2 class="text-2xl font-bold text-center mb-6" data-translate="authModalTitle">Sign In</h2>
-                <div class="mt-6 text-center">
-                    <button id="modal-google-login-button" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg shadow-md flex items-center justify-center w-full transition duration-300">
-                        <i class="fab fa-google mr-2"></i>
-                        <span data-translate="signInWithGoogle">Sign in with Google</span>
-                    </button>
-                </div>
+        <section id="website-analysis-section" class="mt-8 p-6 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700">
+            <h2 class="text-2xl font-bold mb-4 text-center">تحليل المواقع والمنافسين</h2>
+            <div class="mb-4">
+                <label for="websiteUrl" class="block text-gray-700 dark:text-gray-200 font-medium mb-2">أدخل عنوان URL للموقع:</label>
+                <input type="url" id="websiteUrl" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100" placeholder="https://example.com" required>
             </div>
+            <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
+                <button id="analyzeWebsiteButton" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300">تحليل الموقع</button>
+                <button id="analyzeCompetitorButton" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300">تحليل المنافس</button>
+            </div>
+            <div id="website-analysis-output" class="mt-6 p-4 min-h-[100px] bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                <p class="text-gray-500 dark:text-gray-400">النتائج ستظهر هنا...</p>
+            </div>
+        </section>
+
+        <section id="article-analysis-section" class="mt-12 p-6 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700">
+            <h2 class="text-2xl font-bold mb-4 text-center">تحليل وتحسين المقالات</h2>
+            <div class="mb-4">
+                <label for="articleText" class="block text-gray-700 dark:text-gray-200 font-medium mb-2">أدخل محتوى المقال هنا:</label>
+                <textarea id="articleText" rows="10" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100" placeholder="اكتب أو الصق محتوى مقالك هنا..."></textarea>
+            </div>
+            <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
+                <button id="analyzeArticleButton" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300">تحليل المقال</button>
+                <button id="articleRewriteButton" class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300">إعادة كتابة المقال</button>
+            </div>
+            <div id="analysis-output" class="mt-6 p-4 min-h-[100px] bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                <p class="text-gray-500 dark:text-gray-400">النتائج ستظهر هنا...</p>
+            </div>
+        </section>
+        
+        <section class="mt-12 p-6 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 text-center">
+            <h2 class="text-2xl font-bold mb-4 text-blue-600">ميزات مدفوعة</h2>
+            <p class="text-gray-700 dark:text-gray-300 mb-4">
+                للحصول على تقارير غير محدودة، تحليل المنافسين المتقدم، وميزات الذكاء الاصطناعي الحصرية مثل اقتراح الروابط الداخلية،
+                قم بالترقية إلى خطتنا المدفوعة.
+            </p>
+            <a href="#" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-md transition duration-300">الترقية الآن</a>
+        </section>
+    </main>
+
+    <footer class="bg-white dark:bg-gray-800 shadow-inner p-4 mt-12">
+        <div class="container mx-auto text-center text-gray-600 dark:text-gray-400">
+            <p>&copy; 2025 SEO Analyser. جميع الحقوق محفوظة.</p>
         </div>
+    </footer>
 
-    </div>
-
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-    
-    <!-- Link to the main JavaScript file -->
     <script src="main.js"></script>
+    <script>
+        // Dark Mode Toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const sunIcon = document.getElementById('sunIcon');
+        const moonIcon = document.getElementById('moonIcon');
+        
+        const toggleTheme = () => {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+                moonIcon.classList.remove('hidden');
+                sunIcon.classList.add('hidden');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+                moonIcon.classList.add('hidden');
+                sunIcon.classList.remove('hidden');
+            }
+        };
+
+        themeToggle.addEventListener('click', toggleTheme);
+
+        // Check for saved theme preference
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+            moonIcon.classList.add('hidden');
+            sunIcon.classList.remove('hidden');
+        } else {
+            document.documentElement.classList.remove('dark');
+            moonIcon.classList.remove('hidden');
+            sunIcon.classList.add('hidden');
+        }
+    </script>
 </body>
 </html>
