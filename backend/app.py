@@ -3,31 +3,21 @@ import json
 import firebase_admin
 import google.generativeai as genai
 from firebase_admin import credentials, auth, firestore
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, make_response
 from flask_cors import CORS
+from backend.services.website_analysis import get_website_analysis, generate_pdf_report, ai_rewrite_seo_content, ai_refine_content, ai_broken_link_suggestions
+from backend.services.article_analysis import analyze_article_content, rewrite_article
 
-# Import your services
-from services.website_analysis import get_website_analysis, generate_pdf_report, ai_rewrite_seo_content, ai_refine_content, ai_broken_link_suggestions
-from services.article_analysis import analyze_article_content, rewrite_article
-
-# Get Firebase service account key and Gemini API variables from environment variables
+# Get Firebase service account key and Gemini API key from environment variables
 firebase_service_account_key_json = os.getenv("FIREBASE_SERVICE_ACCOUNT_KEY_JSON")
 gemini_api_key = os.getenv("GEMINI_API_KEY")
-
-# Initialize Flask with the correct template and static folders
-# Note: The paths are relative to the location of app.py
-# The static_folder is now pointing to the 'public' folder in frontend
-app = Flask(__name__,
-            static_folder='../frontend/public',
-            template_folder='../frontend/public')
-CORS(app)
 
 if firebase_service_account_key_json:
     try:
         cred_dict = json.loads(firebase_service_account_key_json)
         cred = credentials.Certificate(cred_dict)
         firebase_admin.initialize_app(cred)
-        db = firestore.client() # Initialize Firestore
+        db = firestore.client()  # Initialize Firestore
         print("Firebase Admin SDK and Firestore initialized successfully.")
     except Exception as e:
         print(f"Error initializing Firebase Admin SDK: {e}")
@@ -44,47 +34,70 @@ if gemini_api_key:
         print(f"Error configuring Gemini API: {e}")
         print("Gemini API will not be available.")
 
-# This route serves the main page (index.html) from the correct path.
+# Initialize Flask app
+app = Flask(__name__, static_folder='../static')
+CORS(app)
+
 @app.route('/')
-def home():
-    """
-    Serves the index.html file from the 'frontend/public' directory.
-    """
-    return send_from_directory(app.template_folder, 'index.html')
+def serve_index():
+    # This route will serve your main HTML file
+    return send_from_directory('../', 'index.html')
 
+@app.route('/<path:path>')
+def serve_static(path):
+    # This route will serve all other static files (like JS and CSS)
+    # The path to 'static' is now defined in the Flask app initialization
+    # It's assumed your static files are in a directory named 'static' at the project root
+    if path.startswith('static/'):
+        return send_from_directory('../', path)
+    return send_from_directory('../', path)
 
-# This route serves all static files (like CSS, JS, etc.) from their correct subdirectories.
-# The path in the HTML will be /css/style.css or /js/main.js
-@app.route('/<path:filename>')
-def serve_static(filename):
-    """
-    Serves static files from the 'frontend/public' directory and its subdirectories.
-    """
-    return send_from_directory(app.static_folder, filename)
-
-
-@app.route('/analyze_website', methods=['POST'])
-def analyze_website_route():
+@app.route('/api/analyze_website', methods=['POST'])
+def analyze_website():
     data = request.get_json()
     url = data.get('url', '')
-    lang = request.headers.get('Accept-Language', 'en')
-
     if not url:
         return jsonify({"error": "URL is required"}), 400
-    
     try:
-        analysis_results = get_website_analysis(url, lang=lang)
-        if analysis_results.get("error"):
-            return jsonify({"error": analysis_results["error"]}), 500
+        analysis_results = get_website_analysis(url)
         return jsonify(analysis_results), 200
     except Exception as e:
         print(f"Error during website analysis: {e}")
-        return jsonify({"error": "Failed to analyze website. Please try again later."}), 500
+        return jsonify({"error": "Failed to analyze website"}), 500
 
-# Your other routes will go here
-# ... (rest of your existing routes)
+@app.route('/api/rewrite_seo_content', methods=['POST'])
+def rewrite_seo_content_route():
+    data = request.get_json()
+    content = data.get('content', '')
+    lang = data.get('lang', 'en')
+    if not content:
+        return jsonify({"error": "Content is required"}), 400
+    try:
+        rewritten_content = ai_rewrite_seo_content(content, lang=lang)
+        return jsonify({"rewritten_content": rewritten_content}), 200
+    except Exception as e:
+        print(f"Error during SEO content rewrite: {e}")
+        return jsonify({"error": "Failed to rewrite SEO content"}), 500
+    
+@app.route('/api/refine_content', methods=['POST'])
+def refine_content_route():
+    data = request.get_json()
+    text_to_refine = data.get('text_to_refine', '')
+    lang = request.headers.get('Accept-Language', 'en')
 
-@app.route('/analyze_content', methods=['POST'])
+    if not text_to_refine:
+        return jsonify({"error": "Text to refine is required"}), 400
+
+    try:
+        refined_data = ai_refine_content(text_to_refine, lang=lang)
+        if refined_data.get("error"):
+            return jsonify({"error": refined_data["error"]}), 500
+        return jsonify(refined_data), 200
+    except Exception as e:
+        print(f"Error during AI content refinement: {e}")
+        return jsonify({"error": "Failed to refine content. Please try again later."}), 500
+
+@app.route('/api/analyze_article', methods=['POST'])
 def analyze_article():
     data = request.get_json()
     article_text = data.get('article_text', '')
@@ -102,7 +115,7 @@ def analyze_article():
         print(f"Error during article content analysis: {e}")
         return jsonify({"error": "Failed to analyze article content. Please try again later."}), 500
 
-@app.route('/rewrite_article', methods=['POST'])
+@app.route('/api/rewrite_article', methods=['POST'])
 def rewrite_article_route():
     data = request.get_json()
     article_text = data.get('article_text', '')
@@ -119,3 +132,6 @@ def rewrite_article_route():
     except Exception as e:
         print(f"Error during article rewrite: {e}")
         return jsonify({"error": "Failed to rewrite article. Please try again later."}), 500
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=os.environ.get('PORT', 5000), debug=True)
