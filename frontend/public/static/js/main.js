@@ -10,11 +10,11 @@ document.addEventListener('DOMContentLoaded', () => {
         appId: "1:283151112955:web:4f715cd8fc188ebfb8ee5e" // Replace with your app ID
     };
 
-    if (!firebase.apps.length) {
+    if (typeof firebase !== 'undefined' && !firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
     }
-    const auth = firebase.auth();
-    const provider = new firebase.auth.GoogleAuthProvider();
+    const auth = typeof firebase !== 'undefined' ? firebase.auth() : null;
+    const provider = typeof firebase !== 'undefined' ? new firebase.auth.GoogleAuthProvider() : null;
 
     // --- Variables and Elements ---
     const articleTextarea = document.getElementById('articleText');
@@ -92,181 +92,204 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Modal control
-    loginButton.addEventListener('click', () => modal.classList.remove('hidden'));
-    closeModalButton.addEventListener('click', () => modal.classList.add('hidden'));
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) modal.classList.add('hidden');
-    });
+    if (loginButton) loginButton.addEventListener('click', () => modal.classList.remove('hidden'));
+    if (closeModalButton) closeModalButton.addEventListener('click', () => modal.classList.add('hidden'));
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.classList.add('hidden');
+        });
+    }
 
     // Switch between login and signup
-    switchAuthButton.addEventListener('click', () => {
-        isLoginMode = !isLoginMode;
-        modalTitle.textContent = isLoginMode ? translations['loginTitle'] : translations['signupTitle'];
-        submitButton.textContent = isLoginMode ? translations['loginButton'] : translations['signupButton'];
-        switchAuthText.textContent = isLoginMode ? translations['noAccountText'] : translations['haveAccountText'];
-        switchAuthButton.textContent = isLoginMode ? translations['signupNow'] : translations['loginNow'];
-    });
+    if (switchAuthButton) {
+        switchAuthButton.addEventListener('click', () => {
+            isLoginMode = !isLoginMode;
+            modalTitle.textContent = isLoginMode ? translations['loginTitle'] : translations['signupTitle'];
+            submitButton.textContent = isLoginMode ? translations['loginButton'] : translations['signupButton'];
+            switchAuthText.textContent = isLoginMode ? translations['noAccountText'] : translations['haveAccountText'];
+            switchAuthButton.textContent = isLoginMode ? translations['signupNow'] : translations['loginNow'];
+        });
+    }
 
     // Google Sign-In
-    googleLoginButton.addEventListener('click', async () => {
-        try {
-            const result = await auth.signInWithPopup(provider);
-            const idToken = await result.user.getIdToken();
-            await fetch('/api/auth/google', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${idToken}`
+    if (googleLoginButton) {
+        googleLoginButton.addEventListener('click', async () => {
+            if (!auth || !provider) {
+                alert('Firebase Authentication is not available.');
+                return;
+            }
+            try {
+                const result = await auth.signInWithPopup(provider);
+                const idToken = await result.user.getIdToken();
+                const response = await fetch('/api/auth/google', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${idToken}`
+                    }
+                });
+                // Handle successful login
+                if (response.ok) {
+                    alert('Login with Google successful!');
+                    if (modal) modal.classList.add('hidden');
+                } else {
+                    const data = await response.json();
+                    alert(`Login failed: ${data.error}`);
                 }
-            });
-            // Handle successful login
-            alert('Login with Google successful!');
-            modal.classList.add('hidden');
-            // Update UI to show user is logged in
-        } catch (error) {
-            console.error('Google Sign-In Error:', error);
-            alert('Failed to sign in with Google.');
-        }
-    });
+            } catch (error) {
+                console.error('Google Sign-In Error:', error);
+                alert('Failed to sign in with Google.');
+            }
+        });
+    }
 
     // Email/Password login/signup
-    loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = document.getElementById('modal-email-input').value;
-        const password = document.getElementById('modal-password-input').value;
-        const submitUrl = isLoginMode ? '/api/auth/login' : '/api/auth/signup';
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('modal-email-input').value;
+            const password = document.getElementById('modal-password-input').value;
+            const submitUrl = isLoginMode ? '/api/auth/login' : '/api/auth/signup';
 
-        try {
-            const response = await fetch(submitUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
-            });
+            try {
+                const response = await fetch(submitUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
 
-            const data = await response.json();
-            if (response.ok) {
-                alert(isLoginMode ? 'Login successful!' : 'Signup successful!');
-                modal.classList.add('hidden');
-                // Store token or user state
-            } else {
-                alert(`Error: ${data.error}`);
+                const data = await response.json();
+                if (response.ok) {
+                    alert(isLoginMode ? 'Login successful!' : 'Signup successful!');
+                    if (modal) modal.classList.add('hidden');
+                    // Store token or user state
+                } else {
+                    alert(`Error: ${data.error}`);
+                }
+            } catch (error) {
+                console.error('Auth Error:', error);
+                alert('An error occurred during authentication.');
             }
-        } catch (error) {
-            console.error('Auth Error:', error);
-            alert('An error occurred during authentication.');
-        }
-    });
+        });
+    }
 
     // --- Analysis Functions ---
 
     // Article Analysis
-    analyzeArticleButton.addEventListener('click', async () => {
-        const articleContent = articleTextarea.value;
-        if (!articleContent) {
-            analysisOutput.innerHTML = `<p class="text-red-500">${translations.enterArticleContent}</p>`;
-            return;
-        }
-
-        analysisOutput.innerHTML = `<p class="text-blue-500">${translations.analyzingArticle}</p>`;
-
-        try {
-            const response = await fetch('/api/analyze-article', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content: articleContent })
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                let outputHtml = `<h4 class="text-lg font-medium mb-2">${translations.articleAnalysisResults}</h4>`;
-                outputHtml += `<p><strong>${translations.keywords}:</strong> ${data.keywords.join(', ')}</p>`;
-                outputHtml += `<p class="mt-2"><strong>${translations.readabilityScore}:</strong> ${data.readability_score}</p>`;
-                outputHtml += `<p><strong>${translations.readabilityRecommendations}:</strong> ${data.readability_recommendations}</p>`;
-                outputHtml += `<p class="mt-2"><strong>${translations.userIntent}:</strong> ${data.user_intent}</p>`;
-                outputHtml += `<p class="mt-2"><strong>${translations.contentGaps}:</strong> ${data.content_gaps.join(', ')}</p>`;
-                analysisOutput.innerHTML = outputHtml;
-            } else {
-                analysisOutput.innerHTML = `<p class="text-red-500">Error: ${data.error}</p>`;
+    if (analyzeArticleButton) {
+        analyzeArticleButton.addEventListener('click', async () => {
+            const articleContent = articleTextarea.value;
+            if (!articleContent) {
+                analysisOutput.innerHTML = `<p class="text-red-500">${translations.enterArticleContent}</p>`;
+                return;
             }
-        } catch (error) {
-            console.error('Error:', error);
-            analysisOutput.innerHTML = `<p class="text-red-500">${translations.fetchDataError}</p>`;
-        }
-    });
+
+            analysisOutput.innerHTML = `<p class="text-blue-500">${translations.analyzingArticle}</p>`;
+
+            try {
+                const response = await fetch('/api/analyze-article', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content: articleContent })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    let outputHtml = `<h4 class="text-lg font-medium mb-2">${translations.articleAnalysisResults}</h4>`;
+                    outputHtml += `<p><strong>${translations.keywords}:</strong> ${data.keywords.join(', ')}</p>`;
+                    outputHtml += `<p class="mt-2"><strong>${translations.readabilityScore}:</strong> ${data.readability_score}</p>`;
+                    outputHtml += `<p><strong>${translations.readabilityRecommendations}:</strong> ${data.readability_recommendations}</p>`;
+                    outputHtml += `<p class="mt-2"><strong>${translations.userIntent}:</strong> ${data.user_intent}</p>`;
+                    outputHtml += `<p class="mt-2"><strong>${translations.contentGaps}:</strong> ${data.content_gaps.join(', ')}</p>`;
+                    analysisOutput.innerHTML = outputHtml;
+                } else {
+                    analysisOutput.innerHTML = `<p class="text-red-500">Error: ${data.error}</p>`;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                analysisOutput.innerHTML = `<p class="text-red-500">${translations.fetchDataError}</p>`;
+            }
+        });
+    }
 
     // Article Rewriter
-    articleRewriteButton.addEventListener('click', async () => {
-        // ... (Rewriter logic here)
-        analysisOutput.innerHTML = `<p class="text-orange-500">${translations.rewritingFeature}</p>`;
-    });
+    if (articleRewriteButton) {
+        articleRewriteButton.addEventListener('click', async () => {
+            analysisOutput.innerHTML = `<p class="text-orange-500">${translations.rewritingFeature}</p>`;
+        });
+    }
 
     // Website Keywords Analysis
-    analyzeWebsiteButton.addEventListener('click', async () => {
-        const url = websiteUrlInput.value;
-        if (!url) {
-            websiteAnalysisOutput.innerHTML = `<p class="text-red-500">${translations.enterYourWebsiteURLFirst}</p>`;
-            return;
-        }
-
-        websiteAnalysisOutput.innerHTML = `<p class="text-blue-500">${translations.analyzingWebsite}</p>`;
-
-        try {
-            const response = await fetch('/api/get_website_keywords', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url: url })
-            });
-            
-            const data = await response.json();
-
-            if (response.ok) {
-                let outputHtml = `<h4 class="text-lg font-medium mb-2">${translations.websiteKeywordsAnalysis}</h4>`;
-                outputHtml += `<p><strong>${translations.keywords}:</strong> ${data.keywords.join(', ')}</p>`;
-                outputHtml += `<p><strong>${translations.longTailKeywords}:</strong> ${data.long_tail_keywords.join(', ')}</p>`;
-                websiteAnalysisOutput.innerHTML = outputHtml;
-            } else {
-                websiteAnalysisOutput.innerHTML = `<p class="text-red-500">Error: ${data.error}</p>`;
+    if (analyzeWebsiteButton) {
+        analyzeWebsiteButton.addEventListener('click', async () => {
+            const url = websiteUrlInput.value;
+            if (!url) {
+                websiteAnalysisOutput.innerHTML = `<p class="text-red-500">${translations.enterYourWebsiteURLFirst}</p>`;
+                return;
             }
-        } catch (error) {
-            console.error('Error:', error);
-            websiteAnalysisOutput.innerHTML = `<p class="text-red-500">${translations.fetchDataError}</p>`;
-        }
-    });
+
+            websiteAnalysisOutput.innerHTML = `<p class="text-blue-500">${translations.analyzingWebsite}</p>`;
+
+            try {
+                const response = await fetch('/api/get_website_keywords', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: url })
+                });
+                
+                const data = await response.json();
+
+                if (response.ok) {
+                    let outputHtml = `<h4 class="text-lg font-medium mb-2">${translations.websiteKeywordsAnalysis}</h4>`;
+                    outputHtml += `<p><strong>${translations.keywords}:</strong> ${data.keywords.join(', ')}</p>`;
+                    outputHtml += `<p><strong>${translations.longTailKeywords}:</strong> ${data.long_tail_keywords.join(', ')}</p>`;
+                    websiteAnalysisOutput.innerHTML = outputHtml;
+                } else {
+                    websiteAnalysisOutput.innerHTML = `<p class="text-red-500">Error: ${data.error}</p>`;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                websiteAnalysisOutput.innerHTML = `<p class="text-red-500">${translations.fetchDataError}</p>`;
+            }
+        });
+    }
 
     // Competitor Analysis
-    analyzeCompetitorButton.addEventListener('click', async () => {
-        const my_url = websiteUrlInput.value;
-        if (!my_url) {
-            websiteAnalysisOutput.innerHTML = `<p class="text-red-500">${translations.enterYourWebsiteURLFirst}</p>`;
-            return;
-        }
-
-        const competitor_url = prompt(translations.enterCompetitorURLPrompt);
-        if (!competitor_url) return;
-
-        websiteAnalysisOutput.innerHTML = `<p class="text-blue-500">${translations.analyzingCompetitors}</p>`;
-
-        try {
-            const response = await fetch('/api/analyze_competitors', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ my_url: my_url, competitor_url: competitor_url })
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                let outputHtml = `<h4 class="text-lg font-medium mb-2">${translations.competitorAnalysisResults}</h4>`;
-                outputHtml += `<p><strong>${translations.commonKeywords}:</strong> ${data.common_keywords.join(', ')}</p>`;
-                outputHtml += `<p class="mt-2"><strong>${translations.competitorExclusiveKeywords}:</strong> ${data.competitor_exclusive_keywords.join(', ')}</p>`;
-                websiteAnalysisOutput.innerHTML = outputHtml;
-            } else {
-                websiteAnalysisOutput.innerHTML = `<p class="text-red-500">Error: ${data.error}</p>`;
+    if (analyzeCompetitorButton) {
+        analyzeCompetitorButton.addEventListener('click', async () => {
+            const my_url = websiteUrlInput.value;
+            if (!my_url) {
+                websiteAnalysisOutput.innerHTML = `<p class="text-red-500">${translations.enterYourWebsiteURLFirst}</p>`;
+                return;
             }
-        } catch (error) {
-            console.error('Error:', error);
-            websiteAnalysisOutput.innerHTML = `<p class="text-red-500">${translations.fetchDataError}</p>`;
-        }
-    });
+
+            const competitor_url = prompt(translations.enterCompetitorURLPrompt);
+            if (!competitor_url) return;
+
+            websiteAnalysisOutput.innerHTML = `<p class="text-blue-500">${translations.analyzingCompetitors}</p>`;
+
+            try {
+                const response = await fetch('/api/analyze_competitors', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ my_url: my_url, competitor_url: competitor_url })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    let outputHtml = `<h4 class="text-lg font-medium mb-2">${translations.competitorAnalysisResults}</h4>`;
+                    outputHtml += `<p><strong>${translations.commonKeywords}:</strong> ${data.common_keywords.join(', ')}</p>`;
+                    outputHtml += `<p class="mt-2"><strong>${translations.competitorExclusiveKeywords}:</strong> ${data.competitor_exclusive_keywords.join(', ')}</p>`;
+                    websiteAnalysisOutput.innerHTML = outputHtml;
+                } else {
+                    websiteAnalysisOutput.innerHTML = `<p class="text-red-500">Error: ${data.error}</p>`;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                websiteAnalysisOutput.innerHTML = `<p class="text-red-500">${translations.fetchDataError}</p>`;
+            }
+        });
+    }
 });
