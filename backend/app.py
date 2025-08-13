@@ -5,17 +5,21 @@ import google.generativeai as genai
 from firebase_admin import credentials, auth, firestore
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-from backend.services.website_analysis import get_website_analysis, generate_pdf_report, ai_rewrite_seo_content, ai_refine_content, ai_broken_link_suggestions
-from backend.services.article_analysis import analyze_article_content, rewrite_article
+
+# Import your services
+from services.website_analysis import get_website_analysis, generate_pdf_report, ai_rewrite_seo_content, ai_refine_content, ai_broken_link_suggestions
+from services.article_analysis import analyze_article_content, rewrite_article
 
 # Get Firebase service account key and Gemini API variables from environment variables
 firebase_service_account_key_json = os.getenv("FIREBASE_SERVICE_ACCOUNT_KEY_JSON")
 gemini_api_key = os.getenv("GEMINI_API_KEY")
 
-# Initialize Flask with the correct paths for static and template files
-# The template_folder is set to the folder where index.html is located
-# The static_folder is set to the same folder for consistency
-app = Flask(__name__, static_folder='../frontend/public/static', template_folder='../frontend/public')
+# Initialize Flask with the correct template and static folders
+# Note: The paths are relative to the location of app.py
+# The static_folder is now pointing to the 'public' folder in frontend
+app = Flask(__name__,
+            static_folder='../frontend/public',
+            template_folder='../frontend/public')
 CORS(app)
 
 if firebase_service_account_key_json:
@@ -40,23 +44,23 @@ if gemini_api_key:
         print(f"Error configuring Gemini API: {e}")
         print("Gemini API will not be available.")
 
-# This is the most important change
-# We are now serving the index.html file from the correct path.
+# This route serves the main page (index.html) from the correct path.
 @app.route('/')
 def home():
     """
-    Serves the index.html file from the frontend/public directory.
+    Serves the index.html file from the 'frontend/public' directory.
     """
     return send_from_directory(app.template_folder, 'index.html')
 
-# This route serves static files like CSS and JS.
-# The path is now relative to the root directory.
+
+# This route serves all static files (like CSS, JS, etc.) from their correct subdirectories.
+# The path in the HTML will be /css/style.css or /js/main.js
 @app.route('/<path:filename>')
 def serve_static(filename):
     """
-    Serves static files like CSS and JavaScript from the 'frontend/public' directory.
+    Serves static files from the 'frontend/public' directory and its subdirectories.
     """
-    return send_from_directory(app.template_folder, filename)
+    return send_from_directory(app.static_folder, filename)
 
 
 @app.route('/analyze_website', methods=['POST'])
@@ -77,7 +81,9 @@ def analyze_website_route():
         print(f"Error during website analysis: {e}")
         return jsonify({"error": "Failed to analyze website. Please try again later."}), 500
 
-# The rest of your existing routes...
+# Your other routes will go here
+# ... (rest of your existing routes)
+
 @app.route('/analyze_content', methods=['POST'])
 def analyze_article():
     data = request.get_json()
@@ -113,4 +119,3 @@ def rewrite_article_route():
     except Exception as e:
         print(f"Error during article rewrite: {e}")
         return jsonify({"error": "Failed to rewrite article. Please try again later."}), 500
-
