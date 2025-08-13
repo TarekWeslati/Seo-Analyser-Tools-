@@ -6,16 +6,16 @@ import google.generativeai as genai
 from firebase_admin import credentials, auth, firestore
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-from backend.services.website_analysis import get_website_analysis, generate_pdf_report, ai_rewrite_seo_content, ai_refine_content, ai_broken_link_suggestions
-from backend.services.article_analysis import analyze_article_content, rewrite_article
+from backend.services.website_analysis import get_website_analysis
+from backend.services.article_analysis import analyze_article_content
 
 # Get the Firebase service account key and Gemini API key from environment variables
 firebase_service_account_key_json = os.getenv("FIREBASE_SERVICE_ACCOUNT_KEY_JSON")
 gemini_api_key = os.getenv("GEMINI_API_KEY")
 
+# Initialize Firebase Admin SDK
 if firebase_service_account_key_json:
     try:
-        # Load the service account key from the environment variable (JSON string)
         cred_dict = json.loads(firebase_service_account_key_json)
         cred = credentials.Certificate(cred_dict)
         firebase_admin.initialize_app(cred)
@@ -39,25 +39,28 @@ else:
     print("GEMINI_API_KEY environment variable not set. Gemini API will not be configured.")
 
 # Initialize the Flask app
-app = Flask(__name__, static_folder='static')
+# The static_folder is set to None because we handle serving static files manually
+app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
 # Define routes for website analyzer
 @app.route('/')
 def serve_index():
-    return send_from_directory(app.root_path, 'index.html')
-
-@app.route('/static/locales/<filename>')
-def serve_locales(filename):
-    return send_from_directory(os.path.join(app.root_path, 'static', 'locales'), filename)
+    # Serves the index.html file from the root directory
+    return send_from_directory('.', 'index.html')
 
 @app.route('/main.js')
 def serve_main_js():
-    return send_from_directory(app.root_path, 'main.js')
+    # Serves the main.js file from the root directory
+    return send_from_directory('.', 'main.js')
+
+@app.route('/static/locales/<filename>')
+def serve_locales(filename):
+    # Serves the translation files from the static/locales directory
+    return send_from_directory('static/locales', filename)
 
 @app.route('/api/website-analyze', methods=['POST'])
 def analyze_website():
-    # Authentication check
     auth_header = request.headers.get('Authorization')
     if not auth_header:
         return jsonify({"error": "Authorization token is missing"}), 401
@@ -86,10 +89,8 @@ def analyze_website():
         print(f"Error during website analysis: {e}")
         return jsonify({"error": "Failed to analyze the website. Please try again later."}), 500
 
-# Define routes for article analyzer
 @app.route('/api/article-analyze', methods=['POST'])
 def analyze_article():
-    # Authentication check
     auth_header = request.headers.get('Authorization')
     if not auth_header:
         return jsonify({"error": "Authorization token is missing"}), 401
@@ -117,3 +118,6 @@ def analyze_article():
     except Exception as e:
         print(f"Error during article content analysis: {e}")
         return jsonify({"error": "Failed to analyze article content. Please try again later."}), 500
+
+if __name__ == '__main__':
+    app.run(debug=True)
