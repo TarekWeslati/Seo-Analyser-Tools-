@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,6 +17,14 @@
         <div class="container mx-auto flex justify-between items-center">
             <h1 class="text-3xl font-extrabold text-blue-600">SEO Analyser</h1>
             <div class="flex items-center space-x-4">
+                <select id="languageSelector" class="p-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                    <option value="ar">العربية</option>
+                    <option value="en">English</option>
+                    <option value="fr">Français</option>
+                    <option value="es">Español</option>
+                    <option value="de">Deutsch</option>
+                </select>
+                <button id="loginButton" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">تسجيل الدخول</button>
                 <button id="themeToggle" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
                     <svg id="moonIcon" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
@@ -35,42 +43,42 @@
         </p>
 
         <section id="website-analysis-section" class="mt-8 p-6 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700">
-            <h2 class="text-2xl font-bold mb-4 text-center">تحليل المواقع والمنافسين</h2>
+            <h2 class="text-2xl font-bold mb-4 text-center" data-translate="websiteAnalysisTitle">تحليل المواقع والمنافسين</h2>
             <div class="mb-4">
-                <label for="websiteUrl" class="block text-gray-700 dark:text-gray-200 font-medium mb-2">أدخل عنوان URL للموقع:</label>
+                <label for="websiteUrl" class="block text-gray-700 dark:text-gray-200 font-medium mb-2" data-translate="enterWebsiteUrl">أدخل عنوان URL للموقع:</label>
                 <input type="url" id="websiteUrl" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100" placeholder="https://example.com" required>
             </div>
             <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
-                <button id="analyzeWebsiteButton" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300">تحليل الموقع</button>
-                <button id="analyzeCompetitorButton" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300">تحليل المنافس</button>
+                <button id="analyzeWebsiteButton" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300" data-translate="analyzeButton">تحليل الموقع</button>
+                <button id="analyzeCompetitorButton" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300" data-translate="analyzeCompetitorButton">تحليل المنافس</button>
             </div>
             <div id="website-analysis-output" class="mt-6 p-4 min-h-[100px] bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-                <p class="text-gray-500 dark:text-gray-400">النتائج ستظهر هنا...</p>
+                <p class="text-gray-500 dark:text-gray-400" data-translate="resultsWillAppearHere">النتائج ستظهر هنا...</p>
             </div>
         </section>
 
         <section id="article-analysis-section" class="mt-12 p-6 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700">
-            <h2 class="text-2xl font-bold mb-4 text-center">تحليل وتحسين المقالات</h2>
+            <h2 class="text-2xl font-bold mb-4 text-center" data-translate="articleAnalysisTitle">تحليل وتحسين المقالات</h2>
             <div class="mb-4">
-                <label for="articleText" class="block text-gray-700 dark:text-gray-200 font-medium mb-2">أدخل محتوى المقال هنا:</label>
-                <textarea id="articleText" rows="10" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100" placeholder="اكتب أو الصق محتوى مقالك هنا..."></textarea>
+                <label for="articleText" class="block text-gray-700 dark:text-gray-200 font-medium mb-2" data-translate="enterArticleContent">أدخل محتوى المقال هنا:</label>
+                <textarea id="articleText" rows="10" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100" placeholder="اكتب أو الصق محتوى مقالك هنا..." data-translate="enterArticlePlaceholder"></textarea>
             </div>
             <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
-                <button id="analyzeArticleButton" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300">تحليل المقال</button>
-                <button id="articleRewriteButton" class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300">إعادة كتابة المقال</button>
+                <button id="analyzeArticleButton" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300" data-translate="analyzeButton">تحليل المقال</button>
+                <button id="articleRewriteButton" class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300" data-translate="rewriteButton">إعادة كتابة المقال</button>
             </div>
             <div id="analysis-output" class="mt-6 p-4 min-h-[100px] bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-                <p class="text-gray-500 dark:text-gray-400">النتائج ستظهر هنا...</p>
+                <p class="text-gray-500 dark:text-gray-400" data-translate="resultsWillAppearHere">النتائج ستظهر هنا...</p>
             </div>
         </section>
         
         <section class="mt-12 p-6 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 text-center">
-            <h2 class="text-2xl font-bold mb-4 text-blue-600">ميزات مدفوعة</h2>
-            <p class="text-gray-700 dark:text-gray-300 mb-4">
+            <h2 class="text-2xl font-bold mb-4 text-blue-600" data-translate="premiumFeaturesTitle">ميزات مدفوعة</h2>
+            <p class="text-gray-700 dark:text-gray-300 mb-4" data-translate="premiumFeaturesDescription">
                 للحصول على تقارير غير محدودة، تحليل المنافسين المتقدم، وميزات الذكاء الاصطناعي الحصرية مثل اقتراح الروابط الداخلية،
                 قم بالترقية إلى خطتنا المدفوعة.
             </p>
-            <a href="#" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-md transition duration-300">الترقية الآن</a>
+            <a href="#" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-md transition duration-300" data-translate="upgradeNow">الترقية الآن</a>
         </section>
     </main>
 
@@ -80,9 +88,9 @@
         </div>
     </footer>
 
-    <script src="main.js"></script>
+    <script src="../js/main.js"></script>
     <script>
-        // Dark Mode Toggle
+        // Dark Mode Toggle (same as before)
         const themeToggle = document.getElementById('themeToggle');
         const sunIcon = document.getElementById('sunIcon');
         const moonIcon = document.getElementById('moonIcon');
@@ -103,7 +111,6 @@
 
         themeToggle.addEventListener('click', toggleTheme);
 
-        // Check for saved theme preference
         if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
             moonIcon.classList.add('hidden');
@@ -113,6 +120,34 @@
             moonIcon.classList.remove('hidden');
             sunIcon.classList.add('hidden');
         }
+
+        // Language Selection
+        const languageSelector = document.getElementById('languageSelector');
+        languageSelector.addEventListener('change', (event) => {
+            const selectedLanguage = event.target.value;
+            // هنا سيتم استدعاء وظيفة لتحديث النصوص بناءً على اللغة المختارة
+            console.log(`Selected language: ${selectedLanguage}`);
+            fetch(`/locales/${selectedLanguage}.json`)
+                .then(response => response.json())
+                .then(data => {
+                    document.querySelectorAll('[data-translate]').forEach(element => {
+                        const key = element.getAttribute('data-translate');
+                        if (data.hasOwnProperty(key)) {
+                            element.textContent = data\[key];
+                            if (element.placeholder && data.hasOwnProperty(element.getAttribute('data-translate') + 'Placeholder')) {
+                                element.placeholder = data\[element.getAttribute('data-translate') + 'Placeholder'];
+                            }
+                        }
+                    });
+                })
+                .catch(error => console.error('Error loading translations:', error));
+        });
+
+        // Login Button (will be expanded later)
+        const loginButton = document.getElementById('loginButton');
+        loginButton.addEventListener('click', () => {
+            alert('سيتم إضافة نموذج تسجيل الدخول قريبًا.');
+        });
     </script>
 </body>
 </html>
