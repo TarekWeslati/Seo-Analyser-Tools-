@@ -121,7 +121,57 @@ def analyze_competitors():
         competitor_text = competitor_soup.get_text()
 
         prompt = f"قارن بين هذين النصين واستخرج: 1- الكلمات المفتاحية المشتركة. 2- الكلمات المفتاحية التي يستخدمها المنافس ولا أستخدمها.\n\nالنص الأول (موقعي):\n{my_text[:2000]}\n\nالنص الثاني (المنافس):\n{competitor_text[:2000]}"
+    # أضف هذه الأكواد إلى ملف app.py
+
+@app.route('/api/auth/google', methods=['POST'])
+def google_auth_handler():
+    # استخراج رمز التعريف من الواجهة الأمامية
+    id_token = request.headers.get('Authorization', '').split('Bearer ')[1]
+    
+    if not id_token:
+        return jsonify({"error": "Authorization token is missing"}), 400
+    
+    try:
+        # التحقق من رمز التعريف باستخدام Firebase Admin SDK
+        decoded_token = auth.verify_id_token(id_token)
+        uid = decoded_token['uid']
+        user_email = decoded_token.get('email')
+
+        # حفظ أو تحديث بيانات المستخدم في Firestore
+        user_ref = db.collection('users').document(uid)
+        user_ref.set({
+            'email': user_email,
+            'last_login': firestore.SERVER_TIMESTAMP
+        }, merge=True)
         
+        return jsonify({"message": "User authenticated successfully", "uid": uid}), 200
+    
+    except auth.InvalidIdTokenError:
+        return jsonify({"error": "Invalid ID token"}), 401
+    except Exception as e:
+        print(f"Error during Google auth: {e}")
+        return jsonify({"error": "Failed to authenticate"}), 500
+
+def authenticate_user():
+    # دالة مساعدة للتحقق من المستخدم في المسارات المحمية
+    id_token = request.headers.get('Authorization', '').split('Bearer ')[1]
+    if not id_token:
+        return None
+    try:
+        decoded_token = auth.verify_id_token(id_token)
+        return decoded_token
+    except auth.InvalidIdTokenError:
+        return None
+
+# مثال على كيفية استخدام وظيفة authenticate_user لحماية مسار مدفوع
+@app.route('/api/premium/advanced-analysis', methods=['POST'])
+def advanced_analysis():
+    user = authenticate_user()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    # هنا يتم تنفيذ منطق التحليل المتقدم للمشتركين المدفوعين
+    return jsonify({"message": f"Welcome, {user.get('email')}! Here is your advanced analysis."})    
         # استبدال هذا الاستدعاء بـ API Gemini الفعلي
         gemini_api_response = {
             "common_keywords": ["تحليل المواقع", "تسويق رقمي"],
