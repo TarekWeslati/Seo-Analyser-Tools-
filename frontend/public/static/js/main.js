@@ -1,408 +1,298 @@
+// main.js: The core logic for the Website & Article Analyzer front-end.
+// It handles authentication, UI state, API calls, and displaying results.
+
 // Wait for the DOM to be fully loaded before running the script
 document.addEventListener('DOMContentLoaded', () => {
 
-    // IMPORTANT: Firebase Configuration
-    // The following global variables are provided by the Canvas environment.
-    // Use them to initialize Firebase and authenticate the user.
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-    // Initialize Firebase
-    if (Object.keys(firebaseConfig).length > 0) {
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-
-        // Sign in with the provided custom token
-        const signInUser = async () => {
-            try {
-                if (initialAuthToken) {
-                    await auth.signInWithCustomToken(initialAuthToken);
-                    console.log('Signed in with custom token.');
-                } else {
-                    await auth.signInAnonymously();
-                    console.log('Signed in anonymously.');
-                }
-            } catch (error) {
-                console.error('Firebase authentication error:', error);
-            }
-        };
-        signInUser();
-    } else {
-        console.error('Firebase configuration is missing. Authentication features will be disabled.');
-    }
-
     // =========================================================================
-    // UI Elements and Event Listeners
+    // Firebase & App Initialization
     // =========================================================================
 
-    // General UI Elements
-    const themeToggle = document.getElementById('theme-toggle');
-    const languageSelect = document.getElementById('language-select');
-    const authModal = document.getElementById('auth-modal');
-    const closeAuthModal = document.getElementById('close-auth-modal');
-    const showAuthModalButton = document.getElementById('show-auth-modal-button');
-    const logoutButton = document.getElementById('logout-button');
-    const authStatus = document.getElementById('auth-status');
-    const notLoggedInMessage = document.getElementById('not-logged-in-message');
-    const userEmailDisplay = document.getElementById('user-email-display');
-    const authButtonsContainer = document.getElementById('auth-buttons-container');
-    const loadingSpinner = document.getElementById('loading-spinner');
-    const errorMessage = document.getElementById('error-message');
-    const resultsDashboard = document.getElementById('results-dashboard');
-    const analyzedSource = document.getElementById('analyzed-source');
+    // Dynamically get the backend base URL from the current window's origin
+    const backendBaseUrl = window.location.origin;
 
-    // Analysis Input Elements
-    const websiteUrlInput = document.getElementById('website-url');
-    const articleTextInput = document.getElementById('article-text');
-    const analyzeWebsiteButton = document.getElementById('analyze-website-button');
-    const analyzeArticleButton = document.getElementById('analyze-article-button');
-    const analyzeAnotherButton = document.getElementById('analyze-another-button');
-    const exportPdfButton = document.getElementById('export-pdf-button');
-
-    // Translation data (in a real app, this would be loaded from a separate JSON file)
-    const translations = {
-        en: {
-            // ... (Add your English translations here)
-            websiteAnalyzerTitle: "Website & Article Analyzer",
-            mainTitle: "Website & Article Analyzer Tool",
-            websiteAnalysisTitle: "Website Analysis",
-            enterUrlPrompt: "Enter website URL to analyze:",
-            analyzeWebsiteButton: "Analyze Website",
-            articleAnalysisTitle: "Article Analysis",
-            enterArticlePrompt: "Enter article text to analyze:",
-            analyzeArticleButton: "Analyze Article",
-            loadingMessage: "Loading...",
-            notLoggedInMessage: "Not logged in",
-            loginButton: "Login",
-            logoutButton: "Logout",
-            expandAll: "Expand All",
-            collapseAll: "Collapse All",
-            domainAuthorityTitle: "Domain Authority",
-            // etc...
-        },
-        ar: {
-            websiteAnalyzerTitle: "أداة تحليل المواقع والمقالات",
-            mainTitle: "أداة تحليل المواقع والمقالات",
-            websiteAnalysisTitle: "تحليل الموقع",
-            enterUrlPrompt: "أدخل رابط الموقع لتحليله:",
-            analyzeWebsiteButton: "تحليل الموقع",
-            articleAnalysisTitle: "تحليل المقال",
-            enterArticlePrompt: "أدخل نص المقال لتحليله:",
-            analyzeArticleButton: "تحليل المقال",
-            loadingMessage: "جارٍ التحميل...",
-            notLoggedInMessage: "غير مسجل الدخول",
-            loginButton: "تسجيل الدخول",
-            logoutButton: "تسجيل الخروج",
-            expandAll: "توسيع الكل",
-            collapseAll: "طي الكل",
-            analysisReportTitle: "تقرير التحليل لـ:",
-            domainAuthorityTitle: "صلاحية الموقع",
-            domainName: "اسم الموقع:",
-            domainAuthorityScore: "نتيجة صلاحية الموقع:",
-            domainAge: "عمر الموقع:",
-            sslStatus: "حالة SSL:",
-            blacklistStatus: "حالة القائمة السوداء:",
-            dnsHealth: "صحة DNS:",
-            pageSpeedTitle: "سرعة الصفحة",
-            performanceScore: "نتيجة الأداء:",
-            coreWebVitals: "مقاييس الويب الأساسية:",
-            performanceIssues: "مشاكل الأداء:",
-            pagespeedReport: "تقرير PageSpeed:",
-            seoQualityTitle: "جودة تحسين محركات البحث (SEO)",
-            overallScore: "النتيجة الإجمالية:",
-            seoTitle: "العنوان:",
-            seoMetaDescription: "الوصف التعريفي:",
-            headingTags: "عناوين الصفحة (H1-H6):",
-            contentWordCount: "عدد كلمات المحتوى:",
-            contentCharCount: "عدد أحرف المحتوى:",
-            robotsTxtPresent: "ملف Robots.txt موجود:",
-            sitemapXmlPresent: "ملف Sitemap.xml موجود:",
-            keywordDensity: "كثافة الكلمات المفتاحية (أهم 10):",
-            seoImprovementTips: "نصائح لتحسين SEO:",
-            aiSeoSuggestionsTitle: "اقتراحات SEO بالذكاء الاصطناعي",
-            rewriteSeoButton: "إعادة صياغة العنوان/الوصف",
-            aiRewritesTitle: "إعادة صياغة من الذكاء الاصطناعي:",
-            loadingAiRewrites: "جارٍ تحميل الاقتراحات...",
-            brokenLinksDetailsTitle: "تفاصيل الروابط المعطلة",
-            brokenLinksCount: "عدد الروابط المعطلة:",
-            brokenLinksList: "قائمة الروابط المعطلة:",
-            brokenLinksFixSuggestionsTitle: "اقتراحات إصلاح الروابط المعطلة بالذكاء الاصطناعي",
-            userExperienceTitle: "تجربة المستخدم (UX)",
-            viewportMetaPresent: "وصف Viewport Meta Tag موجود:",
-            uxIssues: "مشاكل تجربة المستخدم:",
-            uxSuggestions: "اقتراحات تجربة المستخدم:",
-            aiContentInsightsTitle: "رؤى المحتوى بالذكاء الاصطناعي",
-            refineContentButton: "تحسين المحتوى",
-            refinedContentTitle: "المحتوى المحسن:",
-            loadingAiRefinement: "جارٍ تحميل التحسينات...",
-            adsenseReadinessTitle: "جاهزية AdSense",
-            assessment: "التقييم:",
-            improvementAreas: "مجالات التحسين:",
-            aiOverallSummaryTitle: "ملخص شامل بالذكاء الاصطناعي",
-            analyzeAnotherButton: "تحليل آخر",
-            exportPdfButton: "تصدير التقرير كـ PDF",
-            loginTitle: "تسجيل الدخول إلى حسابك",
-            loginToContinue: "يرجى تسجيل الدخول أو التسجيل للمتابعة.",
-            emailLabel: "البريد الإلكتروني:",
-            passwordLabel: "كلمة المرور:",
-            processingMessage: "...جارٍ المعالجة",
-            orSignInWith: "أو سجل الدخول باستخدام:",
-            signInWithGoogle: "تسجيل الدخول باستخدام جوجل",
-            noAccountText: "لا يوجد لديك حساب؟",
-            registerHereButton: "سجل هنا"
-        }
+    // Firebase configuration - IMPORTANT: Replace with your actual Firebase project config
+    // You can find this in your Firebase project settings -> Project settings -> General -> Your apps -> Web app -> Firebase SDK snippet -> Config
+    // This is a placeholder configuration.
+    const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_AUTH_DOMAIN",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_STORAGE_BUCKET",
+        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+        appId: "YOUR_APP_ID"
     };
     
-    let currentLanguage = 'ar';
+    // Check if Firebase is already initialized
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const auth = firebase.auth();
+    const db = firebase.firestore();
 
     // =========================================================================
-    // Functions
+    // DOM Elements & State
     // =========================================================================
 
-    // Function to apply translations
-    function applyTranslations(lang) {
-        const elements = document.querySelectorAll('[data-translate]');
-        elements.forEach(el => {
-            const key = el.getAttribute('data-translate');
-            if (translations[lang] && translations[lang][key]) {
-                el.textContent = translations[lang][key];
-            }
-        });
-        document.documentElement.lang = lang;
-        currentLanguage = lang;
-    }
+    const websiteAnalyzerForm = document.getElementById('website-analyzer-form');
+    const articleAnalyzerForm = document.getElementById('article-analyzer-form');
+    const urlInput = document.getElementById('url-input');
+    const articleInput = document.getElementById('article-input');
+    const analyzeWebsiteBtn = document.getElementById('analyze-website-btn');
+    const analyzeArticleBtn = document.getElementById('analyze-article-btn');
+    const websiteResultContainer = document.getElementById('website-result-container');
+    const articleResultContainer = document.getElementById('article-result-container');
+    const loadingSpinner = document.getElementById('loading-spinner');
+    const authModal = document.getElementById('auth-modal');
+    const loginButton = document.getElementById('login-btn');
+    const logoutButton = document.getElementById('logout-btn');
+    const userDisplayName = document.getElementById('user-display-name');
+    const authForm = document.getElementById('auth-form');
+    const googleLoginButton = document.getElementById('modal-google-login-button');
+    const themeToggle = document.getElementById('theme-toggle');
+    const languageToggle = document.getElementById('language-toggle');
+    const closeAuthModalButton = document.getElementById('modal-close-button');
 
-    // Function to handle Dark/Light mode
-    function toggleTheme() {
-        if (document.documentElement.classList.contains('dark')) {
-            document.documentElement.classList.remove('dark');
-            localStorage.setItem('theme', 'light');
-        } else {
-            document.documentElement.classList.add('dark');
-            localStorage.setItem('theme', 'dark');
-        }
-    }
+    let currentLanguage = 'en';
+    let translations = {};
 
-    // Function to handle the analysis process
-    async function handleAnalysis(type, input) {
-        // Clear previous results and errors
-        resultsDashboard.classList.add('hidden');
-        errorMessage.classList.add('hidden');
-        loadingSpinner.classList.remove('hidden');
+    // =========================================================================
+    // Localization (Translation) Logic
+    // =========================================================================
 
-        // Set the analyzed source text
-        analyzedSource.textContent = input;
-
-        // Hide sections that are not relevant to the analysis type
-        document.querySelectorAll('.result-section').forEach(section => {
-            const sectionTypes = section.getAttribute('data-section-type');
-            if (sectionTypes.includes(type)) {
-                section.classList.remove('hidden');
-            } else {
-                section.classList.add('hidden');
-            }
-        });
-        
+    const loadTranslations = async (lang) => {
         try {
-            const response = await fetch(`/api/${type}-analyze`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ input: input })
+            const response = await fetch(`https://message-oxabite.web.app/static/translations/${lang}.json`);
+            if (!response.ok) throw new Error('Translation file not found');
+            translations = await response.json();
+            document.querySelectorAll('[data-translate]').forEach(element => {
+                const key = element.getAttribute('data-translate');
+                if (translations[key]) {
+                    element.innerHTML = translations[key];
+                }
             });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                // Populate the results dashboard with data
-                populateResults(data, type);
-            } else {
-                errorMessage.textContent = data.error || 'فشل التحليل. يرجى المحاولة مرة أخرى.';
-                errorMessage.classList.remove('hidden');
-            }
+            document.documentElement.lang = lang;
+            currentLanguage = lang;
+            document.body.classList.toggle('rtl', lang === 'ar');
         } catch (error) {
-            console.error('Analysis error:', error);
-            errorMessage.textContent = 'حدث خطأ في الشبكة. يرجى التحقق من اتصالك والمحاولة مرة أخرى.';
-            errorMessage.classList.remove('hidden');
-        } finally {
-            loadingSpinner.classList.add('hidden');
-            resultsDashboard.classList.remove('hidden');
+            console.error('Error loading translations:', error);
         }
-    }
+    };
 
-    // Function to populate the results dashboard (placeholder)
-    function populateResults(data, type) {
-        // This is a placeholder function. You'll need to implement the actual
-        // logic to update the DOM elements based on the API response 'data'.
-        // The structure should be similar to what you have in the old file,
-        // but now it handles both 'website' and 'article' types.
-
-        // Example: Update Domain Authority score
-        if (type === 'website' && data.domainAuthority) {
-            const daScore = data.domainAuthority.score;
-            document.getElementById('domain-authority-score').textContent = daScore;
-            document.getElementById('domain-authority-progress').style.width = `${daScore}%`;
-            // Add more logic to update other fields
-        }
-
-        // Example: Update SEO Quality section
-        if (data.seoQuality) {
-            const seoScore = data.seoQuality.overallScore;
-            document.getElementById('seo-overall-score').textContent = seoScore;
-            document.getElementById('seo-overall-progress').style.width = `${seoScore}%`;
-            // Add more logic for other SEO fields
-        }
-
-        // You'll need to create similar logic for all other sections
-    }
-    
-    // Function to reset the UI for a new analysis
-    function resetUI() {
-        resultsDashboard.classList.add('hidden');
-        errorMessage.classList.add('hidden');
-        websiteUrlInput.value = '';
-        articleTextInput.value = '';
-        // Reset other UI elements to their initial state if needed
-    }
-
-    // =========================================================================
-    // Event Listeners
-    // =========================================================================
-
-    // Language selector change event
-    languageSelect.addEventListener('change', (e) => {
-        applyTranslations(e.target.value);
-        localStorage.setItem('lang', e.target.value);
+    languageToggle.addEventListener('click', () => {
+        const newLang = currentLanguage === 'en' ? 'ar' : 'en';
+        loadTranslations(newLang);
     });
 
-    // Theme toggle button click event
-    themeToggle.addEventListener('click', toggleTheme);
+    // Initial load of English translations
+    loadTranslations('en');
 
-    // Show auth modal button click event
-    showAuthModalButton.addEventListener('click', () => {
+    // =========================================================================
+    // Theme Switcher Logic
+    // =========================================================================
+
+    themeToggle.addEventListener('click', () => {
+        document.body.classList.toggle('dark');
+        document.body.classList.toggle('light');
+        const isDarkMode = document.body.classList.contains('dark');
+        themeToggle.innerHTML = isDarkMode
+            ? '<i class="fas fa-sun"></i>'
+            : '<i class="fas fa-moon"></i>';
+    });
+
+    // =========================================================================
+    // Authentication & Firebase
+    // =========================================================================
+    
+    // Listen for authentication state changes
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            // User is signed in.
+            loginButton.style.display = 'none';
+            logoutButton.style.display = 'block';
+            userDisplayName.textContent = user.displayName || user.email;
+            userDisplayName.style.display = 'block';
+            authModal.classList.add('hidden');
+        } else {
+            // User is signed out.
+            loginButton.style.display = 'block';
+            logoutButton.style.display = 'none';
+            userDisplayName.style.display = 'none';
+        }
+    });
+
+    loginButton.addEventListener('click', () => {
         authModal.classList.remove('hidden');
     });
 
-    // Close auth modal button click event
-    closeAuthModal.addEventListener('click', () => {
+    closeAuthModalButton.addEventListener('click', () => {
         authModal.classList.add('hidden');
     });
+
+    googleLoginButton.addEventListener('click', async () => {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        try {
+            await auth.signInWithPopup(provider);
+        } catch (error) {
+            console.error('Google Sign-in error:', error);
+            alert(`Error during sign-in: ${error.message}`);
+        }
+    });
+
+    logoutButton.addEventListener('click', async () => {
+        try {
+            await auth.signOut();
+        } catch (error) {
+            console.error('Sign-out error:', error);
+            alert(`Error during sign-out: ${error.message}`);
+        }
+    });
     
-    // Website analysis button click event
-    analyzeWebsiteButton.addEventListener('click', () => {
-        const url = websiteUrlInput.value;
-        if (url) {
-            handleAnalysis('website', url);
-        } else {
-            errorMessage.textContent = 'الرجاء إدخال رابط صالح.';
-            errorMessage.classList.remove('hidden');
+    // =========================================================================
+    // API Request Functions
+    // =========================================================================
+
+    const callApi = async (endpoint, payload) => {
+        const user = auth.currentUser;
+        if (!user) {
+            alert('Please log in to use this feature.');
+            return;
+        }
+
+        const idToken = await user.getIdToken();
+        
+        showLoading(true);
+        try {
+            const response = await fetch(`${backendBaseUrl}/api/${endpoint}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`,
+                    'Accept-Language': currentLanguage
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Server error');
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            alert(error.message);
+            console.error(`API call error for ${endpoint}:`, error);
+            return null;
+        } finally {
+            showLoading(false);
+        }
+    };
+    
+    // =========================================================================
+    // Form Submission Handlers
+    // =========================================================================
+
+    websiteAnalyzerForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const url = urlInput.value.trim();
+        if (!url) return;
+
+        const results = await callApi('website-analyze', { input: url });
+        if (results) {
+            displayWebsiteResults(results);
         }
     });
 
-    // Article analysis button click event
-    analyzeArticleButton.addEventListener('click', () => {
-        const text = articleTextInput.value;
-        if (text) {
-            handleAnalysis('article', text);
-        } else {
-            errorMessage.textContent = 'الرجاء إدخال نص المقال.';
-            errorMessage.classList.remove('hidden');
+    articleAnalyzerForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const articleText = articleInput.value.trim();
+        if (!articleText) return;
+
+        const results = await callApi('article-analyze', { input: articleText });
+        if (results) {
+            displayArticleResults(results);
         }
-    });
-
-    // Analyze another button click event
-    analyzeAnotherButton.addEventListener('click', resetUI);
-
-    // Expand all sections button
-    document.getElementById('expand-all-button').addEventListener('click', () => {
-        document.querySelectorAll('.section-content').forEach(content => {
-            content.classList.remove('hidden');
-        });
-        document.querySelectorAll('.toggle-icon').forEach(icon => {
-            icon.classList.remove('fa-chevron-down');
-            icon.classList.add('fa-chevron-up');
-        });
-    });
-
-    // Collapse all sections button
-    document.getElementById('collapse-all-button').addEventListener('click', () => {
-        document.querySelectorAll('.section-content').forEach(content => {
-            content.classList.add('hidden');
-        });
-        document.querySelectorAll('.toggle-icon').forEach(icon => {
-            icon.classList.remove('fa-chevron-up');
-            icon.classList.add('fa-chevron-down');
-        });
-    });
-
-    // Toggle section content on click
-    document.querySelectorAll('.toggle-section').forEach(header => {
-        header.addEventListener('click', () => {
-            const content = header.nextElementSibling;
-            const icon = header.querySelector('.toggle-icon');
-            content.classList.toggle('hidden');
-            icon.classList.toggle('fa-chevron-down');
-            icon.classList.toggle('fa-chevron-up');
-        });
     });
 
     // =========================================================================
-    // Initial Setup
+    // UI Helper Functions
     // =========================================================================
 
-    // Set initial theme from localStorage
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark') {
-        document.documentElement.classList.add('dark');
-    }
+    const showLoading = (isLoading) => {
+        loadingSpinner.classList.toggle('hidden', !isLoading);
+        analyzeWebsiteBtn.disabled = isLoading;
+        analyzeArticleBtn.disabled = isLoading;
+        if (isLoading) {
+            websiteResultContainer.innerHTML = '';
+            articleResultContainer.innerHTML = '';
+        }
+    };
+    
+    const displayWebsiteResults = (data) => {
+        let html = `
+            <div class="space-y-4">
+                <div class="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg shadow">
+                    <h3 class="text-xl font-bold mb-2">${translations.websiteAnalysisTitle}</h3>
+                    <p><strong>URL:</strong> ${data.source_url}</p>
+                </div>
+                
+                <div class="result-section">
+                    <h3 class="text-xl font-bold">${translations.pageSpeedTitle}</h3>
+                    <p><strong>${translations.performanceScore}:</strong> ${data.pageSpeed.performanceScore}%</p>
+                </div>
 
-    // Set initial language from localStorage
-    const savedLang = localStorage.getItem('lang') || 'ar';
-    languageSelect.value = savedLang;
-    applyTranslations(savedLang);
+                <div class="result-section">
+                    <h3 class="text-xl font-bold">${translations.seoQualityTitle}</h3>
+                    <p><strong>${translations.title}:</strong> ${data.seoQuality.title || 'N/A'}</p>
+                    <p><strong>${translations.metaDescription}:</strong> ${data.seoQuality.metaDescription || 'N/A'}</p>
+                    <p><strong>${translations.wordCount}:</strong> ${data.seoQuality.wordCount || 'N/A'}</p>
+                </div>
 
-    // Firebase Auth State Listener
-    firebase.auth().onAuthStateChanged(user => {
-        if (user) {
-            // User is signed in.
-            notLoggedInMessage.classList.add('hidden');
-            authButtonsContainer.classList.add('hidden');
-            logoutButton.classList.remove('hidden');
-            userEmailDisplay.textContent = user.email || 'مستخدم مجهول';
-            userEmailDisplay.classList.remove('hidden');
-        } else {
-            // User is signed out.
-            notLoggedInMessage.classList.remove('hidden');
-            authButtonsContainer.classList.remove('hidden');
-            logoutButton.classList.add('hidden');
-            userEmailDisplay.classList.add('hidden');
+                <div class="result-section">
+                    <h3 class="text-xl font-bold">${translations.brokenLinksTitle}</h3>
+                    <p><strong>${translations.brokenLinksCount}:</strong> ${data.brokenLinks.count}</p>
+                    ${data.brokenLinks.list.length > 0 ? `<ul class="list-disc ml-5 mt-2">${data.brokenLinks.list.map(link => `<li>${link}</li>`).join('')}</ul>` : `<p>${translations.noBrokenLinks}</p>`}
+                </div>
+
+                <div class="ai-section p-4 rounded-lg">
+                    <h3 class="text-xl font-bold mb-2">${translations.aiInsightsTitle}</h3>
+                    <h4 class="font-semibold">${translations.aiSeoSuggestions}:</h4>
+                    <p>${data.aiInsights.seoSuggestions}</p>
+                    <h4 class="font-semibold mt-4">${translations.aiContentRefinement}:</h4>
+                    <p>${data.aiInsights.contentRefinement}</p>
+                </div>
+            </div>
+        `;
+        websiteResultContainer.innerHTML = html;
+    };
+
+    const displayArticleResults = (data) => {
+        let html = `
+            <div class="ai-section p-4 rounded-lg">
+                <h3 class="text-xl font-bold mb-2">${translations.articleAnalysisTitle}</h3>
+                <p>${data.ai_analysis}</p>
+            </div>
+        `;
+        articleResultContainer.innerHTML = html;
+    };
+
+    // Toggle logic for sections in the results container
+    document.addEventListener('click', (e) => {
+        const toggleBtn = e.target.closest('.toggle-section-btn');
+        if (toggleBtn) {
+            const content = toggleBtn.nextElementSibling;
+            const icon = toggleBtn.querySelector('.toggle-icon');
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+            } else {
+                content.classList.add('hidden');
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+            }
         }
     });
 
-    // Logout button event listener
-    logoutButton.addEventListener('click', () => {
-        firebase.auth().signOut().then(() => {
-            console.log('User signed out successfully');
-            authModal.classList.add('hidden');
-        }).catch(error => {
-            console.error('Error signing out:', error);
-        });
-    });
-
-    // We need to handle the logic for the modal buttons here as well.
-    // This is just a placeholder, you'll need to implement the actual logic
-    // for email/password login and Google login, similar to the logic
-    // you would have in your original `main.js`.
-    document.getElementById('modal-auth-submit-button').addEventListener('click', () => {
-        // Implement email/password login or registration logic here
-        console.log('Login/Register button clicked on modal.');
-    });
-
-    document.getElementById('modal-google-login-button').addEventListener('click', () => {
-        // Implement Google Sign-in logic here
-        console.log('Google login button clicked on modal.');
-    });
 });
