@@ -55,8 +55,10 @@ except Exception as e:
 # Flask App Setup
 # =========================================================================
 
-# Define the path to the frontend public directory
-frontend_public_path = os.path.join(os.path.dirname(__file__), '..', 'public')
+# Define the path to the frontend public directory using a robust and correct path
+# It should now point to 'frontend/public' relative to the directory of this app.py file
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+frontend_public_path = os.path.join(BASE_DIR, '..', 'frontend', 'public')
 
 app = Flask(__name__,
             static_folder=frontend_public_path,
@@ -79,7 +81,7 @@ def index():
 def serve_static(filename):
     """Serve all other static files."""
     return send_from_directory(app.static_folder, filename)
-
+    
 # =========================================================================
 # Middleware for Authentication
 # =========================================================================
