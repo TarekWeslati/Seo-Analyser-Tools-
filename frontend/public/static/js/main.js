@@ -1,7 +1,5 @@
-// main.js: The core logic for the Website & Article Analyzer front-end.
-// It handles authentication, UI state, API calls, and displaying results.
+// main.js: The final and complete front-end logic for the application.
 
-// Wait for the DOM to be fully loaded before running the script
 document.addEventListener('DOMContentLoaded', () => {
 
     // =========================================================================
@@ -12,8 +10,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const backendBaseUrl = window.location.origin;
 
     // Firebase configuration - IMPORTANT: Replace with your actual Firebase project config
-    // You can find this in your Firebase project settings -> Project settings -> General -> Your apps -> Web app -> Firebase SDK snippet -> Config
-    // This is a placeholder configuration.
     const firebaseConfig = {
         apiKey: "YOUR_API_KEY",
         authDomain: "YOUR_AUTH_DOMAIN",
@@ -22,8 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
         messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
         appId: "YOUR_APP_ID"
     };
-    
-    // Check if Firebase is already initialized
+
     if (!firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
     }
@@ -56,14 +51,17 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentLanguage = 'en';
     let translations = {};
 
-    // =========================================================================
+    // =atus=
     // Localization (Translation) Logic
     // =========================================================================
 
     const loadTranslations = async (lang) => {
         try {
-            const response = await fetch(`https://message-oxabite.web.app/static/translations/${lang}.json`);
-            if (!response.ok) throw new Error('Translation file not found');
+            const response = await fetch(`${backendBaseUrl}/static/locales/${lang}.json`);
+            if (!response.ok) {
+                console.error(`Translation file not found for language: ${lang}`);
+                throw new Error('Translation file not found');
+            }
             translations = await response.json();
             document.querySelectorAll('[data-translate]').forEach(element => {
                 const key = element.getAttribute('data-translate');
@@ -103,21 +101,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // =========================================================================
     // Authentication & Firebase
     // =========================================================================
-    
-    // Listen for authentication state changes
+
     auth.onAuthStateChanged(user => {
         if (user) {
-            // User is signed in.
             loginButton.style.display = 'none';
             logoutButton.style.display = 'block';
             userDisplayName.textContent = user.displayName || user.email;
             userDisplayName.style.display = 'block';
             authModal.classList.add('hidden');
+            analyzeWebsiteBtn.disabled = false;
+            analyzeArticleBtn.disabled = false;
         } else {
-            // User is signed out.
             loginButton.style.display = 'block';
             logoutButton.style.display = 'none';
             userDisplayName.style.display = 'none';
+            analyzeWebsiteBtn.disabled = true;
+            analyzeArticleBtn.disabled = true;
         }
     });
 
@@ -147,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
             alert(`Error during sign-out: ${error.message}`);
         }
     });
-    
+
     // =========================================================================
     // API Request Functions
     // =========================================================================
@@ -156,7 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const user = auth.currentUser;
         if (!user) {
             alert('Please log in to use this feature.');
-            return;
+            return null;
         }
 
         const idToken = await user.getIdToken();
