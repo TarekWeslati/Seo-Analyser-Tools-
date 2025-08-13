@@ -1,7 +1,7 @@
-import sys
-import os
+# Import the Flask application object from your app.py file
+from app import app
 
-# Add the backend directory to the Python path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-from backend.app import app # Import Flask app named 'app'
+# This file is used by the Gunicorn server to run the application.
+# The 'app' variable is the entry point.
+if __name__ == "__main__":
+    app.run()
