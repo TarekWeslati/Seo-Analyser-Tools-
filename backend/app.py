@@ -1,26 +1,77 @@
-from flask import Flask, request, jsonify
+import os
+import json
 import requests
 from bs4 import BeautifulSoup
-import os
+from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS
+import firebase_admin
+from firebase_admin import credentials, auth, firestore
+import google.generativeai as genai
 
-app = Flask(__name__)
+# Firebase Admin SDK Configuration
+# This assumes you've stored the service account key in an environment variable on Render
+# like "FIREBASE_SERVICE_ACCOUNT_KEY"
+try:
+    firebase_cred = json.loads(os.environ.get("FIREBASE_SERVICE_ACCOUNT_KEY"))
+    cred = credentials.Certificate(firebase_cred)
+    firebase_admin.initialize_app(cred)
+    db = firestore.client()
+except Exception as e:
+    print(f"Error initializing Firebase Admin SDK: {e}")
+    cred = None
+    db = None
 
-# دالة وهمية لاستدعاء نموذج Gemini
-# يجب استبدال هذه الدالة بالكود الفعلي الخاص بك
+# Gemini API Configuration
+# Assumes you've set up a GEMINI_API_KEY environment variable
+genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
+
+# Flask App Configuration
+app = Flask(__name__, static_folder='frontend/public/static', template_folder='frontend/public')
+CORS(app)
+
+# --- Routes for Serving Frontend Files ---
+@app.route('/')
+def serve_index():
+    return send_from_directory(app.template_folder, 'index.html')
+
+@app.route('/static/<path:path>')
+def serve_static(path):
+    return send_from_directory(app.static_folder, path)
+
+# --- Authentication Routes ---
+@app.route('/api/auth/google', methods=['POST'])
+def google_auth_handler():
+    id_token = request.headers.get('Authorization', '').split('Bearer ')[1]
+    
+    if not id_token:
+        return jsonify({"error": "Authorization token is missing"}), 400
+    
+    try:
+        decoded_token = auth.verify_id_token(id_token)
+        uid = decoded_token['uid']
+        user_email = decoded_token.get('email')
+
+        user_ref = db.collection('users').document(uid)
+        user_ref.set({
+            'email': user_email,
+            'last_login': firestore.SERVER_TIMESTAMP
+        }, merge=True)
+        
+        return jsonify({"message": "User authenticated successfully", "uid": uid}), 200
+    
+    except auth.InvalidIdTokenError:
+        return jsonify({"error": "Invalid ID token"}), 401
+    except Exception as e:
+        print(f"Error during Google auth: {e}")
+        return jsonify({"error": "Failed to authenticate"}), 500
+
+# --- Function for Calling Gemini API ---
 def call_gemini_api(prompt):
-    # هنا يجب أن يكون الكود الذي يرسل الطلب إلى API Gemini
-    # ويعيد النتيجة
-    # كمثال، يمكن استخدام مكتبة google.generativeai
-    # import google.generativeai as genai
-    # genai.configure(api_key=os.environ["GEMINI_API_KEY"])
-    # model = genai.GenerativeModel('gemini-pro')
-    # response = model.generate_content(prompt)
-    # return response.text
-    return {"result": f"This is a placeholder for Gemini's response to: {prompt}"}
+    model = genai.GenerativeModel('gemini-pro')
+    response = model.generate_content(prompt)
+    return response.text
 
-# ---
-# 1. وظيفة إعادة كتابة المقالات (Article Rewriter)
-# ---
+# --- 1. Article Rewriter ---
 @app.route('/api/rewrite', methods=['POST'])
 def rewrite_article():
     data = request.get_json()
@@ -33,11 +84,9 @@ def rewrite_article():
     
     gemini_response = call_gemini_api(prompt)
     
-    return jsonify({"rewritten_text": gemini_response["result"]})
+    return jsonify({"rewritten_text": gemini_response})
 
-# ---
-# 2. وظيفة تحليل المقالات (Article Analysis)
-# ---
+# --- 2. Article Analysis ---
 @app.route('/api/analyze-article', methods=['POST'])
 def analyze_article_content():
     data = request.get_json()
@@ -53,25 +102,16 @@ def analyze_article_content():
     2. تقييم لسهولة القراءة (Readability Score) وتوصيات لتحسينه.
     3. تقييم لنية المستخدم (User Intent) التي يستهدفها المقال (مثل: إعلامي، تجاري، استقصائي).
     4. اقتراحات للمحتوى المفقود (Content Gaps) التي يمكن إضافتها لتعزيز المقال.
-
+    
     محتوى المقال:
     {article_content}
     """
+    
+    gemini_response = call_gemini_api(prompt)
+    
+    return jsonify({"analysis_report": gemini_response})
 
-    # استبدال هذا الاستدعاء بـ API Gemini الفعلي
-    gemini_api_response = {
-        "keywords": ["الذكاء الاصطناعي", "تحليل البيانات"],
-        "readability_score": "جيد جداً (85/100)",
-        "readability_recommendations": "استخدم جمل أقصر في بعض الأحيان",
-        "user_intent": "إعلامي (Informational)",
-        "content_gaps": ["يمكن إضافة فقرة عن تطبيقات الذكاء الاصطناعي في حياتنا اليومية."]
-    }
-
-    return jsonify(gemini_api_response)
-
-# ---
-# 3. وظيفة تحليل الكلمات المفتاحية للمواقع (Website Keyword Analysis)
-# ---
+# --- 3. Website Keyword Analysis ---
 @app.route('/api/get_website_keywords', methods=['POST'])
 def get_website_keywords():
     data = request.get_json()
@@ -87,20 +127,14 @@ def get_website_keywords():
 
         prompt = f"حلل هذا النص واستخرج أهم الكلمات المفتاحية و الكلمات المفتاحية الطويلة (long-tail keywords) ذات الصلة: \n\n{page_text[:4000]}"
         
-        # استبدال هذا الاستدعاء بـ API Gemini الفعلي
-        gemini_api_response = {
-            "keywords": ["تحليل المواقع", "تحسين محركات البحث"],
-            "long_tail_keywords": ["كيفية تحسين سيو الموقع", "أدوات مجانية لتحليل المواقع"]
-        }
+        gemini_response = call_gemini_api(prompt)
 
-        return jsonify(gemini_api_response)
+        return jsonify({"keywords_report": gemini_response})
 
     except requests.exceptions.RequestException as e:
         return jsonify({"error": f"Failed to fetch the URL: {e}"}), 500
 
-# ---
-# 4. وظيفة تحليل المنافسين (Competitor Analysis)
-# ---
+# --- 4. Competitor Analysis ---
 @app.route('/api/analyze_competitors', methods=['POST'])
 def analyze_competitors():
     data = request.get_json()
@@ -121,67 +155,14 @@ def analyze_competitors():
         competitor_text = competitor_soup.get_text()
 
         prompt = f"قارن بين هذين النصين واستخرج: 1- الكلمات المفتاحية المشتركة. 2- الكلمات المفتاحية التي يستخدمها المنافس ولا أستخدمها.\n\nالنص الأول (موقعي):\n{my_text[:2000]}\n\nالنص الثاني (المنافس):\n{competitor_text[:2000]}"
-    # أضف هذه الأكواد إلى ملف app.py
-
-@app.route('/api/auth/google', methods=['POST'])
-def google_auth_handler():
-    # استخراج رمز التعريف من الواجهة الأمامية
-    id_token = request.headers.get('Authorization', '').split('Bearer ')[1]
-    
-    if not id_token:
-        return jsonify({"error": "Authorization token is missing"}), 400
-    
-    try:
-        # التحقق من رمز التعريف باستخدام Firebase Admin SDK
-        decoded_token = auth.verify_id_token(id_token)
-        uid = decoded_token['uid']
-        user_email = decoded_token.get('email')
-
-        # حفظ أو تحديث بيانات المستخدم في Firestore
-        user_ref = db.collection('users').document(uid)
-        user_ref.set({
-            'email': user_email,
-            'last_login': firestore.SERVER_TIMESTAMP
-        }, merge=True)
         
-        return jsonify({"message": "User authenticated successfully", "uid": uid}), 200
-    
-    except auth.InvalidIdTokenError:
-        return jsonify({"error": "Invalid ID token"}), 401
-    except Exception as e:
-        print(f"Error during Google auth: {e}")
-        return jsonify({"error": "Failed to authenticate"}), 500
+        gemini_response = call_gemini_api(prompt)
 
-def authenticate_user():
-    # دالة مساعدة للتحقق من المستخدم في المسارات المحمية
-    id_token = request.headers.get('Authorization', '').split('Bearer ')[1]
-    if not id_token:
-        return None
-    try:
-        decoded_token = auth.verify_id_token(id_token)
-        return decoded_token
-    except auth.InvalidIdTokenError:
-        return None
-
-# مثال على كيفية استخدام وظيفة authenticate_user لحماية مسار مدفوع
-@app.route('/api/premium/advanced-analysis', methods=['POST'])
-def advanced_analysis():
-    user = authenticate_user()
-    if not user:
-        return jsonify({"error": "Unauthorized"}), 401
-    
-    # هنا يتم تنفيذ منطق التحليل المتقدم للمشتركين المدفوعين
-    return jsonify({"message": f"Welcome, {user.get('email')}! Here is your advanced analysis."})    
-        # استبدال هذا الاستدعاء بـ API Gemini الفعلي
-        gemini_api_response = {
-            "common_keywords": ["تحليل المواقع", "تسويق رقمي"],
-            "competitor_exclusive_keywords": ["تحليل سيو المقالات", "أدوات SEO مجانية"]
-        }
-
-        return jsonify(gemini_api_response)
+        return jsonify({"comparison_report": gemini_response})
 
     except requests.exceptions.RequestException as e:
         return jsonify({"error": f"Failed to fetch one of the URLs: {e}"}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
