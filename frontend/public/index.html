@@ -1,160 +1,210 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" class="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title data-translate="websiteAnalyzerTitle">Website Analyzer</title>
+    <title data-translate="websiteAnalyzerTitle">أداة تحليل المواقع والمقالات</title>
     <!-- Link to Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Link to Tailwind CSS (loaded from CDN for simplicity) -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@200;300;400;500;700;800;900&display=swap" rel="stylesheet">
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <!-- Custom CSS for dark mode and other styles -->
     <link rel="stylesheet" href="/static/css/style.css">
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col items-center justify-center p-4 transition-colors duration-300">
-    <div class="container bg-white dark:bg-gray-800 shadow-lg rounded-xl p-8 max-w-4xl w-full transition-colors duration-300">
-        <header class="flex flex-col sm:flex-row items-center justify-between mb-8">
-            <h1 class="text-4xl font-bold text-blue-700 dark:text-blue-400 mb-4 sm:mb-0 flex items-center">
-                <i class="fas fa-globe mr-3"></i>
-                <span data-translate="websiteAnalyzerTitle">Website Analyzer</span>
-            </h1>
-            <div class="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4">
-                <a href="/article_analyzer.html" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 flex items-center justify-center text-sm whitespace-nowrap">
-                    <i class="fas fa-file-alt mr-2"></i>
-                    <span data-translate="articleAnalyzerButton">Article Analyzer</span>
-                </a>
-                <select id="language-select" class="p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200">
-                    <option value="en">English</option>
-                    <option value="ar">العربية</option>
-                    <option value="fr">Français</option>
-                </select>
-                <button id="theme-toggle" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <i class="fas fa-moon dark:hidden"></i>
-                    <i class="fas fa-sun hidden dark:inline-block"></i>
-                </button>
-            </div>
-        </header>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen font-tajawal transition-colors duration-300">
+    
+    <!-- Main Navigation Bar -->
+    <nav class="bg-white dark:bg-gray-900 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex-shrink-0">
+                    <span class="text-2xl font-bold text-blue-600 dark:text-blue-400">SEO Analyzer</span>
+                </div>
+                <!-- Auth and Language/Theme controls -->
+                <div class="flex items-center space-x-4">
+                    <!-- Auth section -->
+                    <div id="auth-status" class="flex items-center space-x-2">
+                        <span id="user-email-display" class="font-medium text-gray-700 dark:text-gray-300 hidden"></span>
+                        <div id="not-logged-in-message" class="text-sm text-gray-500 dark:text-gray-400">
+                            <span data-translate="notLoggedInMessage">غير مسجل الدخول</span>
+                        </div>
+                        <div id="auth-buttons-container" class="flex space-x-2">
+                            <button id="show-auth-modal-button" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-4 rounded-full transition-colors duration-300">
+                                <i class="fas fa-sign-in-alt ml-2"></i>
+                                <span data-translate="loginButton">تسجيل الدخول</span>
+                            </button>
+                        </div>
+                        <button id="logout-button" class="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-4 rounded-full transition-colors duration-300 hidden">
+                            <i class="fas fa-sign-out-alt ml-2"></i>
+                            <span data-translate="logoutButton">تسجيل الخروج</span>
+                        </button>
+                    </div>
 
-        <!-- Auth Status Display -->
-        <div id="auth-status" class="text-center mb-6">
-            <p class="text-lg mb-2">
-                <span data-translate="welcomeMessage">Welcome,</span>
-                <span id="user-email-display" class="font-semibold text-blue-600 dark:text-blue-300"></span>
-                <span id="not-logged-in-message" class="text-gray-600 dark:text-gray-400 hidden" data-translate="notLoggedInMessage">Not logged in.</span>
-            </p>
-            <button id="logout-button" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 hidden" data-translate="logoutButton">Logout</button>
-            <div id="auth-buttons-container" class="mt-2">
-                <button id="show-auth-modal-button" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300" data-translate="loginRegisterButton">Login / Register</button>
+                    <!-- Language and Theme controls -->
+                    <div class="flex items-center space-x-2">
+                        <select id="language-select" class="p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                            <option value="en">English</option>
+                            <option value="ar">العربية</option>
+                        </select>
+                        <button id="theme-toggle" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <i class="fas fa-moon dark:hidden"></i>
+                            <i class="fas fa-sun hidden dark:inline-block"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <div class="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 mt-8">
+        <h1 class="text-3xl font-bold text-center text-gray-900 dark:text-gray-100 mb-6" data-translate="mainTitle">
+            أداة تحليل المواقع والمقالات
+        </h1>
+
+        <!-- Input Section -->
+        <div class="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-xl mb-8">
+            <!-- Website Analysis Section -->
+            <h2 class="text-2xl font-bold mb-4 text-blue-600 dark:text-blue-400" data-translate="websiteAnalysisTitle">
+                تحليل الموقع
+            </h2>
+            <div class="mb-4">
+                <label for="website-url" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" data-translate="enterUrlPrompt">
+                    أدخل رابط الموقع لتحليله:
+                </label>
+                <input type="text" id="website-url" placeholder="https://example.com" class="w-full p-3 rounded-md border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <button id="analyze-website-button" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full transition-colors duration-300 focus:outline-none focus:ring-4 focus:ring-blue-300">
+                <i class="fas fa-chart-line ml-2"></i>
+                <span data-translate="analyzeWebsiteButton">تحليل الموقع</span>
+            </button>
+
+            <!-- Article Analysis Section -->
+            <h2 class="text-2xl font-bold mt-8 mb-4 text-green-600 dark:text-green-400" data-translate="articleAnalysisTitle">
+                تحليل المقال
+            </h2>
+            <div class="mb-4">
+                <label for="article-text" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" data-translate="enterArticlePrompt">
+                    أدخل نص المقال لتحليله:
+                </label>
+                <textarea id="article-text" rows="8" placeholder="الصق مقالك هنا..." class="w-full p-3 rounded-md border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500"></textarea>
+            </div>
+            <button id="analyze-article-button" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-full transition-colors duration-300 focus:outline-none focus:ring-4 focus:ring-green-300">
+                <i class="fas fa-edit ml-2"></i>
+                <span data-translate="analyzeArticleButton">تحليل المقال</span>
+            </button>
+            <div id="error-message" class="text-red-500 mt-4 text-center hidden"></div>
+            <div id="loading-spinner" class="mt-4 text-center hidden">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
             </div>
         </div>
 
-        <section id="url-input-section" class="mb-8 text-center">
-            <h2 class="text-2xl font-semibold mb-4" data-translate="enterWebsiteUrl">Enter Website URL</h2>
-            <input type="url" id="website-url" placeholder="https://example.com" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100">
-            <button id="analyze-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 mt-4 flex items-center justify-center mx-auto">
-                <i class="fas fa-search mr-2"></i>
-                <span data-translate="analyzeButton">Analyze Website</span>
-            </button>
-            <p id="error-message" class="text-red-600 mt-4 hidden" role="alert"></p>
-            <div id="loading-spinner" class="hidden mt-4">
-                <i class="fas fa-spinner fa-spin text-blue-500 text-3xl"></i>
-                <p class="text-blue-500 mt-2" data-translate="analyzingMessage">Analyzing website, please wait...</p>
-            </div>
-        </section>
-
-        <section id="results-dashboard" class="hidden mt-8">
-            <h2 class="text-2xl font-semibold mb-4" data-translate="analysisResults">Analysis Results for <span id="analyzed-url" class="text-blue-600 dark:text-blue-300"></span></h2>
-            
-            <!-- Global Toggle Buttons -->
-            <div class="flex justify-end gap-2 mb-4">
-                <button id="expand-all-button" class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 py-2 px-4 rounded-lg text-sm transition duration-300">
-                    <i class="fas fa-expand-alt mr-1"></i> <span data-translate="expandAll">Expand All</span>
-                </button>
-                <button id="collapse-all-button" class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 py-2 px-4 rounded-lg text-sm transition duration-300">
-                    <i class="fas fa-compress-alt mr-1"></i> <span data-translate="collapseAll">Collapse All</span>
-                </button>
+        <!-- Results Dashboard (initially hidden) -->
+        <div id="results-dashboard" class="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-xl hidden">
+            <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100" data-translate="analysisReportTitle">
+                    تقرير التحليل لـ: <span id="analyzed-source" class="text-blue-600 dark:text-blue-400 break-all"></span>
+                </h2>
+                <div class="flex space-x-2 rtl:space-x-reverse">
+                    <button id="expand-all-button" class="text-sm text-blue-500 hover:underline" data-translate="expandAll">توسيع الكل</button>
+                    <button id="collapse-all-button" class="text-sm text-blue-500 hover:underline" data-translate="collapseAll">طي الكل</button>
+                </div>
             </div>
 
             <!-- Domain Authority Section -->
-            <div id="domain-authority-section" class="section-container bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow-md mb-6">
-                <h3 class="text-xl font-semibold mb-3 flex justify-between items-center cursor-pointer toggle-section" data-target="domain-authority-content">
-                    <span data-translate="domainAuthorityTitle">Domain Authority</span>
-                    <i class="fas fa-chevron-down toggle-icon"></i>
-                </h3>
-                <div id="domain-authority-content" class="section-content">
-                    <p><span class="font-medium" data-translate="domainName">Domain Name:</span> <span id="domain-name">N/A</span></p>
+            <div id="domain-authority-section" class="mb-6 result-section" data-section-type="website">
+                <div class="flex justify-between items-center cursor-pointer toggle-section">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                        <i class="fas fa-globe mr-2"></i>
+                        <span data-translate="domainAuthorityTitle">صلاحية الموقع</span>
+                    </h3>
+                    <i class="fas fa-chevron-down toggle-icon text-gray-500"></i>
+                </div>
+                <div id="domain-authority-content" class="section-content mt-4 hidden">
+                    <p><span class="font-medium" data-translate="domainName">اسم الموقع:</span> <span id="domain-name">N/A</span></p>
                     <div class="mb-4">
-                        <span class="font-medium" data-translate="domainAuthorityScore">Domain Authority Score:</span> <span id="domain-authority-score">N/A</span>
+                        <span class="font-medium" data-translate="domainAuthorityScore">نتيجة صلاحية الموقع:</span> <span id="domain-authority-score">N/A</span>
                         <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-2">
                             <div id="domain-authority-progress" class="h-2.5 rounded-full bg-gray-400" style="width: 0%"></div>
                         </div>
                         <p id="domain-authority-text" class="text-sm mt-1 text-gray-600 dark:text-gray-400"></p>
                     </div>
-                    <p><span class="font-medium" data-translate="domainAge">Domain Age:</span> <span id="domain-age">N/A</span></p>
-                    <p><span class="font-medium" data-translate="sslStatus">SSL Status:</span> <span id="ssl-status">N/A</span></p>
-                    <p><span class="font-medium" data-translate="blacklistStatus">Blacklist Status:</span> <span id="blacklist-status">N/A</span></p>
-                    <p><span class="font-medium" data-translate="dnsHealth">DNS Health:</span> <span id="dns-health">N/A</span></p>
+                    <p><span class="font-medium" data-translate="domainAge">عمر الموقع:</span> <span id="domain-age">N/A</span></p>
+                    <p><span class="font-medium" data-translate="sslStatus">حالة SSL:</span> <span id="ssl-status">N/A</span></p>
+                    <p><span class="font-medium" data-translate="blacklistStatus">حالة القائمة السوداء:</span> <span id="blacklist-status">N/A</span></p>
+                    <p><span class="font-medium" data-translate="dnsHealth">صحة DNS:</span> <span id="dns-health">N/A</span></p>
                 </div>
             </div>
 
             <!-- Page Speed Section -->
-            <div id="page-speed-section" class="section-container bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow-md mb-6">
-                <h3 class="text-xl font-semibold mb-3 flex justify-between items-center cursor-pointer toggle-section" data-target="page-speed-content">
-                    <span data-translate="pageSpeedTitle">Page Speed Insights</span>
-                    <i class="fas fa-chevron-down toggle-icon"></i>
-                </h3>
-                <div id="page-speed-content" class="section-content">
+            <div id="page-speed-section" class="mb-6 result-section" data-section-type="website">
+                <div class="flex justify-between items-center cursor-pointer toggle-section">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                        <i class="fas fa-tachometer-alt mr-2"></i>
+                        <span data-translate="pageSpeedTitle">سرعة الصفحة</span>
+                    </h3>
+                    <i class="fas fa-chevron-down toggle-icon text-gray-500"></i>
+                </div>
+                <div id="page-speed-content" class="section-content mt-4 hidden">
                     <div class="mb-4">
-                        <span class="font-medium" data-translate="performanceScore">Performance Score:</span> <span id="performance-score">N/A</span>
+                        <span class="font-medium" data-translate="performanceScore">نتيجة الأداء:</span> <span id="performance-score">N/A</span>
                         <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-2">
                             <div id="performance-progress" class="h-2.5 rounded-full bg-gray-400" style="width: 0%"></div>
                         </div>
                         <p id="performance-text" class="text-sm mt-1 text-gray-600 dark:text-gray-400"></p>
                     </div>
-                    <p class="font-medium mb-2" data-translate="coreWebVitals">Core Web Vitals:</p>
+                    <p class="font-medium mb-2" data-translate="coreWebVitals">مقاييس الويب الأساسية:</p>
                     <ul id="core-web-vitals" class="list-disc list-inside ml-4">
                         <li data-translate="loadingMessage">Loading...</li>
                     </ul>
-                    <p class="font-medium mt-4 mb-2" data-translate="performanceIssues">Performance Issues:</p>
+                    <p class="font-medium mt-4 mb-2" data-translate="performanceIssues">مشاكل الأداء:</p>
                     <ul id="performance-issues" class="list-disc list-inside ml-4">
                         <li data-translate="loadingMessage">Loading...</li>
                     </ul>
-                    <p class="mt-4"><span class="font-medium" data-translate="pagespeedReport">PageSpeed Report:</span> <a id="pagespeed-link" href="#" target="_blank" class="text-blue-500 hover:underline">Link</a></p>
+                    <p class="mt-4"><span class="font-medium" data-translate="pagespeedReport">تقرير PageSpeed:</span> <a id="pagespeed-link" href="#" target="_blank" class="text-blue-500 hover:underline">Link</a></p>
                 </div>
             </div>
 
             <!-- SEO Quality Section -->
-            <div id="seo-quality-section" class="section-container bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow-md mb-6">
-                <h3 class="text-xl font-semibold mb-3 flex justify-between items-center cursor-pointer toggle-section" data-target="seo-quality-content">
-                    <span data-translate="seoQualityTitle">SEO Quality</span>
-                    <i class="fas fa-chevron-down toggle-icon"></i>
-                </h3>
-                <div id="seo-quality-content" class="section-content">
+            <div id="seo-quality-section" class="mb-6 result-section" data-section-type="website article">
+                <div class="flex justify-between items-center cursor-pointer toggle-section">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                        <i class="fas fa-file-alt mr-2"></i>
+                        <span data-translate="seoQualityTitle">جودة تحسين محركات البحث (SEO)</span>
+                    </h3>
+                    <i class="fas fa-chevron-down toggle-icon text-gray-500"></i>
+                </div>
+                <div id="seo-quality-content" class="section-content mt-4 hidden">
                     <div class="mb-4">
-                        <span class="font-medium" data-translate="overallScore">Overall Score:</span> <span id="seo-overall-score">N/A</span>
+                        <span class="font-medium" data-translate="overallScore">النتيجة الإجمالية:</span> <span id="seo-overall-score">N/A</span>
                         <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-2">
                             <div id="seo-overall-progress" class="h-2.5 rounded-full bg-gray-400" style="width: 0%"></div>
                         </div>
                         <p id="seo-overall-text" class="text-sm mt-1 text-gray-600 dark:text-gray-400"></p>
                     </div>
-                    <p><span class="font-medium" data-translate="seoTitle">Title:</span> <span id="seo-title">N/A</span></p>
-                    <p><span class="font-medium" data-translate="seoMetaDescription">Meta Description:</span> <span id="seo-meta-description">N/A</span></p>
-                    <p class="font-medium mt-4 mb-2" data-translate="headingTags">Heading Tags (H1-H6):</p>
+                    <p data-section-type="website"><span class="font-medium" data-translate="seoTitle">العنوان:</span> <span id="seo-title">N/A</span></p>
+                    <p data-section-type="website"><span class="font-medium" data-translate="seoMetaDescription">الوصف التعريفي:</span> <span id="seo-meta-description">N/A</span></p>
+                    <p class="font-medium mt-4 mb-2" data-translate="headingTags">عناوين الصفحة (H1-H6):</p>
                     <ul id="h-tags-list" class="list-disc list-inside ml-4">
                         <li data-translate="loadingMessage">Loading...</li>
                     </ul>
-                    <p class="mt-4"><span class="font-medium" data-translate="contentWordCount">Content Word Count:</span> <span id="content-word-count">N/A</span></p>
-                    <p><span class="font-medium" data-translate="contentCharCount">Content Character Count:</span> <span id="content-char-count">N/A</span></p>
-                    <p><span class="font-medium" data-translate="robotsTxtPresent">Robots.txt Present:</span> <span id="robots-txt-present">N/A</span></p>
-                    <p><span class="font-medium" data-translate="sitemapXmlPresent">Sitemap.xml Present:</span> <span id="sitemap-xml-present">N/A</span></p>
-                    <p class="font-medium mt-4 mb-2" data-translate="keywordDensity">Keyword Density (Top 10):</p>
+                    <p class="mt-4"><span class="font-medium" data-translate="contentWordCount">عدد كلمات المحتوى:</span> <span id="content-word-count">N/A</span></p>
+                    <p><span class="font-medium" data-translate="contentCharCount">عدد أحرف المحتوى:</span> <span id="content-char-count">N/A</span></p>
+                    <p data-section-type="website"><span class="font-medium" data-translate="robotsTxtPresent">ملف Robots.txt موجود:</span> <span id="robots-txt-present">N/A</span></p>
+                    <p data-section-type="website"><span class="font-medium" data-translate="sitemapXmlPresent">ملف Sitemap.xml موجود:</span> <span id="sitemap-xml-present">N/A</span></p>
+                    <p class="font-medium mt-4 mb-2" data-translate="keywordDensity">كثافة الكلمات المفتاحية (أهم 10):</p>
                     <ul id="keyword-density-list" class="list-disc list-inside ml-4">
                         <li data-translate="loadingMessage">Loading...</li>
                     </ul>
-                    <p class="font-medium mt-4 mb-2" data-translate="seoImprovementTips">SEO Improvement Tips:</p>
+                    <p class="font-medium mt-4 mb-2" data-translate="seoImprovementTips">نصائح لتحسين SEO:</p>
                     <ul id="seo-improvement-tips" class="list-disc list-inside ml-4">
                         <li data-translate="loadingMessage">Loading...</li>
                     </ul>
@@ -162,33 +212,39 @@
             </div>
 
             <!-- AI SEO Suggestions Section -->
-            <div id="ai-seo-suggestions-section" class="section-container bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow-md mb-6">
-                <h3 class="text-xl font-semibold mb-3 flex justify-between items-center cursor-pointer toggle-section" data-target="ai-seo-suggestions-content">
-                    <span data-translate="aiSeoSuggestionsTitle">AI SEO Suggestions</span>
-                    <i class="fas fa-chevron-down toggle-icon"></i>
-                </h3>
-                <div id="ai-seo-suggestions-content" class="section-content">
+            <div id="ai-seo-suggestions-section" class="mb-6 result-section" data-section-type="website">
+                <div class="flex justify-between items-center cursor-pointer toggle-section">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                        <i class="fas fa-robot mr-2"></i>
+                        <span data-translate="aiSeoSuggestionsTitle">اقتراحات SEO بالذكاء الاصطناعي</span>
+                    </h3>
+                    <i class="fas fa-chevron-down toggle-icon text-gray-500"></i>
+                </div>
+                <div id="ai-seo-suggestions-content" class="section-content mt-4 hidden">
                     <p id="ai-seo-suggestions-text" data-translate="loadingMessage">Loading...</p>
                     <button id="rewrite-seo-button" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 mt-4">
-                        <i class="fas fa-magic mr-2"></i>
-                        <span data-translate="rewriteSeoButton">Rewrite Title/Meta Description</span>
+                        <i class="fas fa-magic ml-2"></i>
+                        <span data-translate="rewriteSeoButton">إعادة صياغة العنوان/الوصف</span>
                     </button>
                     <div id="rewrite-seo-output" class="ai-section p-4 rounded-lg mt-4 hidden">
-                        <h4 class="text-lg font-medium mb-2" data-translate="aiRewritesTitle">AI Rewrites:</h4>
+                        <h4 class="text-lg font-medium mb-2" data-translate="aiRewritesTitle">إعادة صياغة من الذكاء الاصطناعي:</h4>
                         <p data-translate="loadingAiRewrites">Loading AI rewrites...</p>
                     </div>
                 </div>
             </div>
 
             <!-- Broken Links Details Section -->
-            <div id="broken-links-details-section" class="section-container bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow-md mb-6">
-                <h3 class="text-xl font-semibold mb-3 flex justify-between items-center cursor-pointer toggle-section" data-target="broken-links-details-content">
-                    <span data-translate="brokenLinksDetailsTitle">Broken Links Details</span>
-                    <i class="fas fa-chevron-down toggle-icon"></i>
-                </h3>
-                <div id="broken-links-details-content" class="section-content">
-                    <p><span class="font-medium" data-translate="brokenLinksCount">Broken Links Count:</span> <span id="seo-broken-links">N/A</span></p>
-                    <p class="font-medium mt-4 mb-2" data-translate="brokenLinksList">Broken Links List:</p>
+            <div id="broken-links-details-section" class="mb-6 result-section" data-section-type="website">
+                <div class="flex justify-between items-center cursor-pointer toggle-section">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                        <i class="fas fa-link mr-2"></i>
+                        <span data-translate="brokenLinksDetailsTitle">تفاصيل الروابط المعطلة</span>
+                    </h3>
+                    <i class="fas fa-chevron-down toggle-icon text-gray-500"></i>
+                </div>
+                <div id="broken-links-details-content" class="section-content mt-4 hidden">
+                    <p><span class="font-medium" data-translate="brokenLinksCount">عدد الروابط المعطلة:</span> <span id="seo-broken-links">N/A</span></p>
+                    <p class="font-medium mt-4 mb-2" data-translate="brokenLinksList">قائمة الروابط المعطلة:</p>
                     <ul id="broken-links-list" class="list-disc list-inside ml-4">
                         <li data-translate="loadingMessage">Loading...</li>
                     </ul>
@@ -196,29 +252,35 @@
             </div>
 
             <!-- Broken Links Fix Suggestions (AI) Section -->
-            <div id="broken-links-fix-suggestions-section" class="section-container bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow-md mb-6">
-                <h3 class="text-xl font-semibold mb-3 flex justify-between items-center cursor-pointer toggle-section" data-target="broken-links-fix-suggestions-content">
-                    <span data-translate="brokenLinksFixSuggestionsTitle">AI Broken Links Fix Suggestions</span>
-                    <i class="fas fa-chevron-down toggle-icon"></i>
-                </h3>
-                <div id="broken-links-fix-suggestions-content" class="section-content">
+            <div id="broken-links-fix-suggestions-section" class="mb-6 result-section" data-section-type="website">
+                <div class="flex justify-between items-center cursor-pointer toggle-section">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                        <i class="fas fa-tools mr-2"></i>
+                        <span data-translate="brokenLinksFixSuggestionsTitle">اقتراحات إصلاح الروابط المعطلة بالذكاء الاصطناعي</span>
+                    </h3>
+                    <i class="fas fa-chevron-down toggle-icon text-gray-500"></i>
+                </div>
+                <div id="broken-links-fix-suggestions-content" class="section-content mt-4 hidden">
                     <p id="broken-links-fix-suggestions-text" data-translate="loadingMessage">Loading...</p>
                 </div>
             </div>
 
             <!-- User Experience Section -->
-            <div id="user-experience-section" class="section-container bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow-md mb-6">
-                <h3 class="text-xl font-semibold mb-3 flex justify-between items-center cursor-pointer toggle-section" data-target="user-experience-content">
-                    <span data-translate="userExperienceTitle">User Experience (UX)</span>
-                    <i class="fas fa-chevron-down toggle-icon"></i>
-                </h3>
-                <div id="user-experience-content" class="section-content">
-                    <p><span class="font-medium" data-translate="viewportMetaPresent">Viewport Meta Tag Present:</span> <span id="viewport-meta-present">N/A</span></p>
-                    <p class="font-medium mt-4 mb-2" data-translate="uxIssues">UX Issues:</p>
+            <div id="user-experience-section" class="mb-6 result-section" data-section-type="website">
+                <div class="flex justify-between items-center cursor-pointer toggle-section">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                        <i class="fas fa-hand-pointer mr-2"></i>
+                        <span data-translate="userExperienceTitle">تجربة المستخدم (UX)</span>
+                    </h3>
+                    <i class="fas fa-chevron-down toggle-icon text-gray-500"></i>
+                </div>
+                <div id="user-experience-content" class="section-content mt-4 hidden">
+                    <p><span class="font-medium" data-translate="viewportMetaPresent">وصف Viewport Meta Tag موجود:</span> <span id="viewport-meta-present">N/A</span></p>
+                    <p class="font-medium mt-4 mb-2" data-translate="uxIssues">مشاكل تجربة المستخدم:</p>
                     <ul id="ux-issues-list" class="list-disc list-inside ml-4">
                         <li data-translate="loadingMessage">Loading...</li>
                     </ul>
-                    <p class="font-medium mt-4 mb-2" data-translate="uxSuggestions">UX Suggestions:</p>
+                    <p class="font-medium mt-4 mb-2" data-translate="uxSuggestions">اقتراحات تجربة المستخدم:</p>
                     <ul id="ux-suggestions-list" class="list-disc list-inside ml-4">
                         <li data-translate="loadingMessage">Loading...</li>
                     </ul>
@@ -226,33 +288,39 @@
             </div>
 
             <!-- AI Content Insights Section -->
-            <div id="ai-content-insights-section" class="section-container bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow-md mb-6">
-                <h3 class="text-xl font-semibold mb-3 flex justify-between items-center cursor-pointer toggle-section" data-target="ai-content-insights-content">
-                    <span data-translate="aiContentInsightsTitle">AI Content Insights</span>
-                    <i class="fas fa-chevron-down toggle-icon"></i>
-                </h3>
-                <div id="ai-content-insights-content" class="section-content">
+            <div id="ai-content-insights-section" class="mb-6 result-section" data-section-type="website article">
+                <div class="flex justify-between items-center cursor-pointer toggle-section">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                        <i class="fas fa-robot mr-2"></i>
+                        <span data-translate="aiContentInsightsTitle">رؤى المحتوى بالذكاء الاصطناعي</span>
+                    </h3>
+                    <i class="fas fa-chevron-down toggle-icon text-gray-500"></i>
+                </div>
+                <div id="ai-content-insights-content" class="section-content mt-4 hidden">
                     <p id="ai-content-insights-text" data-translate="loadingMessage">Loading...</p>
                     <button id="refine-content-button" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 mt-4">
-                        <i class="fas fa-wand-magic-sparkles mr-2"></i>
-                        <span data-translate="refineContentButton">Refine Content</span>
+                        <i class="fas fa-wand-magic-sparkles ml-2"></i>
+                        <span data-translate="refineContentButton">تحسين المحتوى</span>
                     </button>
                     <div id="refine-content-output" class="ai-section p-4 rounded-lg mt-4 hidden">
-                        <h4 class="text-lg font-medium mb-2" data-translate="refinedContentTitle">Refined Content:</h4>
+                        <h4 class="text-lg font-medium mb-2" data-translate="refinedContentTitle">المحتوى المحسن:</h4>
                         <p data-translate="loadingAiRefinement">Loading AI refinement...</p>
                     </div>
                 </div>
             </div>
 
             <!-- AdSense Readiness Section -->
-            <div id="adsense-readiness-section" class="section-container bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow-md mb-6">
-                <h3 class="text-xl font-semibold mb-3 flex justify-between items-center cursor-pointer toggle-section" data-target="adsense-readiness-content">
-                    <span data-translate="adsenseReadinessTitle">AdSense Readiness</span>
-                    <i class="fas fa-chevron-down toggle-icon"></i>
-                </h3>
-                <div id="adsense-readiness-content" class="section-content">
-                    <p><span class="font-medium" data-translate="assessment">Assessment:</span> <span id="adsense-assessment-text">N/A</span></p>
-                    <p class="font-medium mt-4 mb-2" data-translate="improvementAreas">Improvement Areas:</p>
+            <div id="adsense-readiness-section" class="mb-6 result-section" data-section-type="website article">
+                <div class="flex justify-between items-center cursor-pointer toggle-section">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                        <i class="fas fa-money-check-alt mr-2"></i>
+                        <span data-translate="adsenseReadinessTitle">جاهزية AdSense</span>
+                    </h3>
+                    <i class="fas fa-chevron-down toggle-icon text-gray-500"></i>
+                </div>
+                <div id="adsense-readiness-content" class="section-content mt-4 hidden">
+                    <p><span class="font-medium" data-translate="assessment">التقييم:</span> <span id="adsense-assessment-text">N/A</span></p>
+                    <p class="font-medium mt-4 mb-2" data-translate="improvementAreas">مجالات التحسين:</p>
                     <ul id="adsense-improvement-areas-list" class="list-disc list-inside ml-4">
                         <li data-translate="loadingMessage">Loading...</li>
                     </ul>
@@ -260,67 +328,71 @@
             </div>
 
             <!-- AI Overall Summary Section -->
-            <div id="ai-summary-section" class="section-container bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow-md mb-6">
-                <h3 class="text-xl font-semibold mb-3 flex justify-between items-center cursor-pointer toggle-section" data-target="ai-summary-content">
-                    <span data-translate="aiOverallSummaryTitle">AI Overall Summary</span>
-                    <i class="fas fa-chevron-down toggle-icon"></i>
-                </h3>
-                <div id="ai-summary-content" class="section-content">
+            <div id="ai-summary-section" class="mb-6 result-section" data-section-type="website article">
+                <div class="flex justify-between items-center cursor-pointer toggle-section">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                        <i class="fas fa-robot mr-2"></i>
+                        <span data-translate="aiOverallSummaryTitle">ملخص شامل بالذكاء الاصطناعي</span>
+                    </h3>
+                    <i class="fas fa-chevron-down toggle-icon text-gray-500"></i>
+                </div>
+                <div id="ai-summary-content" class="section-content mt-4 hidden">
                     <p id="ai-summary-text" data-translate="loadingMessage">Loading...</p>
                 </div>
             </div>
 
-            <div class="flex justify-center space-x-4 mt-8">
-                <button id="analyze-another-button" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-6 rounded-lg shadow-md transition duration-300">
-                    <span data-translate="analyzeAnotherButton">Analyze Another Website</span>
+            <div class="mt-8 flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 rtl:md:space-x-reverse">
+                <button id="analyze-another-button" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-full transition-colors duration-300 focus:outline-none focus:ring-4 focus:ring-gray-300">
+                    <i class="fas fa-sync-alt ml-2"></i>
+                    <span data-translate="analyzeAnotherButton">تحليل آخر</span>
                 </button>
-                <button id="export-pdf-button" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300">
-                    <i class="fas fa-file-pdf mr-2"></i>
-                    <span data-translate="exportPdfButton">Export PDF Report</span>
+                <button id="export-pdf-button" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-full transition-colors duration-300 focus:outline-none focus:ring-4 focus:ring-red-300">
+                    <i class="fas fa-file-pdf ml-2"></i>
+                    <span data-translate="exportPdfButton">تصدير التقرير كـ PDF</span>
                 </button>
             </div>
-        </section>
+        </div>
     </div>
-
-    <!-- Auth Modal Structure -->
+    
+    <!-- Auth Modal -->
     <div id="auth-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 hidden">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 max-w-md w-full relative">
             <button id="close-auth-modal" class="absolute top-4 right-4 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white text-2xl">&times;</button>
-            <h2 id="modal-auth-form-title" class="text-2xl font-semibold mb-6 text-center text-blue-700 dark:text-blue-400" data-translate="loginTitle">Login to Your Account</h2>
-            <p id="modal-auth-prompt" class="text-center text-gray-700 dark:text-gray-200 mb-4" data-translate="loginToContinue">Please login or register to continue.</p>
+            <h2 id="modal-auth-form-title" class="text-2xl font-semibold mb-6 text-center text-blue-700 dark:text-blue-400" data-translate="loginTitle">تسجيل الدخول إلى حسابك</h2>
+            <p id="modal-auth-prompt" class="text-center text-gray-700 dark:text-gray-200 mb-4" data-translate="loginToContinue">يرجى تسجيل الدخول أو التسجيل للمتابعة.</p>
             
             <div class="mb-4">
-                <label for="modal-auth-email" class="block text-gray-700 dark:text-gray-200 text-sm font-bold mb-2" data-translate="emailLabel">Email:</label>
+                <label for="modal-auth-email" class="block text-gray-700 dark:text-gray-200 text-sm font-bold mb-2" data-translate="emailLabel">البريد الإلكتروني:</label>
                 <input type="email" id="modal-auth-email" placeholder="your@example.com" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 dark:bg-gray-600 text-gray-900 dark:text-gray-100">
             </div>
             <div class="mb-6">
-                <label for="modal-auth-password" class="block text-gray-700 dark:text-gray-200 text-sm font-bold mb-2" data-translate="passwordLabel">Password:</label>
+                <label for="modal-auth-password" class="block text-gray-700 dark:text-gray-200 text-sm font-bold mb-2" data-translate="passwordLabel">كلمة المرور:</label>
                 <input type="password" id="modal-auth-password" placeholder="********" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 dark:bg-gray-600 text-gray-900 dark:text-gray-100">
             </div>
             <p id="modal-auth-error-message" class="text-red-600 text-center mb-4 hidden" role="alert"></p>
             <div id="modal-auth-loading-spinner" class="hidden text-center mb-4">
                 <i class="fas fa-spinner fa-spin text-blue-500 text-3xl"></i>
-                <p class="text-blue-500 mt-2" data-translate="processingMessage">Processing...</p>
+                <p class="text-blue-500 mt-2" data-translate="processingMessage">...جارٍ المعالجة</p>
             </div>
-            <button id="modal-auth-submit-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md w-full transition duration-300" data-translate="loginButton">Login</button>
+            <button id="modal-auth-submit-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md w-full transition duration-300" data-translate="loginButton">تسجيل الدخول</button>
             
             <div class="mt-6 text-center">
-                <p class="text-gray-700 dark:text-gray-200 mb-4" data-translate="orSignInWith">Or sign in with:</p>
+                <p class="text-gray-700 dark:text-gray-200 mb-4" data-translate="orSignInWith">أو سجل الدخول باستخدام:</p>
                 <div class="flex flex-col sm:flex-row justify-center space-y-3 sm:space-y-0 sm:space-x-4">
                     <button id="modal-google-login-button" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg shadow-md flex items-center justify-center transition duration-300">
                         <i class="fab fa-google mr-2"></i>
-                        <span data-translate="signInWithGoogle">Sign in with Google</span>
+                        <span data-translate="signInWithGoogle">تسجيل الدخول باستخدام جوجل</span>
                     </button>
                 </div>
             </div>
 
             <p class="text-center text-gray-600 dark:text-gray-400 mt-4">
-                <span id="modal-switch-auth-text" data-translate="noAccountText">Don't have an account?</span>
-                <button id="modal-switch-auth-button" class="text-blue-600 dark:text-blue-400 hover:underline font-semibold ml-1" data-translate="registerHereButton">Register here</button>
+                <span id="modal-switch-auth-text" data-translate="noAccountText">لا يوجد لديك حساب؟</span>
+                <button id="modal-switch-auth-button" class="text-blue-600 dark:text-blue-400 hover:underline font-semibold ml-1" data-translate="registerHereButton">سجل هنا</button>
             </p>
         </div>
     </div>
-
+    
     <script src="/static/js/main.js" defer></script>
 </body>
 </html>
