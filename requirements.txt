@@ -1,10 +1,5 @@
 Flask
-gunicorn
 requests
-python-whois
 beautifulsoup4
 firebase-admin
 google-generativeai
-Flask-Cors
-dnspython
-weasyprint
