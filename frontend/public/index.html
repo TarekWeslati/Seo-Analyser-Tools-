@@ -149,5 +149,47 @@
             alert('سيتم إضافة نموذج تسجيل الدخول قريبًا.');
         });
     </script>
+    <div id="auth-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 dark:bg-gray-800 dark:bg-opacity-75 hidden overflow-y-auto h-full w-full z-50 transition-opacity duration-300">
+    <div class="relative top-20 mx-auto p-8 border w-96 shadow-lg rounded-lg bg-white dark:bg-gray-800 transition-transform duration-300 transform scale-95">
+        
+        <div class="flex justify-between items-center mb-6">
+            <h3 id="modal-auth-title" class="text-2xl font-bold text-gray-900 dark:text-gray-100" data-translate="loginTitle">تسجيل الدخول</h3>
+            <button class="close-modal text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-3xl font-light leading-none transition-colors duration-200">
+                &times;
+            </button>
+        </div>
+
+        <form id="auth-form" class="space-y-4">
+            <div>
+                <label for="modal-email-input" class="block text-sm font-medium text-gray-700 dark:text-gray-300">البريد الإلكتروني</label>
+                <input type="email" id="modal-email-input" class="mt-1 block w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100" placeholder="example@email.com" required>
+            </div>
+            <div>
+                <label for="modal-password-input" class="block text-sm font-medium text-gray-700 dark:text-gray-300">كلمة المرور</label>
+                <input type="password" id="modal-password-input" class="mt-1 block w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100" placeholder="••••••••" required>
+            </div>
+            <div id="auth-message" class="text-center text-sm font-medium text-red-600 dark:text-red-400"></div>
+            
+            <button id="modal-auth-submit-button" type="submit" class="w-full py-3 px-4 rounded-md shadow-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200" data-translate="loginButton">تسجيل الدخول</button>
+        </form>
+
+        <div class="my-6 flex items-center">
+            <div class="flex-grow border-t border-gray-300 dark:border-gray-600"></div>
+            <span class="flex-shrink mx-4 text-gray-500 dark:text-gray-400 text-sm" data-translate="orSignInWith">أو سجل الدخول عبر:</span>
+            <div class="flex-grow border-t border-gray-300 dark:border-gray-600"></div>
+        </div>
+
+        <button id="modal-google-login-button" class="w-full py-3 px-4 rounded-md shadow-sm font-semibold text-white bg-red-600 hover:bg-red-700 flex items-center justify-center space-x-2 transition-colors duration-200">
+            <svg class="h-5 w-5" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.619 4.676-6.003 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.096 28.605 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20c11.452 0 20.04-8.625 20.04-20.04v-.001z" clip-rule="evenodd" fill-rule="evenodd"/><path fill="#FF3D00" d="M6.306 14.691L1.69 9.972C3.272 6.942 5.928 4.711 9.215 3.197 10.45 2.529 11.758 2.052 13.11 1.691V1.666L15.344 3.992l-1.921 1.488C11.968 5.176 10.472 5.751 9.215 6.306c-3.155 1.474-5.592 3.864-6.909 6.758L6.306 14.691z" clip-rule="evenodd" fill-rule="evenodd"/><path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.401-5.195l-6.195-5.289C29.62 34.225 27.037 35 24 35c-5.187 0-9.539-3.486-11.868-8.204L4.85 31.78l-2.056 1.583C5.556 39.42 14.44 44 24 44z" clip-rule="evenodd" fill-rule="evenodd"/><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-1.619 4.676-6.003 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.096 28.605 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20c11.452 0 20.04-8.625 20.04-20.04v-.001z" clip-rule="evenodd" fill-rule="evenodd"/></svg>
+            <span data-translate="signInWithGoogle">تسجيل الدخول عبر Google</span>
+        </button>
+
+        <p class="text-center text-gray-600 dark:text-gray-400 mt-4 text-sm">
+            <span id="modal-switch-auth-text" data-translate="noAccountText">ليس لديك حساب؟</span>
+            <button id="modal-switch-auth-button" class="text-blue-600 hover:underline dark:text-blue-400 transition-colors duration-200" data-translate="signupNow">سجل الآن</button>
+        </p>
+
+    </div>
+</div>
 </body>
 </html>
