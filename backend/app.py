@@ -1,148 +1,137 @@
+from flask import Flask, request, jsonify
+import requests
+from bs4 import BeautifulSoup
 import os
-import json
-import firebase_admin
-import google.generativeai as genai
-from firebase_admin import credentials, auth, firestore
-from flask import Flask, request, jsonify, send_from_directory, make_response
-from flask_cors import CORS
 
-# Get Firebase service account key and Gemini API key from environment variables
-firebase_service_account_key_json = os.getenv("FIREBASE_SERVICE_ACCOUNT_KEY_JSON")
-gemini_api_key = os.getenv("GEMINI_API_KEY")
+app = Flask(__name__)
 
-if firebase_service_account_key_json:
-    try:
-        cred_dict = json.loads(firebase_service_account_key_json)
-        cred = credentials.Certificate(cred_dict)
-        firebase_admin.initialize_app(cred)
-        db = firestore.client()  # Initialize Firestore
-        print("Firebase Admin SDK and Firestore initialized successfully.")
-    except Exception as e:
-        print(f"Error initializing Firebase Admin SDK: {e}")
-        print("Firebase Admin SDK will not be available.")
-else:
-    print("FIREBASE_SERVICE_ACCOUNT_KEY_JSON environment variable not set. Firebase Admin SDK will not be initialized.")
+# دالة وهمية لاستدعاء نموذج Gemini
+# يجب استبدال هذه الدالة بالكود الفعلي الخاص بك
+def call_gemini_api(prompt):
+    # هنا يجب أن يكون الكود الذي يرسل الطلب إلى API Gemini
+    # ويعيد النتيجة
+    # كمثال، يمكن استخدام مكتبة google.generativeai
+    # import google.generativeai as genai
+    # genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+    # model = genai.GenerativeModel('gemini-pro')
+    # response = model.generate_content(prompt)
+    # return response.text
+    return {"result": f"This is a placeholder for Gemini's response to: {prompt}"}
 
-# Initialize Gemini API
-if gemini_api_key:
-    try:
-        genai.configure(api_key=gemini_api_key)
-        print("Gemini API key configured successfully.")
-    except Exception as e:
-        print(f"Error configuring Gemini API: {e}")
-        print("Gemini API will not be available.")
-
-# Define the absolute paths for the project root and static folder
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-STATIC_FOLDER = os.path.join(PROJECT_ROOT, 'static')
-TEMPLATE_FOLDER = os.path.join(PROJECT_ROOT) # Assumes index.html is in the project root
-
-# Initialize Flask app with corrected paths
-app = Flask(__name__,
-            static_folder=STATIC_FOLDER,
-            static_url_path='/static',
-            template_folder=TEMPLATE_FOLDER)
-CORS(app)
-
-@app.route('/')
-def serve_index():
-    # This route now serves the index.html file from the project root
-    # It will look for 'index.html' in the directory defined by TEMPLATE_FOLDER
-    return send_from_directory(app.template_folder, 'index.html')
-
-# The static route is now handled automatically by Flask due to the static_folder parameter,
-# but we'll keep a route for non-static files like favicon.ico if needed.
-@app.route('/<path:path>')
-def serve_other_files(path):
-    return send_from_directory(app.template_folder, path)
-
-# =================================================================================================
-# The rest of your API routes remain unchanged
-# =================================================================================================
-
-from backend.services.website_analysis import get_website_analysis, generate_pdf_report, ai_rewrite_seo_content, ai_refine_content, ai_broken_link_suggestions
-from backend.services.article_analysis import analyze_article_content, rewrite_article
-
-@app.route('/api/analyze_website', methods=['POST'])
-def analyze_website():
+# ---
+# 1. وظيفة إعادة كتابة المقالات (Article Rewriter)
+# ---
+@app.route('/api/rewrite', methods=['POST'])
+def rewrite_article():
     data = request.get_json()
-    url = data.get('url', '')
+    text = data.get('text')
+    
+    if not text:
+        return jsonify({"error": "Text to rewrite is required"}), 400
+    
+    prompt = f"أعد كتابة هذا المقال بأسلوب احترافي وجذاب مع الحفاظ على المعنى الأصلي:\n\n{text}"
+    
+    gemini_response = call_gemini_api(prompt)
+    
+    return jsonify({"rewritten_text": gemini_response["result"]})
+
+# ---
+# 2. وظيفة تحليل المقالات (Article Analysis)
+# ---
+@app.route('/api/analyze-article', methods=['POST'])
+def analyze_article_content():
+    data = request.get_json()
+    article_content = data.get('content')
+
+    if not article_content:
+        return jsonify({"error": "Article content is required"}), 400
+
+    prompt = f"""
+    قم بتحليل المحتوى التالي من المقال وقدم تقريراً مفصلاً.
+    تقريرك يجب أن يتضمن:
+    1. الكلمات المفتاحية الأساسية في المقال.
+    2. تقييم لسهولة القراءة (Readability Score) وتوصيات لتحسينه.
+    3. تقييم لنية المستخدم (User Intent) التي يستهدفها المقال (مثل: إعلامي، تجاري، استقصائي).
+    4. اقتراحات للمحتوى المفقود (Content Gaps) التي يمكن إضافتها لتعزيز المقال.
+
+    محتوى المقال:
+    {article_content}
+    """
+
+    # استبدال هذا الاستدعاء بـ API Gemini الفعلي
+    gemini_api_response = {
+        "keywords": ["الذكاء الاصطناعي", "تحليل البيانات"],
+        "readability_score": "جيد جداً (85/100)",
+        "readability_recommendations": "استخدم جمل أقصر في بعض الأحيان",
+        "user_intent": "إعلامي (Informational)",
+        "content_gaps": ["يمكن إضافة فقرة عن تطبيقات الذكاء الاصطناعي في حياتنا اليومية."]
+    }
+
+    return jsonify(gemini_api_response)
+
+# ---
+# 3. وظيفة تحليل الكلمات المفتاحية للمواقع (Website Keyword Analysis)
+# ---
+@app.route('/api/get_website_keywords', methods=['POST'])
+def get_website_keywords():
+    data = request.get_json()
+    url = data.get('url')
+
     if not url:
         return jsonify({"error": "URL is required"}), 400
-    try:
-        analysis_results = get_website_analysis(url)
-        return jsonify(analysis_results), 200
-    except Exception as e:
-        print(f"Error during website analysis: {e}")
-        return jsonify({"error": "Failed to analyze website"}), 500
 
-@app.route('/api/rewrite_seo_content', methods=['POST'])
-def rewrite_seo_content_route():
+    try:
+        response = requests.get(url, timeout=10)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        page_text = soup.get_text()
+
+        prompt = f"حلل هذا النص واستخرج أهم الكلمات المفتاحية و الكلمات المفتاحية الطويلة (long-tail keywords) ذات الصلة: \n\n{page_text[:4000]}"
+        
+        # استبدال هذا الاستدعاء بـ API Gemini الفعلي
+        gemini_api_response = {
+            "keywords": ["تحليل المواقع", "تحسين محركات البحث"],
+            "long_tail_keywords": ["كيفية تحسين سيو الموقع", "أدوات مجانية لتحليل المواقع"]
+        }
+
+        return jsonify(gemini_api_response)
+
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": f"Failed to fetch the URL: {e}"}), 500
+
+# ---
+# 4. وظيفة تحليل المنافسين (Competitor Analysis)
+# ---
+@app.route('/api/analyze_competitors', methods=['POST'])
+def analyze_competitors():
     data = request.get_json()
-    content = data.get('content', '')
-    lang = data.get('lang', 'en')
-    if not content:
-        return jsonify({"error": "Content is required"}), 400
-    try:
-        rewritten_content = ai_rewrite_seo_content(content, lang=lang)
-        return jsonify({"rewritten_content": rewritten_content}), 200
-    except Exception as e:
-        print(f"Error during SEO content rewrite: {e}")
-        return jsonify({"error": "Failed to rewrite SEO content"}), 500
-    
-@app.route('/api/refine_content', methods=['POST'])
-def refine_content_route():
-    data = request.get_json()
-    text_to_refine = data.get('text_to_refine', '')
-    lang = request.headers.get('Accept-Language', 'en')
+    my_url = data.get('my_url')
+    competitor_url = data.get('competitor_url')
 
-    if not text_to_refine:
-        return jsonify({"error": "Text to refine is required"}), 400
+    if not my_url or not competitor_url:
+        return jsonify({"error": "Both URLs are required"}), 400
 
     try:
-        refined_data = ai_refine_content(text_to_refine, lang=lang)
-        if refined_data.get("error"):
-            return jsonify({"error": refined_data["error"]}), 500
-        return jsonify(refined_data), 200
-    except Exception as e:
-        print(f"Error during AI content refinement: {e}")
-        return jsonify({"error": "Failed to refine content. Please try again later."}), 500
+        my_response = requests.get(my_url, timeout=10)
+        competitor_response = requests.get(competitor_url, timeout=10)
 
-@app.route('/api/analyze_article', methods=['POST'])
-def analyze_article():
-    data = request.get_json()
-    article_text = data.get('article_text', '')
-    lang = request.headers.get('Accept-Language', 'en')
+        my_soup = BeautifulSoup(my_response.text, 'html.parser')
+        competitor_soup = BeautifulSoup(competitor_response.text, 'html.parser')
 
-    if not article_text:
-        return jsonify({"error": "Article text is required"}), 400
+        my_text = my_soup.get_text()
+        competitor_text = competitor_soup.get_text()
 
-    try:
-        analysis_results = analyze_article_content(article_text, lang=lang)
-        if analysis_results.get("error"):
-            return jsonify({"error": analysis_results["error"]}), 500
-        return jsonify(analysis_results), 200
-    except Exception as e:
-        print(f"Error during article content analysis: {e}")
-        return jsonify({"error": "Failed to analyze article content. Please try again later."}), 500
+        prompt = f"قارن بين هذين النصين واستخرج: 1- الكلمات المفتاحية المشتركة. 2- الكلمات المفتاحية التي يستخدمها المنافس ولا أستخدمها.\n\nالنص الأول (موقعي):\n{my_text[:2000]}\n\nالنص الثاني (المنافس):\n{competitor_text[:2000]}"
+        
+        # استبدال هذا الاستدعاء بـ API Gemini الفعلي
+        gemini_api_response = {
+            "common_keywords": ["تحليل المواقع", "تسويق رقمي"],
+            "competitor_exclusive_keywords": ["تحليل سيو المقالات", "أدوات SEO مجانية"]
+        }
 
-@app.route('/api/rewrite_article', methods=['POST'])
-def rewrite_article_route():
-    data = request.get_json()
-    article_text = data.get('article_text', '')
-    lang = request.headers.get('Accept-Language', 'en')
+        return jsonify(gemini_api_response)
 
-    if not article_text:
-        return jsonify({"error": "Article text is required"}), 400
-
-    try:
-        rewritten_data = rewrite_article(article_text, lang=lang)
-        if rewritten_data.get("error"):
-            return jsonify({"error": rewritten_data["error"]}), 500
-        return jsonify(rewritten_data), 200
-    except Exception as e:
-        print(f"Error during article rewrite: {e}")
-        return jsonify({"error": "Failed to rewrite article. Please try again later."}), 500
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": f"Failed to fetch one of the URLs: {e}"}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=os.environ.get('PORT', 5000), debug=True)
+    app.run(debug=True)
