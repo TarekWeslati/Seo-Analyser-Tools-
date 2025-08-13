@@ -1,163 +1,188 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+/*
+ * style.css
+ * This file contains the custom styles for the Website & Article Analyzer application.
+ * It includes styles for typography, dark mode, animations, and general layout.
+ */
 
+/* =========================================
+   Base Styles and Typography
+   ========================================= */
+
+/* Use the Tajawal font for the entire body */
 body {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Tajawal', sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Base styles for scores and progress bars */
-.score-display {
-    border: 1px solid; /* Will be colored by status */
-    border-radius: 0.5rem; /* rounded-lg */
-    padding: 0.75rem; /* p-3 */
-    margin-top: 0.75rem; /* mt-3 */
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
-    transition: all 0.3s ease-in-out;
+/* Base colors for light mode */
+body.light {
+    background-color: #f3f4f6; /* bg-gray-100 */
+    color: #1f2937; /* text-gray-900 */
 }
 
-/* Specific colors for score-display borders */
-.score-display .bg-green-600 { /* Good */
-    border-color: #16a34a; /* green-600 */
-    background-color: #dcfce7; /* green-100 */
-}
-.score-display .bg-yellow-500 { /* Medium */
-    border-color: #f59e0b; /* yellow-500 */
-    background-color: #fffbeb; /* yellow-100 */
-}
-.score-display .bg-red-600 { /* Bad */
-    border-color: #dc2626; /* red-600 */
-    background-color: #fee2e2; /* red-100 */
+/* =========================================
+   Dark Mode Styles
+   ========================================= */
+
+/* Dark mode colors */
+body.dark {
+    background-color: #111827; /* bg-gray-900 */
+    color: #e5e7eb; /* text-gray-100 */
 }
 
-/* Dark mode adjustments for score-display */
-.dark .score-display .bg-green-600 {
-    border-color: #4ade80; /* green-400 */
-    background-color: #14532d; /* green-900 */
-}
-.dark .score-display .bg-yellow-500 {
-    border-color: #fcd34d; /* yellow-300 */
-    background-color: #78350f; /* yellow-900 */
-}
-.dark .score-display .bg-red-600 {
-    border-color: #f87171; /* red-400 */
-    background-color: #7f1d1d; /* red-900 */
+/* Override Tailwind dark mode styles for a smoother transition */
+.dark .bg-white {
+    background-color: #1f2937; /* bg-gray-800 */
 }
 
-
-/* Progress bar colors (already defined in JS, but for clarity) */
-/* .progress-bar.bg-green-600 { background-color: #16a34a; } */
-/* .progress-bar.bg-yellow-500 { background-color: #f59e0b; } */
-/* .progress-bar.bg-red-600 { background-color: #dc2626; } */
-
-/* Text colors for status messages */
-.text-green-600 { color: #16a34a; }
-.text-red-600 { color: #dc2626; }
-.text-yellow-600 { color: #f59e0b; }
-.text-gray-600 { color: #4b5563; } /* Default neutral */
-
-
-/* Existing Tailwind CSS imports and custom styles */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/* Custom styles for the AI sections */
-.ai-section {
-    background-color: #eff6ff; /* blue-50 */
-    border-left: 5px solid #60a5fa; /* blue-400 */
-    padding: 1rem;
-    border-radius: 0.5rem;
-    margin-top: 1rem;
+.dark .text-gray-900 {
+    color: #f9fafb; /* text-gray-50 */
 }
 
-.dark .ai-section {
-    background-color: #1e3a8a; /* blue-900 */
-    border-left-color: #3b82f6; /* blue-500 */
+.dark .bg-gray-100 {
+    background-color: #1f2937;
 }
 
-/* Basic styles for the container and other elements */
+.dark .text-gray-700 {
+    color: #d1d5db; /* text-gray-300 */
+}
+
+.dark .text-gray-600 {
+    color: #9ca3af; /* text-gray-400 */
+}
+
+.dark .border-gray-300 {
+    border-color: #4b5563; /* border-gray-600 */
+}
+
+.dark input,
+.dark textarea,
+.dark select {
+    background-color: #374151; /* bg-gray-700 */
+    color: #e5e7eb;
+}
+
+.dark .bg-gray-200 {
+    background-color: #4b5563;
+}
+
+/* =========================================
+   Component Styles
+   ========================================= */
+
+/* Style for the main container */
 .container {
-    max-width: 960px; /* Equivalent to max-w-4xl */
+    max-width: 960px;
 }
 
-/* General button styles (if not fully covered by Tailwind classes) */
-button {
-    cursor: pointer;
+/* Auth Modal Specific Styles */
+#auth-modal {
+    animation: fadeIn 0.3s ease-out;
 }
 
-/* Hide elements utility */
-.hidden {
-    display: none !important;
+#auth-modal > div {
+    animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* Loading spinner animation */
-@keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
-.fa-spin {
-    animation: spin 1s linear infinite;
+@keyframes slideUp {
+    from {
+        transform: translateY(20px) scale(0.95);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
 }
 
-/* Styles for collapsible sections */
-.section-container {
-    border: 1px solid #e2e8f0; /* gray-200 */
-    border-radius: 0.5rem; /* rounded-lg */
-    overflow: hidden; /* Hide overflow when collapsed */
+/* Style for the results dashboard sections */
+.result-section {
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
 }
 
-.dark .section-container {
-    border-color: #4b5563; /* gray-600 */
+.result-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
 }
 
-.toggle-section {
-    padding: 1rem;
-    background-color: #f0f4f8; /* Light background for header */
-    border-bottom: 1px solid #e2e8f0;
+.result-section .toggle-section {
+    padding: 0.5rem;
+    border-radius: 0.5rem;
     transition: background-color 0.3s ease;
 }
 
-.dark .toggle-section {
-    background-color: #374151; /* Darker background for header */
-    border-bottom-color: #4b5563;
+.result-section .toggle-section:hover {
+    background-color: #f9fafb;
 }
 
-.toggle-section:hover {
-    background-color: #e2e8f0; /* Lighter hover */
-    cursor: pointer;
-}
-
-.dark .toggle-section:hover {
-    background-color: #4b5563; /* Darker hover */
+.dark .result-section .toggle-section:hover {
+    background-color: #374151;
 }
 
 .toggle-icon {
-    transition: transform 0.3s ease-in-out;
+    transition: transform 0.3s ease;
 }
 
 .fa-chevron-up {
     transform: rotate(180deg);
 }
 
-.section-content {
-    padding: 1rem;
-    padding-top: 0.5rem; /* Adjust padding for better look */
-    transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
-    max-height: 1000px; /* Max height for expanded state */
-    opacity: 1;
-    overflow: hidden;
+/* Style for progress bars */
+#domain-authority-progress,
+#performance-progress,
+#seo-overall-progress {
+    transition: width 1s ease-in-out;
 }
 
-/* Initial hidden state for content */
-.section-content.hidden {
-    max-height: 0;
-    opacity: 0;
-    padding-top: 0;
-    padding-bottom: 0;
+/* Style for AI-related sections to make them stand out */
+.ai-section {
+    border: 1px dashed #6b46c1; /* purple-600 */
+    background-color: #f3e8ff; /* purple-100 */
 }
 
-/* Specific style for Article Analyzer link/button to ensure visibility */
-.header .flex.items-center.space-x-4 a {
-    /* Add any specific styles here if needed to override default a styles */
-    /* For example, if it's getting hidden by other flex items */
+.dark .ai-section {
+    border-color: #9f7aea; /* purple-400 */
+    background-color: #4c1d95; /* purple-900 */
+}
+
+/* =========================================
+   Utility and Animation Classes
+   ========================================= */
+
+/* Custom animation for spinner */
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* RTL (Right-to-Left) adjustments for Arabic layout */
+.rtl:md:space-x-reverse > * + * {
+    margin-right: 1rem;
+    margin-left: 0;
+}
+
+/* Ensure icons have correct margin in RTL */
+.fa-chart-line, .fa-edit, .fa-sync-alt, .fa-file-pdf, .fa-sign-in-alt, .fa-sign-out-alt {
+    margin-left: 0.5rem;
+    margin-right: 0;
+}
+
+.rtl .fa-chart-line, .rtl .fa-edit, .rtl .fa-sync-alt, .rtl .fa-file-pdf, .rtl .fa-sign-in-alt, .rtl .fa-sign-out-alt {
+    margin-right: 0.5rem;
+    margin-left: 0;
 }
