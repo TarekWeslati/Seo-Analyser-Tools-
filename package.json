@@ -1,0 +1,7 @@
+{
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'No build step required for this project'",
+    "start": "echo 'No start step required for this project'"
+  }
+}
