@@ -12,10 +12,19 @@ import google.generativeai as genai
 # This assumes you've stored the service account key in an environment variable on Render
 # like "FIREBASE_SERVICE_ACCOUNT_KEY"
 try:
-    firebase_cred = json.loads(os.environ.get("FIREBASE_SERVICE_ACCOUNT_KEY"))
-    cred = credentials.Certificate(firebase_cred)
-    firebase_admin.initialize_app(cred)
-    db = firestore.client()
+    # Adding this line to debug the environment variable issue
+    firebase_key_str = os.environ.get("FIREBASE_SERVICE_ACCOUNT_KEY")
+    print(f"Attempting to load Firebase key. Key is None: {firebase_key_str is None}")
+
+    if firebase_key_str:
+        firebase_cred = json.loads(firebase_key_str)
+        cred = credentials.Certificate(firebase_cred)
+        firebase_admin.initialize_app(cred)
+        db = firestore.client()
+        print("Firebase Admin SDK initialized successfully.")
+    else:
+        raise ValueError("FIREBASE_SERVICE_ACCOUNT_KEY is not set or empty.")
+        
 except Exception as e:
     print(f"Error initializing Firebase Admin SDK: {e}")
     cred = None
