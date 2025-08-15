@@ -75,15 +75,14 @@ def google_auth_handler():
 # --- Function for Calling Gemini API ---
 def call_gemini_api(prompt):
     if not GEMINI_API_KEY:
-        return "Gemini API key is not configured."
+        raise ValueError("Gemini API key is not configured.")
     
     try:
         model = genai.GenerativeModel('gemini-pro')
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
-        print(f"Error calling Gemini API: {e}")
-        return f"Failed to get a response from Gemini API: {e}"
+        raise RuntimeError(f"Failed to get a response from Gemini API: {e}") from e
 
 # --- 1. Article Rewriter ---
 @app.route('/api/rewrite', methods=['POST'])
@@ -96,9 +95,11 @@ def rewrite_article():
     
     prompt = f"أعد كتابة هذا المقال بأسلوب احترافي وجذاب مع الحفاظ على المعنى الأصلي:\n\n{text}"
     
-    gemini_response = call_gemini_api(prompt)
-    
-    return jsonify({"rewritten_text": gemini_response})
+    try:
+        gemini_response = call_gemini_api(prompt)
+        return jsonify({"rewritten_text": gemini_response})
+    except (ValueError, RuntimeError) as e:
+        return jsonify({"error": str(e)}), 500
 
 # --- 2. Article Analysis ---
 @app.route('/api/analyze-article', methods=['POST'])
@@ -121,9 +122,11 @@ def analyze_article_content():
     {article_content}
     """
     
-    gemini_response = call_gemini_api(prompt)
-    
-    return jsonify({"analysis_report": gemini_response})
+    try:
+        gemini_response = call_gemini_api(prompt)
+        return jsonify({"analysis_report": gemini_response})
+    except (ValueError, RuntimeError) as e:
+        return jsonify({"error": str(e)}), 500
 
 # --- 3. Website Keyword Analysis ---
 @app.route('/api/get_website_keywords', methods=['POST'])
@@ -136,6 +139,7 @@ def get_website_keywords():
 
     try:
         response = requests.get(url, timeout=10)
+        response.raise_for_status() # Raises an HTTPError for bad responses (4xx or 5xx)
         soup = BeautifulSoup(response.text, 'html.parser')
         page_text = soup.get_text()
 
@@ -146,7 +150,14 @@ def get_website_keywords():
         return jsonify({"keywords_report": gemini_response})
 
     except requests.exceptions.RequestException as e:
-        return jsonify({"error": f"Failed to fetch the URL: {e}"}), 500
+        print(f"Request Exception: {e}")
+        return jsonify({"error": f"فشل في جلب عنوان URL: {e}"}), 500
+    except (ValueError, RuntimeError) as e:
+        print(f"Gemini API Error: {e}")
+        return jsonify({"error": f"فشل في تحليل المحتوى: {e}"}), 500
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        return jsonify({"error": "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى لاحقًا."}), 500
 
 # --- 4. Competitor Analysis ---
 @app.route('/api/analyze_competitors', methods=['POST'])
@@ -161,6 +172,8 @@ def analyze_competitors():
     try:
         my_response = requests.get(my_url, timeout=10)
         competitor_response = requests.get(competitor_url, timeout=10)
+        my_response.raise_for_status()
+        competitor_response.raise_for_status()
 
         my_soup = BeautifulSoup(my_response.text, 'html.parser')
         competitor_soup = BeautifulSoup(competitor_response.text, 'html.parser')
@@ -175,7 +188,14 @@ def analyze_competitors():
         return jsonify({"comparison_report": gemini_response})
 
     except requests.exceptions.RequestException as e:
-        return jsonify({"error": f"Failed to fetch one of the URLs: {e}"}), 500
+        print(f"Request Exception: {e}")
+        return jsonify({"error": f"فشل في جلب أحد عناوين URL: {e}"}), 500
+    except (ValueError, RuntimeError) as e:
+        print(f"Gemini API Error: {e}")
+        return jsonify({"error": f"فشل في تحليل المحتوى: {e}"}), 500
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        return jsonify({"error": "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى لاحقًا."}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
