@@ -138,7 +138,7 @@ def get_website_keywords():
         return jsonify({"error": "URL is required"}), 400
 
     try:
-        response = requests.get(url, timeout=10)
+        response = requests.get(url, timeout=10, verify=False)
         response.raise_for_status() # Raises an HTTPError for bad responses (4xx or 5xx)
         soup = BeautifulSoup(response.text, 'html.parser')
         page_text = soup.get_text()
@@ -170,8 +170,8 @@ def analyze_competitors():
         return jsonify({"error": "Both URLs are required"}), 400
 
     try:
-        my_response = requests.get(my_url, timeout=10)
-        competitor_response = requests.get(competitor_url, timeout=10)
+        my_response = requests.get(my_url, timeout=10, verify=False)
+        competitor_response = requests.get(competitor_url, timeout=10, verify=False)
         my_response.raise_for_status()
         competitor_response.raise_for_status()
 
