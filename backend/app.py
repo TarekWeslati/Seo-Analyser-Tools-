@@ -79,7 +79,9 @@ def call_gemini_api(prompt):
         raise ValueError("Gemini API key is not configured.")
     
     try:
-        model = genai.GenerativeModel('gemini-pro')
+        # Change the model here to a version that is available in your region.
+        # Examples: 'gemini-1.5-pro-latest' or 'gemini-1.5-flash-latest'
+        model = genai.GenerativeModel('gemini-1.5-pro')
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
@@ -151,13 +153,10 @@ def get_website_keywords():
         return jsonify({"keywords_report": gemini_response})
 
     except requests.exceptions.RequestException as e:
-        print(f"Request Exception: {e}")
         return jsonify({"error": f"فشل في جلب عنوان URL: {e}"}), 500
     except (ValueError, RuntimeError) as e:
-        print(f"Gemini API Error: {e}")
         return jsonify({"error": f"فشل في تحليل المحتوى: {e}"}), 500
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
         return jsonify({"error": "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى لاحقًا."}), 500
 
 # --- 4. Competitor Analysis ---
@@ -189,13 +188,10 @@ def analyze_competitors():
         return jsonify({"comparison_report": gemini_response})
 
     except requests.exceptions.RequestException as e:
-        print(f"Request Exception: {e}")
         return jsonify({"error": f"فشل في جلب أحد عناوين URL: {e}"}), 500
     except (ValueError, RuntimeError) as e:
-        print(f"Gemini API Error: {e}")
         return jsonify({"error": f"فشل في تحليل المحتوى: {e}"}), 500
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
         return jsonify({"error": "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى لاحقًا."}), 500
 
 if __name__ == '__main__':
