@@ -1,6 +1,7 @@
 import os
 import json
 import requests
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from bs4 import BeautifulSoup
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
@@ -8,16 +9,17 @@ import firebase_admin
 from firebase_admin import credentials, auth, firestore
 import google.generativeai as genai
 
+# Suppress InsecureRequestWarning
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+
 # Firebase Admin SDK Configuration
 try:
     firebase_key_str = os.environ.get("FIREBASE_SERVICE_ACCOUNT_KEY")
-    print(f"Attempting to load Firebase key. Key is None: {firebase_key_str is None}")
     if firebase_key_str:
         firebase_cred = json.loads(firebase_key_str)
         cred = credentials.Certificate(firebase_cred)
         firebase_admin.initialize_app(cred)
         db = firestore.client()
-        print("Firebase Admin SDK initialized successfully.")
     else:
         raise ValueError("FIREBASE_SERVICE_ACCOUNT_KEY is not set or empty.")
 except Exception as e:
@@ -69,8 +71,7 @@ def google_auth_handler():
     except auth.InvalidIdTokenError:
         return jsonify({"error": "Invalid ID token"}), 401
     except Exception as e:
-        print(f"Error during Google auth: {e}")
-        return jsonify({"error": "Failed to authenticate"}), 500
+        return jsonify({"error": f"Failed to authenticate: {e}"}), 500
 
 # --- Function for Calling Gemini API ---
 def call_gemini_api(prompt):
