@@ -9,13 +9,9 @@ from firebase_admin import credentials, auth, firestore
 import google.generativeai as genai
 
 # Firebase Admin SDK Configuration
-# This assumes you've stored the service account key in an environment variable on Render
-# like "FIREBASE_SERVICE_ACCOUNT_KEY"
 try:
-    # Adding this line to debug the environment variable issue
     firebase_key_str = os.environ.get("FIREBASE_SERVICE_ACCOUNT_KEY")
     print(f"Attempting to load Firebase key. Key is None: {firebase_key_str is None}")
-
     if firebase_key_str:
         firebase_cred = json.loads(firebase_key_str)
         cred = credentials.Certificate(firebase_cred)
@@ -24,15 +20,17 @@ try:
         print("Firebase Admin SDK initialized successfully.")
     else:
         raise ValueError("FIREBASE_SERVICE_ACCOUNT_KEY is not set or empty.")
-        
 except Exception as e:
     print(f"Error initializing Firebase Admin SDK: {e}")
     cred = None
     db = None
 
 # Gemini API Configuration
-# Assumes you've set up a GEMINI_API_KEY environment variable
-genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+if not GEMINI_API_KEY:
+    print("Warning: GEMINI_API_KEY is not set.")
+else:
+    genai.configure(api_key=GEMINI_API_KEY)
 
 # Flask App Configuration
 app = Flask(__name__, static_folder='frontend/public/static', template_folder='frontend/public')
@@ -76,9 +74,16 @@ def google_auth_handler():
 
 # --- Function for Calling Gemini API ---
 def call_gemini_api(prompt):
-    model = genai.GenerativeModel('gemini-pro')
-    response = model.generate_content(prompt)
-    return response.text
+    if not GEMINI_API_KEY:
+        return "Gemini API key is not configured."
+    
+    try:
+        model = genai.GenerativeModel('gemini-pro')
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        print(f"Error calling Gemini API: {e}")
+        return f"Failed to get a response from Gemini API: {e}"
 
 # --- 1. Article Rewriter ---
 @app.route('/api/rewrite', methods=['POST'])
