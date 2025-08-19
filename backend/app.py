@@ -1,5 +1,7 @@
 import os
 import json
+import asyncio
+import aiohttp
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from bs4 import BeautifulSoup
@@ -23,7 +25,6 @@ try:
     else:
         raise ValueError("FIREBASE_SERVICE_ACCOUNT_KEY is not set or empty.")
 except Exception as e:
-    print(f"Error initializing Firebase Admin SDK: {e}")
     cred = None
     db = None
 
@@ -73,23 +74,31 @@ def google_auth_handler():
     except Exception as e:
         return jsonify({"error": f"Failed to authenticate: {e}"}), 500
 
-# --- Function for Calling Gemini API ---
-def call_gemini_api(prompt):
+# --- Asynchronous Helper Functions ---
+async def call_gemini_api(prompt):
     if not GEMINI_API_KEY:
         raise ValueError("Gemini API key is not configured.")
     
     try:
-        # Change the model here to a version that is available in your region.
-        # Examples: 'gemini-1.5-pro-latest' or 'gemini-1.5-flash-latest'
         model = genai.GenerativeModel('gemini-1.5-pro')
-        response = model.generate_content(prompt)
+        response = await model.generate_content_async(prompt)
         return response.text
     except Exception as e:
         raise RuntimeError(f"Failed to get a response from Gemini API: {e}") from e
 
+async def fetch_website_content_async(url):
+    """Fetches website content asynchronously and handles common errors."""
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, timeout=10, ssl=False) as response:
+                response.raise_for_status()
+                return await response.text()
+    except aiohttp.ClientError as e:
+        raise RuntimeError(f"Failed to fetch URL: {e}") from e
+
 # --- 1. Article Rewriter ---
 @app.route('/api/rewrite', methods=['POST'])
-def rewrite_article():
+async def rewrite_article():
     data = request.get_json()
     text = data.get('text')
     
@@ -99,14 +108,14 @@ def rewrite_article():
     prompt = f"أعد كتابة هذا المقال بأسلوب احترافي وجذاب مع الحفاظ على المعنى الأصلي:\n\n{text}"
     
     try:
-        gemini_response = call_gemini_api(prompt)
+        gemini_response = await call_gemini_api(prompt)
         return jsonify({"rewritten_text": gemini_response})
     except (ValueError, RuntimeError) as e:
         return jsonify({"error": str(e)}), 500
 
 # --- 2. Article Analysis ---
 @app.route('/api/analyze-article', methods=['POST'])
-def analyze_article_content():
+async def analyze_article_content():
     data = request.get_json()
     article_content = data.get('content')
 
@@ -126,14 +135,14 @@ def analyze_article_content():
     """
     
     try:
-        gemini_response = call_gemini_api(prompt)
+        gemini_response = await call_gemini_api(prompt)
         return jsonify({"analysis_report": gemini_response})
     except (ValueError, RuntimeError) as e:
         return jsonify({"error": str(e)}), 500
 
 # --- 3. Website Keyword Analysis ---
 @app.route('/api/get_website_keywords', methods=['POST'])
-def get_website_keywords():
+async def get_website_keywords():
     data = request.get_json()
     url = data.get('url')
 
@@ -141,18 +150,17 @@ def get_website_keywords():
         return jsonify({"error": "URL is required"}), 400
 
     try:
-        response = requests.get(url, timeout=10, verify=False)
-        response.raise_for_status() # Raises an HTTPError for bad responses (4xx or 5xx)
-        soup = BeautifulSoup(response.text, 'html.parser')
+        response_text = await fetch_website_content_async(url)
+        soup = BeautifulSoup(response_text, 'html.parser')
         page_text = soup.get_text()
 
         prompt = f"حلل هذا النص واستخرج أهم الكلمات المفتاحية و الكلمات المفتاحية الطويلة (long-tail keywords) ذات الصلة: \n\n{page_text[:4000]}"
         
-        gemini_response = call_gemini_api(prompt)
+        gemini_response = await call_gemini_api(prompt)
 
         return jsonify({"keywords_report": gemini_response})
 
-    except requests.exceptions.RequestException as e:
+    except RuntimeError as e:
         return jsonify({"error": f"فشل في جلب عنوان URL: {e}"}), 500
     except (ValueError, RuntimeError) as e:
         return jsonify({"error": f"فشل في تحليل المحتوى: {e}"}), 500
@@ -161,7 +169,7 @@ def get_website_keywords():
 
 # --- 4. Competitor Analysis ---
 @app.route('/api/analyze_competitors', methods=['POST'])
-def analyze_competitors():
+async def analyze_competitors():
     data = request.get_json()
     my_url = data.get('my_url')
     competitor_url = data.get('competitor_url')
@@ -170,24 +178,24 @@ def analyze_competitors():
         return jsonify({"error": "Both URLs are required"}), 400
 
     try:
-        my_response = requests.get(my_url, timeout=10, verify=False)
-        competitor_response = requests.get(competitor_url, timeout=10, verify=False)
-        my_response.raise_for_status()
-        competitor_response.raise_for_status()
+        my_response_text, competitor_response_text = await asyncio.gather(
+            fetch_website_content_async(my_url),
+            fetch_website_content_async(competitor_url)
+        )
 
-        my_soup = BeautifulSoup(my_response.text, 'html.parser')
-        competitor_soup = BeautifulSoup(competitor_response.text, 'html.parser')
+        my_soup = BeautifulSoup(my_response_text, 'html.parser')
+        competitor_soup = BeautifulSoup(competitor_response_text, 'html.parser')
 
         my_text = my_soup.get_text()
         competitor_text = competitor_soup.get_text()
 
         prompt = f"قارن بين هذين النصين واستخرج: 1- الكلمات المفتاحية المشتركة. 2- الكلمات المفتاحية التي يستخدمها المنافس ولا أستخدمها.\n\nالنص الأول (موقعي):\n{my_text[:2000]}\n\nالنص الثاني (المنافس):\n{competitor_text[:2000]}"
         
-        gemini_response = call_gemini_api(prompt)
+        gemini_response = await call_gemini_api(prompt)
 
         return jsonify({"comparison_report": gemini_response})
 
-    except requests.exceptions.RequestException as e:
+    except RuntimeError as e:
         return jsonify({"error": f"فشل في جلب أحد عناوين URL: {e}"}), 500
     except (ValueError, RuntimeError) as e:
         return jsonify({"error": f"فشل في تحليل المحتوى: {e}"}), 500
@@ -195,5 +203,10 @@ def analyze_competitors():
         return jsonify({"error": "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى لاحقًا."}), 500
 
 if __name__ == '__main__':
+    from sys import platform
     port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port, debug=true)
+    if "linux" in platform:
+        import asyncio
+        asyncio.run(app.run(host='0.0.0.0', port=port, debug=False))
+    else:
+        app.run(host='0.0.0.0', port=port, debug=False)
