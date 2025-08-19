@@ -1,7 +1,0 @@
-Flask
-requests
-beautifulsoup4
-firebase-admin
-google-generativeai
-gunicorn
-flask_cors
