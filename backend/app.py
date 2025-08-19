@@ -23,15 +23,17 @@ try:
         firebase_admin.initialize_app(cred)
         db = firestore.client()
     else:
-        raise ValueError("FIREBASE_SERVICE_ACCOUNT_KEY is not set or empty.")
+        print("Warning: FIREBASE_SERVICE_ACCOUNT_KEY is not set or empty. Firestore functionality will be disabled.")
+        db = None
 except Exception as e:
-    cred = None
+    print(f"Error initializing Firebase: {e}. Firestore functionality will be disabled.")
     db = None
 
 # Gemini API Configuration
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 if not GEMINI_API_KEY:
     print("Warning: GEMINI_API_KEY is not set.")
+    genai = None # Disable Gemini functionality
 else:
     genai.configure(api_key=GEMINI_API_KEY)
 
@@ -51,6 +53,9 @@ def serve_static(path):
 # --- Authentication Routes ---
 @app.route('/api/auth/google', methods=['POST'])
 def google_auth_handler():
+    if not db:
+        return jsonify({"error": "Firebase is not configured. Authentication not available."}), 500
+    
     id_token = request.headers.get('Authorization', '').split('Bearer ')[1]
     
     if not id_token:
@@ -75,8 +80,40 @@ def google_auth_handler():
         return jsonify({"error": f"Failed to authenticate: {e}"}), 500
 
 # --- Asynchronous Helper Functions ---
-async def call_gemini_api(prompt):
-    if not GEMINI_API_KEY:
+async def call_gemini_api_for_json(prompt_text):
+    if not genai:
+        raise ValueError("Gemini API key is not configured.")
+    
+    # Instruct the model to return a JSON object only
+    prompt = f"{prompt_text}\n\nReturn the response as a single, valid JSON object only."
+    
+    try:
+        model = genai.GenerativeModel('gemini-1.5-pro')
+        response = await model.generate_content_async(prompt)
+        
+        # Extract and parse the JSON from the response text
+        response_text = response.text.strip('`').strip()
+        if response_text.startswith('json'):
+            response_text = response_text[4:].strip()
+        
+        try:
+            json_data = json.loads(response_text)
+            return json_data
+        except json.JSONDecodeError as e:
+            # If parsing fails, try to fix it by asking the model again
+            print(f"Initial JSON parse failed: {e}. Trying to fix with a new prompt.")
+            fix_prompt = f"The previous response was not a valid JSON. Please provide a valid JSON object based on the following task: '{prompt_text}'. The response must be a single, valid JSON object."
+            fix_response = await model.generate_content_async(fix_prompt)
+            fix_response_text = fix_response.text.strip('`').strip()
+            if fix_response_text.startswith('json'):
+                fix_response_text = fix_response_text[4:].strip()
+            return json.loads(fix_response_text)
+
+    except Exception as e:
+        raise RuntimeError(f"Failed to get a valid response from Gemini API: {e}") from e
+
+async def call_gemini_api_for_text(prompt):
+    if not genai:
         raise ValueError("Gemini API key is not configured.")
     
     try:
@@ -108,7 +145,7 @@ async def rewrite_article():
     prompt = f"أعد كتابة هذا المقال بأسلوب احترافي وجذاب مع الحفاظ على المعنى الأصلي:\n\n{text}"
     
     try:
-        gemini_response = await call_gemini_api(prompt)
+        gemini_response = await call_gemini_api_for_text(prompt)
         return jsonify({"rewritten_text": gemini_response})
     except (ValueError, RuntimeError) as e:
         return jsonify({"error": str(e)}), 500
@@ -121,24 +158,26 @@ async def analyze_article_content():
 
     if not article_content:
         return jsonify({"error": "Article content is required"}), 400
-
+    
     prompt = f"""
-    قم بتحليل المحتوى التالي من المقال وقدم تقريراً مفصلاً.
-    تقريرك يجب أن يتضمن:
-    1. الكلمات المفتاحية الأساسية في المقال.
-    2. تقييم لسهولة القراءة (Readability Score) وتوصيات لتحسينه.
-    3. تقييم لنية المستخدم (User Intent) التي يستهدفها المقال (مثل: إعلامي، تجاري، استقصائي).
-    4. اقتراحات للمحتوى المفقود (Content Gaps) التي يمكن إضافتها لتعزيز المقال.
+    قم بتحليل المحتوى التالي من المقال وقدم تقريراً مفصلاً بتنسيق JSON. التقرير يجب أن يحتوي على الحقول التالية:
+    - **main_idea**: الفكرة الرئيسية للمقال.
+    - **keywords**: قائمة بأهم الكلمات المفتاحية.
+    - **readability_score**: تقييم لسهولة القراءة (من 1 إلى 10).
+    - **readability_recommendations**: توصيات لتحسين سهولة القراءة.
+    - **content_gaps**: اقتراحات للمحتوى المفقود.
+    - **user_intent**: نية المستخدم التي يستهدفها المقال (مثل: إعلامي، تجاري).
     
     محتوى المقال:
     {article_content}
     """
     
     try:
-        gemini_response = await call_gemini_api(prompt)
+        gemini_response = await call_gemini_api_for_json(prompt)
         return jsonify({"analysis_report": gemini_response})
-    except (ValueError, RuntimeError) as e:
-        return jsonify({"error": str(e)}), 500
+    except (ValueError, RuntimeError, json.JSONDecodeError) as e:
+        return jsonify({"error": f"فشل في تحليل المحتوى. {e}"}), 500
+
 
 # --- 3. Website Keyword Analysis ---
 @app.route('/api/get_website_keywords', methods=['POST'])
@@ -154,16 +193,23 @@ async def get_website_keywords():
         soup = BeautifulSoup(response_text, 'html.parser')
         page_text = soup.get_text()
 
-        prompt = f"حلل هذا النص واستخرج أهم الكلمات المفتاحية و الكلمات المفتاحية الطويلة (long-tail keywords) ذات الصلة: \n\n{page_text[:4000]}"
+        prompt = f"""
+        حلل هذا النص واستخرج الكلمات المفتاحية والكلمات المفتاحية الطويلة (long-tail keywords). 
+        قدم الإجابة ككائن JSON يحتوي على حقلين:
+        - **keywords**: قائمة بأهم الكلمات المفتاحية.
+        - **long_tail_keywords**: قائمة بالكلمات المفتاحية الطويلة ذات الصلة.
         
-        gemini_response = await call_gemini_api(prompt)
-
+        النص:
+        {page_text[:4000]}
+        """
+        
+        gemini_response = await call_gemini_api_for_json(prompt)
         return jsonify({"keywords_report": gemini_response})
 
     except RuntimeError as e:
         return jsonify({"error": f"فشل في جلب عنوان URL: {e}"}), 500
-    except (ValueError, RuntimeError) as e:
-        return jsonify({"error": f"فشل في تحليل المحتوى: {e}"}), 500
+    except (ValueError, RuntimeError, json.JSONDecodeError) as e:
+        return jsonify({"error": f"فشل في تحليل المحتوى. {e}"}), 500
     except Exception as e:
         return jsonify({"error": "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى لاحقًا."}), 500
 
@@ -189,16 +235,25 @@ async def analyze_competitors():
         my_text = my_soup.get_text()
         competitor_text = competitor_soup.get_text()
 
-        prompt = f"قارن بين هذين النصين واستخرج: 1- الكلمات المفتاحية المشتركة. 2- الكلمات المفتاحية التي يستخدمها المنافس ولا أستخدمها.\n\nالنص الأول (موقعي):\n{my_text[:2000]}\n\nالنص الثاني (المنافس):\n{competitor_text[:2000]}"
+        prompt = f"""
+        قارن بين النصين وقدم الإجابة ككائن JSON يحتوي على الحقول التالية:
+        - **common_keywords**: قائمة بالكلمات المفتاحية المشتركة.
+        - **competitor_exclusive_keywords**: قائمة بالكلمات المفتاحية التي يستخدمها المنافس فقط.
         
-        gemini_response = await call_gemini_api(prompt)
-
+        النص الأول (موقعي):
+        {my_text[:2000]}
+        
+        النص الثاني (المنافس):
+        {competitor_text[:2000]}
+        """
+        
+        gemini_response = await call_gemini_api_for_json(prompt)
         return jsonify({"comparison_report": gemini_response})
 
     except RuntimeError as e:
         return jsonify({"error": f"فشل في جلب أحد عناوين URL: {e}"}), 500
-    except (ValueError, RuntimeError) as e:
-        return jsonify({"error": f"فشل في تحليل المحتوى: {e}"}), 500
+    except (ValueError, RuntimeError, json.JSONDecodeError) as e:
+        return jsonify({"error": f"فشل في تحليل المحتوى. {e}"}), 500
     except Exception as e:
         return jsonify({"error": "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى لاحقًا."}), 500
 
