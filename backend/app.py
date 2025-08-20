@@ -41,6 +41,9 @@ else:
 app = Flask(__name__, static_folder='frontend/public/static', template_folder='frontend/public')
 CORS(app)
 
+# --- In-memory cache for API results ---
+results_cache = {}
+
 # --- Routes for Serving Frontend Files ---
 @app.route('/')
 def serve_index():
@@ -84,14 +87,12 @@ async def call_gemini_api_for_json(prompt_text):
     if not genai:
         raise ValueError("Gemini API key is not configured.")
     
-    # Instruct the model to return a JSON object only
     prompt = f"{prompt_text}\n\nReturn the response as a single, valid JSON object only."
     
     try:
         model = genai.GenerativeModel('gemini-1.5-pro')
         response = await model.generate_content_async(prompt)
         
-        # Extract and parse the JSON from the response text
         response_text = response.text.strip('`').strip()
         if response_text.startswith('json'):
             response_text = response_text[4:].strip()
@@ -100,7 +101,6 @@ async def call_gemini_api_for_json(prompt_text):
             json_data = json.loads(response_text)
             return json_data
         except json.JSONDecodeError as e:
-            # If parsing fails, try to fix it by asking the model again
             print(f"Initial JSON parse failed: {e}. Trying to fix with a new prompt.")
             fix_prompt = f"The previous response was not a valid JSON. Please provide a valid JSON object based on the following task: '{prompt_text}'. The response must be a single, valid JSON object."
             fix_response = await model.generate_content_async(fix_prompt)
@@ -124,7 +124,6 @@ async def call_gemini_api_for_text(prompt):
         raise RuntimeError(f"Failed to get a response from Gemini API: {e}") from e
 
 async def fetch_website_content_async(url):
-    """Fetches website content asynchronously and handles common errors."""
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(url, timeout=10, ssl=False) as response:
@@ -142,10 +141,16 @@ async def rewrite_article():
     if not text:
         return jsonify({"error": "Text to rewrite is required"}), 400
     
+    # Check cache first
+    cache_key = f"rewrite:{text}"
+    if cache_key in results_cache:
+        return jsonify({"rewritten_text": results_cache[cache_key]})
+
     prompt = f"أعد كتابة هذا المقال بأسلوب احترافي وجذاب مع الحفاظ على المعنى الأصلي:\n\n{text}"
     
     try:
         gemini_response = await call_gemini_api_for_text(prompt)
+        results_cache[cache_key] = gemini_response # Store in cache
         return jsonify({"rewritten_text": gemini_response})
     except (ValueError, RuntimeError) as e:
         return jsonify({"error": str(e)}), 500
@@ -159,6 +164,11 @@ async def analyze_article_content():
     if not article_content:
         return jsonify({"error": "Article content is required"}), 400
     
+    # Check cache first
+    cache_key = f"analyze_article:{article_content}"
+    if cache_key in results_cache:
+        return jsonify({"analysis_report": results_cache[cache_key]})
+
     prompt = f"""
     قم بتحليل المحتوى التالي من المقال وقدم تقريراً مفصلاً بتنسيق JSON. التقرير يجب أن يحتوي على الحقول التالية:
     - **main_idea**: الفكرة الرئيسية للمقال.
@@ -174,6 +184,7 @@ async def analyze_article_content():
     
     try:
         gemini_response = await call_gemini_api_for_json(prompt)
+        results_cache[cache_key] = gemini_response # Store in cache
         return jsonify({"analysis_report": gemini_response})
     except (ValueError, RuntimeError, json.JSONDecodeError) as e:
         return jsonify({"error": f"فشل في تحليل المحتوى. {e}"}), 500
@@ -187,6 +198,11 @@ async def get_website_keywords():
 
     if not url:
         return jsonify({"error": "URL is required"}), 400
+
+    # Check cache first
+    cache_key = f"get_keywords:{url}"
+    if cache_key in results_cache:
+        return jsonify({"keywords_report": results_cache[cache_key]})
 
     try:
         response_text = await fetch_website_content_async(url)
@@ -204,6 +220,7 @@ async def get_website_keywords():
         """
         
         gemini_response = await call_gemini_api_for_json(prompt)
+        results_cache[cache_key] = gemini_response # Store in cache
         return jsonify({"keywords_report": gemini_response})
 
     except RuntimeError as e:
@@ -222,6 +239,11 @@ async def analyze_competitors():
 
     if not my_url or not competitor_url:
         return jsonify({"error": "Both URLs are required"}), 400
+
+    # Check cache first
+    cache_key = f"competitor_analysis:{my_url}:{competitor_url}"
+    if cache_key in results_cache:
+        return jsonify({"comparison_report": results_cache[cache_key]})
 
     try:
         my_response_text, competitor_response_text = await asyncio.gather(
@@ -248,6 +270,7 @@ async def analyze_competitors():
         """
         
         gemini_response = await call_gemini_api_for_json(prompt)
+        results_cache[cache_key] = gemini_response # Store in cache
         return jsonify({"comparison_report": gemini_response})
 
     except RuntimeError as e:
