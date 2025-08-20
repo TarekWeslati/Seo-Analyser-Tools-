@@ -9,7 +9,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const analyzeCompetitorButton = document.getElementById('analyzeCompetitorButton');
     const websiteUrlInput = document.getElementById('websiteUrl');
     const websiteAnalysisOutput = document.getElementById('website-analysis-output');
-    const competitorUrlInput = document.getElementById('competitorUrl'); // New input element for competitor URL
 
     // --- Language and Theme Variables ---
     const languageSelector = document.getElementById('languageSelector');
@@ -24,9 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Correct path to the language files
             const response = await fetch(`/static/locales/${lang}.json`);
             if (!response.ok) {
-                // Handle cases where the file might not exist
                 console.error(`Translations file for ${lang} not found. Status: ${response.status}`);
-                // Fallback to a default language if needed
                 return;
             }
             translations = await response.json();
@@ -41,12 +38,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const key = element.getAttribute('data-translate');
                 if (translations[`${key}Placeholder`]) {
                     element.placeholder = translations[`${key}Placeholder`];
-                }
-            });
-            document.querySelectorAll('[data-translate-value]').forEach(element => {
-                const key = element.getAttribute('data-translate-value');
-                if (translations[key]) {
-                    element.value = translations[key];
                 }
             });
             document.documentElement.lang = lang;
@@ -64,25 +55,30 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Event Listeners ---
 
     // Language selector
-    languageSelector.addEventListener('change', (e) => {
-        const selectedLang = e.target.value;
-        localStorage.setItem('lang', selectedLang);
-        fetchTranslations(selectedLang);
-    });
+    if (languageSelector) {
+        languageSelector.addEventListener('change', (e) => {
+            const selectedLang = e.target.value;
+            localStorage.setItem('lang', selectedLang);
+            fetchTranslations(selectedLang);
+        });
+    }
 
     // Dark Mode Toggle
-    themeToggle.addEventListener('click', () => {
-        document.documentElement.classList.toggle('dark');
-        const isDark = document.documentElement.classList.contains('dark');
-        localStorage.setItem('theme', isDark ? 'dark' : 'light');
-        sunIcon.classList.toggle('hidden', !isDark);
-        moonIcon.classList.toggle('hidden', isDark);
-    });
+    if (themeToggle) {
+        themeToggle.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            const isDark = document.documentElement.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            if (sunIcon) sunIcon.classList.toggle('hidden', !isDark);
+            if (moonIcon) moonIcon.classList.toggle('hidden', isDark);
+        });
+    }
+
     // Set initial theme
     if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
         document.documentElement.classList.add('dark');
-        sunIcon.classList.remove('hidden');
-        moonIcon.classList.add('hidden');
+        if (sunIcon) sunIcon.classList.remove('hidden');
+        if (moonIcon) moonIcon.classList.add('hidden');
     }
 
     // --- Analysis Functions ---
