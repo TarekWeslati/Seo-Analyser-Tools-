@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const analyzeCompetitorButton = document.getElementById('analyzeCompetitorButton');
     const websiteUrlInput = document.getElementById('websiteUrl');
     const websiteAnalysisOutput = document.getElementById('website-analysis-output');
+    const competitorUrlInput = document.getElementById('competitorUrl'); // New input element for competitor URL
 
     // --- Language and Theme Variables ---
     const languageSelector = document.getElementById('languageSelector');
@@ -20,8 +21,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Function to fetch translations and update content
     const fetchTranslations = async (lang) => {
         try {
+            // Correct path to the language files
             const response = await fetch(`/static/locales/${lang}.json`);
-            if (!response.ok) throw new Error('Translations file not found.');
+            if (!response.ok) {
+                // Handle cases where the file might not exist
+                console.error(`Translations file for ${lang} not found. Status: ${response.status}`);
+                // Fallback to a default language if needed
+                return;
+            }
             translations = await response.json();
             document.querySelectorAll('[data-translate]').forEach(element => {
                 const key = element.getAttribute('data-translate');
@@ -34,6 +41,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const key = element.getAttribute('data-translate');
                 if (translations[`${key}Placeholder`]) {
                     element.placeholder = translations[`${key}Placeholder`];
+                }
+            });
+            document.querySelectorAll('[data-translate-value]').forEach(element => {
+                const key = element.getAttribute('data-translate-value');
+                if (translations[key]) {
+                    element.value = translations[key];
                 }
             });
             document.documentElement.lang = lang;
@@ -87,7 +100,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (response.ok) {
                 if (result.analysis_report || result.keywords_report || result.comparison_report || result.rewritten_text) {
-                    // Call the specific display function based on the data type
                     displayFunction(result, outputElement);
                 } else {
                     outputElement.innerHTML = `<p class="text-red-500">Error: ${result.error || 'Failed to get a valid report from the server.'}</p>`;
