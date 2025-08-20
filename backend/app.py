@@ -126,7 +126,6 @@ async def call_gemini_api_for_text(prompt):
 async def fetch_website_content_async(url):
     """Fetches website content asynchronously and handles common errors."""
     try:
-        # Add a User-Agent header to make the request look like it's from a web browser
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
         }
