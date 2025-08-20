@@ -124,8 +124,13 @@ async def call_gemini_api_for_text(prompt):
         raise RuntimeError(f"Failed to get a response from Gemini API: {e}") from e
 
 async def fetch_website_content_async(url):
+    """Fetches website content asynchronously and handles common errors."""
     try:
-        async with aiohttp.ClientSession() as session:
+        # Add a User-Agent header to make the request look like it's from a web browser
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+        }
+        async with aiohttp.ClientSession(headers=headers) as session:
             async with session.get(url, timeout=10, ssl=False) as response:
                 response.raise_for_status()
                 return await response.text()
@@ -141,7 +146,6 @@ async def rewrite_article():
     if not text:
         return jsonify({"error": "Text to rewrite is required"}), 400
     
-    # Check cache first
     cache_key = f"rewrite:{text}"
     if cache_key in results_cache:
         return jsonify({"rewritten_text": results_cache[cache_key]})
@@ -164,7 +168,6 @@ async def analyze_article_content():
     if not article_content:
         return jsonify({"error": "Article content is required"}), 400
     
-    # Check cache first
     cache_key = f"analyze_article:{article_content}"
     if cache_key in results_cache:
         return jsonify({"analysis_report": results_cache[cache_key]})
@@ -199,7 +202,6 @@ async def get_website_keywords():
     if not url:
         return jsonify({"error": "URL is required"}), 400
 
-    # Check cache first
     cache_key = f"get_keywords:{url}"
     if cache_key in results_cache:
         return jsonify({"keywords_report": results_cache[cache_key]})
@@ -240,7 +242,6 @@ async def analyze_competitors():
     if not my_url or not competitor_url:
         return jsonify({"error": "Both URLs are required"}), 400
 
-    # Check cache first
     cache_key = f"competitor_analysis:{my_url}:{competitor_url}"
     if cache_key in results_cache:
         return jsonify({"comparison_report": results_cache[cache_key]})
