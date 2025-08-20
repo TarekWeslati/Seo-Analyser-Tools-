@@ -93,7 +93,6 @@ async def call_gemini_api_for_json(prompt_text):
         model = genai.GenerativeModel('gemini-1.5-pro')
         response = await model.generate_content_async(prompt)
         
-        # Strip any extra characters and try to parse the JSON
         response_text = response.text.strip().strip('`').strip()
         if response_text.startswith('json'):
             response_text = response_text[4:].strip()
@@ -102,7 +101,6 @@ async def call_gemini_api_for_json(prompt_text):
             json_data = json.loads(response_text)
             return json_data
         except json.JSONDecodeError as e:
-            # If JSON parsing fails, try to clean the string
             print(f"Initial JSON parse failed: {e}. Trying to fix with a new prompt.")
             fix_prompt = f"The previous response was not a valid JSON. Please provide a valid JSON object based on the following task: '{prompt_text}'. The response must be a single, valid JSON object."
             fix_response = await model.generate_content_async(fix_prompt)
@@ -137,7 +135,7 @@ async def fetch_website_content_async(url):
                 response.raise_for_status()
                 return await response.text()
     except aiohttp.ClientError as e:
-        raise RuntimeError(f"Failed to fetch URL: {e}") from e
+        raise RuntimeError(f"فشل في جلب عنوان URL: {e}") from e
 
 # --- 1. Article Rewriter ---
 @app.route('/api/rewrite', methods=['POST'])
@@ -213,8 +211,6 @@ async def get_website_keywords():
         soup = BeautifulSoup(response_text, 'html.parser')
         page_text = soup.get_text()
 
-        # Extract only the first 2000 characters to save tokens
-        # We can increase this number if needed
         trimmed_text = page_text[:2000]
 
         prompt = f"""
@@ -261,7 +257,6 @@ async def analyze_competitors():
         my_soup = BeautifulSoup(my_response_text, 'html.parser')
         competitor_soup = BeautifulSoup(competitor_response_text, 'html.parser')
 
-        # Reduce the content size sent to the API
         my_text = my_soup.get_text()[:1500] 
         competitor_text = competitor_soup.get_text()[:1500]
 
