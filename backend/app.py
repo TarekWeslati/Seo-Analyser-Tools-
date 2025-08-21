@@ -44,6 +44,27 @@ CORS(app)
 # --- In-memory cache for API results ---
 results_cache = {}
 
+# --- Helper function to run async code in a new loop ---
+def run_async_in_new_loop(coro):
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+    if loop and loop.is_running():
+        # If a loop is already running, run the coroutine in a new one
+        new_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(new_loop)
+        try:
+            return new_loop.run_until_complete(coro)
+        finally:
+            new_loop.close()
+            # Restore the previous event loop
+            if loop:
+                asyncio.set_event_loop(loop)
+    else:
+        # If no loop is running, create one
+        return asyncio.run(coro)
+
 # --- Routes for Serving Frontend Files ---
 @app.route('/')
 def serve_index():
@@ -83,7 +104,7 @@ def google_auth_handler():
         return jsonify({"error": f"Failed to authenticate: {e}"}), 500
 
 # --- Asynchronous Helper Functions ---
-async def call_gemini_api_for_json(prompt_text):
+async def call_gemini_api_for_json_async(prompt_text):
     if not genai:
         raise ValueError("Gemini API key is not configured.")
     
@@ -112,7 +133,7 @@ async def call_gemini_api_for_json(prompt_text):
     except Exception as e:
         raise RuntimeError(f"Failed to get a valid response from Gemini API: {e}") from e
 
-async def call_gemini_api_for_text(prompt):
+async def call_gemini_api_for_text_async(prompt):
     if not genai:
         raise ValueError("Gemini API key is not configured.")
     
@@ -138,7 +159,7 @@ async def fetch_website_content_async(url):
 
 # --- 1. Article Rewriter ---
 @app.route('/api/rewrite', methods=['POST'])
-async def rewrite_article():
+def rewrite_article():
     data = request.get_json()
     text = data.get('text')
     
@@ -152,7 +173,7 @@ async def rewrite_article():
     prompt = f"أعد كتابة هذا المقال بأسلوب احترافي وجذاب مع الحفاظ على المعنى الأصلي:\n\n{text}"
     
     try:
-        gemini_response = await call_gemini_api_for_text(prompt)
+        gemini_response = run_async_in_new_loop(call_gemini_api_for_text_async(prompt))
         results_cache[cache_key] = gemini_response # Store in cache
         return jsonify({"rewritten_text": gemini_response})
     except (ValueError, RuntimeError) as e:
@@ -160,7 +181,7 @@ async def rewrite_article():
 
 # --- 2. Article Analysis ---
 @app.route('/api/analyze-article', methods=['POST'])
-async def analyze_article_content():
+def analyze_article_content():
     data = request.get_json()
     article_content = data.get('content')
 
@@ -185,7 +206,7 @@ async def analyze_article_content():
     """
     
     try:
-        gemini_response = await call_gemini_api_for_json(prompt)
+        gemini_response = run_async_in_new_loop(call_gemini_api_for_json_async(prompt))
         results_cache[cache_key] = gemini_response # Store in cache
         return jsonify({"analysis_report": gemini_response})
     except (ValueError, RuntimeError, json.JSONDecodeError) as e:
@@ -194,7 +215,7 @@ async def analyze_article_content():
 
 # --- 3. Website Keyword Analysis ---
 @app.route('/api/get_website_keywords', methods=['POST'])
-async def get_website_keywords():
+def get_website_keywords():
     data = request.get_json()
     url = data.get('url')
 
@@ -206,7 +227,7 @@ async def get_website_keywords():
         return jsonify({"keywords_report": results_cache[cache_key]})
 
     try:
-        response_text = await fetch_website_content_async(url)
+        response_text = run_async_in_new_loop(fetch_website_content_async(url))
         soup = BeautifulSoup(response_text, 'html.parser')
         page_text = soup.get_text()
 
@@ -222,7 +243,7 @@ async def get_website_keywords():
         {trimmed_text}
         """
         
-        gemini_response = await call_gemini_api_for_json(prompt)
+        gemini_response = run_async_in_new_loop(call_gemini_api_for_json_async(prompt))
         results_cache[cache_key] = gemini_response # Store in cache
         return jsonify({"keywords_report": gemini_response})
 
@@ -235,7 +256,7 @@ async def get_website_keywords():
 
 # --- 4. Competitor Analysis ---
 @app.route('/api/analyze_competitors', methods=['POST'])
-async def analyze_competitors():
+def analyze_competitors():
     data = request.get_json()
     my_url = data.get('my_url')
     competitor_url = data.get('competitor_url')
@@ -248,10 +269,10 @@ async def analyze_competitors():
         return jsonify({"comparison_report": results_cache[cache_key]})
 
     try:
-        my_response_text, competitor_response_text = await asyncio.gather(
+        my_response_text, competitor_response_text = run_async_in_new_loop(asyncio.gather(
             fetch_website_content_async(my_url),
             fetch_website_content_async(competitor_url)
-        )
+        ))
 
         my_soup = BeautifulSoup(my_response_text, 'html.parser')
         competitor_soup = BeautifulSoup(competitor_response_text, 'html.parser')
@@ -271,7 +292,7 @@ async def analyze_competitors():
         {competitor_text}
         """
         
-        gemini_response = await call_gemini_api_for_json(prompt)
+        gemini_response = run_async_in_new_loop(call_gemini_api_for_json_async(prompt))
         results_cache[cache_key] = gemini_response # Store in cache
         return jsonify({"comparison_report": gemini_response})
 
